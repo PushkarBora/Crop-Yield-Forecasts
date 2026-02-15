@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block title %}Forecast Results - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       PAGE LAYOUT
+       ======================================== */
+    .forecast-results-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .forecast-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* ========================================
+       PAGE HEADER
+       ======================================== */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .page-header .subtitle {
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.9);
+        font-weight: 400;
+    }
+
+    /* ========================================
+       BACK BUTTON
+       ======================================== */
+    .back-button-container {
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    .back-btn {
+        display: inline-block;
+        padding: 1rem 2.5rem;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 2px solid rgba(255,255,255,0.3);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .back-btn:hover {
+        background: rgba(255,255,255,0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+
+    .back-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* ========================================
+       INPUT VALUES SECTION
+       ======================================== */
+    .input-values-card {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        animation: fadeInUp 0.8s ease 0.2s backwards;
+        border-left: 5px solid #667eea;
+    }
+
+    .input-values-card h3 {
+        font-size: 1.5rem;
+        color: #2d3748;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .input-values-card .icon {
+        font-size: 1.8rem;
+    }
+
+    .input-values-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .input-value-item {
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-radius: 12px;
+        border: 2px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .input-value-item .label {
+        font-size: 0.9rem;
+        color: #718096;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .input-value-item .value {
+        font-size: 1.3rem;
+        color: #2d3748;
+        font-weight: 700;
+    }
+
+    /* ========================================
+       FORECAST CARDS
+       ======================================== */
+    .forecast-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .forecast-card {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        transition: all 0.3s;
+        animation: fadeInUp 0.8s ease backwards;
+        border-top: 4px solid transparent;
+    }
+
+    .forecast-card:nth-child(1) {
+        animation-delay: 0.3s;
+        border-top-color: #667eea;
+    }
+
+    .forecast-card:nth-child(2) {
+        animation-delay: 0.4s;
+        border-top-color: #764ba2;
+    }
+
+    .forecast-card:nth-child(3) {
+        animation-delay: 0.5s;
+        border-top-color: #f093fb;
+    }
+
+    .forecast-card:nth-child(4) {
+        animation-delay: 0.6s;
+        border-top-color: #4facfe;
+    }
+
+    .forecast-card:nth-child(5) {
+        animation-delay: 0.7s;
+        border-top-color: #43e97b;
+    }
+
+    .forecast-card:nth-child(6) {
+        animation-delay: 0.8s;
+        border-top-color: #fa709a;
+    }
+
+    .forecast-card:nth-child(7) {
+        animation-delay: 0.9s;
+        border-top-color: #fee140;
+    }
+
+    .forecast-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+    }
+
+    .forecast-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .forecast-card-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        font-weight: 700;
+    }
+
+    .forecast-card-title {
+        flex: 1;
+    }
+
+    .forecast-card-title h3 {
+        font-size: 1.5rem;
+        color: #2d3748;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .forecast-card-title .model-type {
+        font-size: 0.85rem;
+        color: #718096;
+        font-weight: 500;
+        margin-top: 0.3rem;
+    }
+
+    /* ========================================
+       FORECAST TABLE
+       ======================================== */
+    .forecast-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+    }
+
+    .forecast-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .forecast-table thead th {
+        padding: 1rem;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        text-align: left;
+        border: none;
+    }
+
+    .forecast-table thead th:first-child {
+        border-top-left-radius: 10px;
+    }
+
+    .forecast-table thead th:last-child {
+        border-top-right-radius: 10px;
+        text-align: right;
+    }
+
+    .forecast-table tbody tr {
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .forecast-table tbody tr:hover {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        transform: scale(1.01);
+    }
+
+    .forecast-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #2d3748;
+        font-size: 0.95rem;
+    }
+
+    .forecast-table tbody td:last-child {
+        text-align: right;
+        font-weight: 700;
+        font-size: 1.2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .forecast-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .forecast-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 10px;
+    }
+
+    .forecast-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 10px;
+    }
+
+    /* ========================================
+       SUMMARY STATS (if multiple years)
+       ======================================== */
+    .forecast-stats {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #e2e8f0;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 0.8rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border-radius: 8px;
+    }
+
+    .stat-item .stat-label {
+        font-size: 0.8rem;
+        color: #718096;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+
+    .stat-item .stat-value {
+        font-size: 1.1rem;
+        color: #2d3748;
+        font-weight: 700;
+    }
+
+    /* ========================================
+       BOTTOM ACTION SECTION
+       ======================================== */
+    .bottom-actions {
+        text-align: center;
+        margin-top: 3rem;
+        padding: 2rem;
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .action-btn {
+        display: inline-block;
+        padding: 1.2rem 3rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0.5rem;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    }
+
+    .action-btn:active {
+        transform: translateY(-1px);
+    }
+
+    .action-btn.secondary {
+        background: rgba(255,255,255,0.2);
+        border: 2px solid rgba(255,255,255,0.4);
+    }
+
+    .action-btn.secondary:hover {
+        background: rgba(255,255,255,0.3);
+    }
+
+    /* ========================================
+       RESPONSIVE
+       ======================================== */
+    @media (max-width: 1024px) {
+        .forecast-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .forecast-stats {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .forecast-card {
+            padding: 1.5rem;
+        }
+
+        .forecast-card-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+
+        .forecast-card-title h3 {
+            font-size: 1.2rem;
+        }
+
+        .action-btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+        }
+
+        .input-values-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ========================================
+       EMPTY STATE
+       ======================================== */
+    .empty-state {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 4rem 2rem;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+
+    .empty-state-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+
+    .empty-state h3 {
+        font-size: 1.8rem;
+        color: #2d3748;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: #718096;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="forecast-results-page">
+    <div class="forecast-container">
+        
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🔮 Forecast Results</h1>
+            <p class="subtitle">AI-Powered Crop Yield Predictions</p>
+        </div>
+
+        <!-- Back Button -->
+        <div class="back-button-container">
+            <a href="/show_comparison" class="back-btn">
+                ← Back to Comparison
+            </a>
+        </div>
+
+        <!-- Input Values Used (if available and NOT ARIMA-only) -->
+        {% set has_non_arima = namespace(value=False) %}
+        {% for model_name in forecasts.keys() %}
+            {% if model_name|upper != 'ARIMA' %}
+                {% set has_non_arima.value = True %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if (session.get('forecast_rain_inputs') or session.get('forecast_temp_inputs')) and has_non_arima.value %}
+        <div class="input-values-card">
+            <h3>
+                <span class="icon">📊</span>
+                Input Values Used for Forecast
+            </h3>
+            <div class="input-values-grid">
+                {% if session.get('forecast_rain_inputs') %}
+                <div class="input-value-item">
+                    <div class="label">💧 Rainfall (mm)</div>
+                    <div class="value">{{ session.get('forecast_rain_inputs')|join(', ') }}</div>
+                </div>
+                {% endif %}
+                
+                {% if session.get('forecast_temp_inputs') %}
+                <div class="input-value-item">
+                    <div class="label">🌡️ Temperature (°C)</div>
+                    <div class="value">{{ session.get('forecast_temp_inputs')|join(', ') }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Forecast Cards Grid -->
+        {% if forecasts %}
+        <div class="forecast-grid">
+            {% for model_name, forecast_df in forecasts.items() %}
+            <div class="forecast-card">
+                <!-- Card Header -->
+                <div class="forecast-card-header">
+                    <div class="forecast-card-icon">
+                        {% if model_name|upper == 'LSTM' %}🧠
+                        {% elif model_name|upper == 'GRU' %}🔄
+                        {% elif model_name|upper == 'RNN' %}🔁
+                        {% elif model_name|upper == 'TRANSFORMER' %}⚡
+                        {% elif model_name|upper == 'ANN' %}🕸️
+                        {% elif model_name|upper == 'SVR' %}📐
+                        {% elif model_name|upper == 'RF' %}🌲
+                        {% elif model_name|upper == 'ARIMA' %}📈
+                        {% else %}🤖
+                        {% endif %}
+                    </div>
+                    <div class="forecast-card-title">
+                        <h3>{{ model_name|upper }}</h3>
+                        <div class="model-type">
+                            {% if model_name|upper in ['LSTM', 'GRU', 'RNN', 'TRANSFORMER', 'ANN'] %}
+                            Deep Learning Model
+                            {% elif model_name|upper in ['SVR', 'RF'] %}
+                            Machine Learning Model
+                            {% elif model_name|upper == 'ARIMA' %}
+                            Statistical Model
+                            {% else %}
+                            AI Model
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forecast Table -->
+                <table class="forecast-table">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Predicted Yield</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for _, row in forecast_df.iterrows() %}
+                        <tr>
+                            <td>{{ row['Year']|round(1) }}</td>
+                            <td>{{ row['Forecast']|round(2) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Summary Stats (if multiple forecasts) -->
+                {% if forecast_df|length > 1 %}
+                <div class="forecast-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Average</div>
+                        <div class="stat-value">{{ forecast_df['Forecast'].mean()|round(2) }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Minimum</div>
+                        <div class="stat-value">{{ forecast_df['Forecast'].min()|round(2) }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Maximum</div>
+                        <div class="stat-value">{{ forecast_df['Forecast'].max()|round(2) }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3>No Forecast Data Available</h3>
+            <p>Please run a model comparison first to generate forecasts.</p>
+        </div>
+        {% endif %}
+
+        <!-- Bottom Actions -->
+        <div class="bottom-actions">
+            <a href="/show_comparison" class="action-btn">
+                ← Back to Model Comparison
+            </a>
+            <a href="/models" class="action-btn secondary">
+                🔄 Run New Analysis
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

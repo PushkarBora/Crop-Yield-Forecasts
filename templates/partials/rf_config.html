@@ -1,0 +1,356 @@
+<h3>Random Forest Hyperparameters</h3>
+
+<!-- Auto-Tune Checkbox -->
+<label for="auto_tune_rf">
+    <input 
+        type="checkbox" 
+        id="auto_tune_rf" 
+        name="auto_tune_rf" 
+        value="true" 
+        checked
+    >
+    Auto-Tune Hyperparameters (Recommended)
+</label>
+<br><br>
+
+<!-- ============================================================ -->
+<!-- GRID SEARCH RANGES (visible when auto-tune enabled) -->
+<!-- ============================================================ -->
+<div id="rf_grid_search_section" class="grid-search-section">
+    <h4>🔍 Grid Search Configuration</h4>
+    <p style="font-size: 0.9em; color: #666;">Define parameter ranges for exhaustive search (min, max, step)</p>
+    
+    <!-- Number of Trees Range -->
+    <div>
+        <label>Number of Trees (n_estimators) Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="rf_n_estimators_min">Min</label>
+                <input 
+                    type="number" 
+                    id="rf_n_estimators_min"
+                    name="rf_n_estimators_min" 
+                    value="100" 
+                    min="10" 
+                    max="1000" 
+                    step="10"
+                    aria-label="Number of trees minimum value"
+                    class="rf-grid-input">
+            </div>
+            <div>
+                <label for="rf_n_estimators_max">Max</label>
+                <input 
+                    type="number" 
+                    id="rf_n_estimators_max"
+                    name="rf_n_estimators_max" 
+                    value="500" 
+                    min="10" 
+                    max="1000" 
+                    step="10"
+                    aria-label="Number of trees maximum value"
+                    class="rf-grid-input">
+            </div>
+            <div>
+                <label for="rf_n_estimators_step">Step</label>
+                <input 
+                    type="number" 
+                    id="rf_n_estimators_step"
+                    name="rf_n_estimators_step" 
+                    value="100" 
+                    min="10" 
+                    max="200"
+                    aria-label="Number of trees step value"
+                    class="rf-grid-input">
+            </div>
+        </div>
+        <small class="help-text-small">Number of decision trees. Example: 100 to 500 by 100 → tests [100, 200, 300, 400, 500]</small>
+    </div>
+    <br>
+    
+    <!-- Max Depth Range -->
+    <div>
+        <label>Maximum Tree Depth Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="rf_max_depth_min">Min</label>
+                <input 
+                    type="number" 
+                    id="rf_max_depth_min"
+                    name="rf_max_depth_min" 
+                    value="2" 
+                    min="1" 
+                    max="20"
+                    aria-label="Max depth minimum value"
+                    class="rf-grid-input">
+            </div>
+            <div>
+                <label for="rf_max_depth_max">Max</label>
+                <input 
+                    type="number" 
+                    id="rf_max_depth_max"
+                    name="rf_max_depth_max" 
+                    value="10" 
+                    min="1" 
+                    max="20"
+                    aria-label="Max depth maximum value"
+                    class="rf-grid-input">
+            </div>
+            <div>
+                <label for="rf_max_depth_step">Step</label>
+                <input 
+                    type="number" 
+                    id="rf_max_depth_step"
+                    name="rf_max_depth_step" 
+                    value="2" 
+                    min="1" 
+                    max="5"
+                    aria-label="Max depth step value"
+                    class="rf-grid-input">
+            </div>
+        </div>
+        <small class="help-text-small">Maximum depth of each tree. Example: 2 to 10 by 2 → tests [2, 4, 6, 8, 10, None]</small>
+        <br>
+        <label style="margin-top: 10px;">
+            <input type="checkbox" name="rf_max_depth_include_none" value="true" checked>
+            Include "None" (unlimited depth)
+        </label>
+    </div>
+    <br>
+    
+    <!-- Min Samples Split Range -->
+    <div>
+        <label>Min Samples to Split Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="rf_min_samples_split_min">Min</label>
+                <input 
+                    type="number" 
+                    id="rf_min_samples_split_min"
+                    name="rf_min_samples_split_min" 
+                    value="2" 
+                    min="2" 
+                    max="20"
+                    aria-label="Min samples split minimum value"
+                    class="rf-grid-input">
+            </div>
+            <div>
+                <label for="rf_min_samples_split_max">Max</label>
+                <input 
+                    type="number" 
+                    id="rf_min_samples_split_max"
+                    name="rf_min_samples_split_max" 
+                    value="10" 
+                    min="2" 
+                    max="20"
+                    aria-label="Min samples split maximum value"
+                    class="rf-grid-input">
+            </div>
+            <div>
+                <label for="rf_min_samples_split_step">Step</label>
+                <input 
+                    type="number" 
+                    id="rf_min_samples_split_step"
+                    name="rf_min_samples_split_step" 
+                    value="2" 
+                    min="1" 
+                    max="5"
+                    aria-label="Min samples split step value"
+                    class="rf-grid-input">
+            </div>
+        </div>
+        <small class="help-text-small">Minimum samples required to split a node. Example: 2 to 10 by 2 → tests [2, 4, 6, 8, 10]</small>
+    </div>
+    <br>
+    
+    <!-- Min Samples Leaf Range -->
+    <div>
+        <label>Min Samples in Leaf Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="rf_min_samples_leaf_min">Min</label>
+                <input 
+                    type="number" 
+                    id="rf_min_samples_leaf_min"
+                    name="rf_min_samples_leaf_min" 
+                    value="1" 
+                    min="1" 
+                    max="10"
+                    aria-label="Min samples leaf minimum value"
+                    class="rf-grid-input">
+            </div>
+            <div>
+                <label for="rf_min_samples_leaf_max">Max</label>
+                <input 
+                    type="number" 
+                    id="rf_min_samples_leaf_max"
+                    name="rf_min_samples_leaf_max" 
+                    value="4" 
+                    min="1" 
+                    max="10"
+                    aria-label="Min samples leaf maximum value"
+                    class="rf-grid-input">
+            </div>
+            <div>
+                <label for="rf_min_samples_leaf_step">Step</label>
+                <input 
+                    type="number" 
+                    id="rf_min_samples_leaf_step"
+                    name="rf_min_samples_leaf_step" 
+                    value="1" 
+                    min="1" 
+                    max="3"
+                    aria-label="Min samples leaf step value"
+                    class="rf-grid-input">
+            </div>
+        </div>
+        <small class="help-text-small">Minimum samples required in leaf node. Example: 1 to 4 by 1 → tests [1, 2, 3, 4]</small>
+    </div>
+    <br>
+    
+    <!-- Max Features Options -->
+    <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+        <label style="font-weight: bold; display: block; margin-bottom: 10px;">
+            Max Features per Split
+        </label>
+        <div style="display: flex; gap: 20px;">
+            <label>
+                <input type="checkbox" name="rf_max_features_sqrt" value="true" checked>
+                sqrt (√n_features)
+            </label>
+            <label>
+                <input type="checkbox" name="rf_max_features_log2" value="true" checked>
+                log2
+            </label>
+            <label>
+                <input type="checkbox" name="rf_max_features_none" value="true">
+                None (all features)
+            </label>
+        </div>
+    </div>
+    
+    <!-- Bootstrap Options -->
+    <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+        <label style="font-weight: bold; display: block; margin-bottom: 10px;">
+            Bootstrap Sampling
+        </label>
+        <div style="display: flex; gap: 20px;">
+            <label>
+                <input type="checkbox" name="rf_bootstrap_true" value="true" checked>
+                With Bootstrap (recommended)
+            </label>
+            <label>
+                <input type="checkbox" name="rf_bootstrap_false" value="true">
+                Without Bootstrap
+            </label>
+        </div>
+    </div>
+    
+    <!-- Combination Estimate -->
+    <div id="rf_combination_estimate" class="combination-estimate">
+        <strong>⚠️ Estimated Combinations:</strong> <span id="rf_total_combinations">Calculating...</span>
+        <br>
+        <small>Calculation: (n_estimators) × (max_depth + 1 for None) × (min_samples_split) × (min_samples_leaf) × (max_features) × (bootstrap)</small>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MANUAL PARAMETERS (visible when auto-tune disabled) -->
+<!-- ============================================================ -->
+<div id="rf_manual_section" style="display: none;">
+    <h4>Manual Hyperparameter Configuration</h4>
+    
+    <label for="n_estimators">Number of Trees</label><br>
+    <input type="number" id="n_estimators" name="n_estimators" value="350"><br><br>
+
+    <label for="max_depth">Maximum Tree Depth</label><br>
+    <input type="number" id="max_depth" name="max_depth" value="3"><br><br>
+
+    <label for="min_samples_split">Min Samples to Split</label><br>
+    <input type="number" id="min_samples_split" name="min_samples_split" value="6"><br><br>
+
+    <label for="min_samples_leaf">Min Samples in Leaf</label><br>
+    <input type="number" id="min_samples_leaf" name="min_samples_leaf" value="1"><br><br>
+
+    <label for="max_features">Max Features per Split</label><br>
+    <input type="number" id="max_features" name="max_features" value="1"><br><br>
+
+    <label for="bootstrap">Bootstrap Samples</label><br>
+    <select id="bootstrap" name="bootstrap">
+        <option value="true" selected>Yes</option>
+        <option value="false">No</option>
+    </select>
+    <br><br>
+
+    <label for="random_state">Random Seed</label><br>
+    <input type="number" id="random_state" name="random_state" value="42"><br><br>
+</div>
+
+<p class="help-text">
+    <i>Note: If "Auto-Tune" is checked, the model will use GridSearchCV to find the best hyperparameters from the specified ranges.</i>
+</p>
+
+<!-- JavaScript for toggle and calculation -->
+<script>
+// Toggle visibility based on checkbox
+document.getElementById('auto_tune_rf').addEventListener('change', function() {
+    document.getElementById('rf_grid_search_section').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('rf_manual_section').style.display = this.checked ? 'none' : 'block';
+});
+
+// Calculate estimated combinations
+function calculateRFCombinations() {
+    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+    
+    const n_estimators = calc(
+        parseFloat(document.getElementById('rf_n_estimators_min').value),
+        parseFloat(document.getElementById('rf_n_estimators_max').value),
+        parseFloat(document.getElementById('rf_n_estimators_step').value)
+    );
+    
+    const max_depth = calc(
+        parseFloat(document.getElementById('rf_max_depth_min').value),
+        parseFloat(document.getElementById('rf_max_depth_max').value),
+        parseFloat(document.getElementById('rf_max_depth_step').value)
+    );
+    const max_depth_with_none = max_depth + (document.querySelector('[name="rf_max_depth_include_none"]').checked ? 1 : 0);
+    
+    const min_samples_split = calc(
+        parseFloat(document.getElementById('rf_min_samples_split_min').value),
+        parseFloat(document.getElementById('rf_min_samples_split_max').value),
+        parseFloat(document.getElementById('rf_min_samples_split_step').value)
+    );
+    
+    const min_samples_leaf = calc(
+        parseFloat(document.getElementById('rf_min_samples_leaf_min').value),
+        parseFloat(document.getElementById('rf_min_samples_leaf_max').value),
+        parseFloat(document.getElementById('rf_min_samples_leaf_step').value)
+    );
+    
+    const max_features = document.querySelectorAll('input[name^="rf_max_features_"]:checked').length;
+    const bootstrap = document.querySelectorAll('input[name^="rf_bootstrap_"]:checked').length;
+    
+    const total = n_estimators * max_depth_with_none * min_samples_split * min_samples_leaf * max_features * bootstrap;
+    
+    document.getElementById('rf_total_combinations').textContent = total.toLocaleString() + ' combinations';
+    
+    // Color code based on total
+    const estimateDiv = document.getElementById('rf_combination_estimate');
+    estimateDiv.className = 'combination-estimate';
+    if (total < 100) {
+        estimateDiv.classList.add('good');
+    } else if (total < 1000) {
+        estimateDiv.classList.add('warning');
+    } else {
+        estimateDiv.classList.add('danger');
+    }
+}
+
+// Add event listeners
+document.querySelectorAll('.rf-grid-input, input[name^="rf_max_features_"], input[name^="rf_bootstrap_"], input[name="rf_max_depth_include_none"]').forEach(input => {
+    input.addEventListener('input', calculateRFCombinations);
+    input.addEventListener('change', calculateRFCombinations);
+});
+
+// Initial calculation
+calculateRFCombinations();
+</script>

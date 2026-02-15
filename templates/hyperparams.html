@@ -1,0 +1,1913 @@
+{% extends "base.html" %}
+
+{% block title %}Configure Hyperparameters - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page Container */
+    .hyperparams-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .hyperparams-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .page-header .model-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.6rem 2rem;
+        border-radius: 50px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    .page-header p {
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.9);
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    /* Main Form Card */
+    .form-card {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        animation: fadeInUp 0.8s ease 0.2s backwards;
+    }
+
+    /* Auto-Tune Toggle */
+    .auto-tune-section {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+
+    .auto-tune-section label {
+        display: flex;
+        align-items: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2d3748;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .auto-tune-section input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+        margin-right: 1rem;
+        cursor: pointer;
+        accent-color: #667eea;
+    }
+
+    /* Grid Search Section */
+    .grid-search-section {
+        margin-top: 2rem;
+        padding: 2.5rem;
+        border: 2px solid #667eea;
+        border-radius: 15px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+    }
+
+    .grid-search-section h4 {
+        color: #667eea;
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+    }
+
+    .grid-search-section h4::before {
+        content: '🔍';
+        margin-right: 0.5rem;
+        font-size: 1.8rem;
+    }
+
+    .grid-search-section > p {
+        color: #718096;
+        margin-bottom: 2rem;
+        font-size: 0.95rem;
+    }
+
+    /* Parameter Group */
+    .parameter-group {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s;
+    }
+
+    .parameter-group:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .parameter-group > label {
+        font-size: 1.1rem;
+        color: #2d3748;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    /* Range Input Group */
+    .range-input-group {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .range-input-group > div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .range-input-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .range-input-group input,
+    .range-input-group select {
+        padding: 0.8rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .range-input-group input:focus,
+    .range-input-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .range-input-group input:hover,
+    .range-input-group select:hover {
+        border-color: #cbd5e0;
+    }
+
+    /* Help Text */
+    .help-text-small {
+        color: #718096;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        font-style: italic;
+        display: block;
+    }
+
+    /* Combination Estimate */
+    .combination-estimate {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border-radius: 12px;
+        font-size: 1rem;
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+    }
+
+    .combination-estimate strong {
+        font-size: 1.1rem;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .combination-estimate span[id$="_total_combinations"] {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #f59e0b;
+        display: block;
+        margin: 0.5rem 0;
+    }
+
+    .combination-estimate.good {
+        background: #d4edda;
+        border-color: #28a745;
+    }
+
+    .combination-estimate.good strong,
+    .combination-estimate.good span {
+        color: #155724 !important;
+    }
+
+    .combination-estimate.warning {
+        background: #fff3cd;
+        border-color: #ffc107;
+    }
+
+    .combination-estimate.warning strong,
+    .combination-estimate.warning span {
+        color: #856404 !important;
+    }
+
+    .combination-estimate.danger {
+        background: #f8d7da;
+        border-color: #dc3545;
+    }
+
+    .combination-estimate.danger strong,
+    .combination-estimate.danger span {
+        color: #721c24 !important;
+    }
+
+    /* Manual Section */
+    .manual-section {
+        margin-top: 2rem;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        border: 2px dashed #cbd5e0;
+    }
+
+    .manual-section h4 {
+        color: #2d3748;
+        margin-bottom: 1.5rem;
+        font-size: 1.3rem;
+    }
+
+    .manual-section label {
+        display: block;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .manual-section input,
+    .manual-section select {
+        width: 100%;
+        padding: 0.8rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s;
+    }
+
+    .manual-section input:focus,
+    .manual-section select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Checkbox Groups */
+    .checkbox-group {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .checkbox-group > label:first-child {
+        font-size: 1.1rem;
+        color: #2d3748;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .checkbox-options {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .checkbox-options label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1.2rem;
+        background: #f7fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+
+    .checkbox-options label:hover {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+    }
+
+    .checkbox-options input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #667eea;
+    }
+
+    /* Submit Button */
+    .submit-container {
+        text-align: center;
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 2px solid #e2e8f0;
+    }
+
+    .submit-btn {
+        padding: 1.2rem 4rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    }
+
+    .submit-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* Help Text */
+    .help-text {
+        background: #f7fafc;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1.5rem;
+        font-style: italic;
+        color: #718096;
+        font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .form-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .range-input-group {
+            grid-template-columns: 1fr;
+        }
+
+        .submit-btn {
+            padding: 1rem 2.5rem;
+            font-size: 1rem;
+        }
+
+        .checkbox-options {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hyperparams-page">
+    <div class="hyperparams-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>⚙️ Configure Hyperparameters</h1>
+            <div class="model-badge">{{ model_name | upper }}</div>
+            <p>Fine-tune your model with precision. Choose auto-tuning for optimal performance or manually configure parameters for full control.</p>
+        </div>
+
+        <!-- Main Form -->
+        <form action="/train_single" method="post">
+
+            <!-- Hidden Values -->
+            <input type="hidden" name="model" value="{{ model_name }}">
+            <input type="hidden" name="frequency" value="{{ frequency }}">
+            <input type="hidden" name="horizon" value="{{ horizon }}">
+            <input type="hidden" name="window" value="{{ window }}">
+            <input type="hidden" name="lags" value="{{ lags }}">
+            <input type="hidden" name="split" value="{{ split }}">
+
+            <div class="form-card">
+
+                <!-- ========================= -->
+                <!-- LSTM PARAMS -->
+                <!-- ========================= -->
+                {% if model_name in ["lstm"] %}
+
+                <!-- Auto-Tune Toggle -->
+                <div class="auto-tune-section">
+                    <label for="auto_tune_lstm">
+                        <input 
+                            type="checkbox" 
+                            id="auto_tune_lstm" 
+                            name="auto_tune_lstm" 
+                            value="true" 
+                            checked
+                        >
+                        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+                    </label>
+                </div>
+
+                <!-- Grid Search Configuration -->
+                <div id="lstm_grid_search_ranges" class="grid-search-section">
+                    <h4>Grid Search Configuration</h4>
+                    <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
+                    
+                    <!-- Hidden Size Range -->
+                    <div class="parameter-group">
+                        <label>Hidden Size Range</label>
+                        <div class="range-input-group">
+                            <div>
+                                <label for="lstm_hidden_size_min">Minimum</label>
+                                <input type="number" id="lstm_hidden_size_min" name="lstm_hidden_size_min" value="4" min="4" max="64" step="4">
+                            </div>
+                            <div>
+                                <label for="lstm_hidden_size_max">Maximum</label>
+                                <input type="number" id="lstm_hidden_size_max" name="lstm_hidden_size_max" value="16" min="4" max="64" step="4">
+                            </div>
+                            <div>
+                                <label for="lstm_hidden_size_step">Step</label>
+                                <input type="number" id="lstm_hidden_size_step" name="lstm_hidden_size_step" value="4" min="1" max="16">
+                            </div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 4 to 16 by 4 → tests [4, 8, 12, 16]</small>
+                    </div>
+
+                    <!-- Number of Layers Range -->
+                    <div class="parameter-group">
+                        <label>Number of Layers Range</label>
+                        <div class="range-input-group">
+                            <div>
+                                <label for="lstm_num_layers_min">Minimum</label>
+                                <input type="number" id="lstm_num_layers_min" name="lstm_num_layers_min" value="1" min="1" max="5">
+                            </div>
+                            <div>
+                                <label for="lstm_num_layers_max">Maximum</label>
+                                <input type="number" id="lstm_num_layers_max" name="lstm_num_layers_max" value="3" min="1" max="5">
+                            </div>
+                            <div>
+                                <label for="lstm_num_layers_step">Step</label>
+                                <input type="number" id="lstm_num_layers_step" name="lstm_num_layers_step" value="1" min="1" max="2">
+                            </div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 1 to 3 by 1 → tests [1, 2, 3]</small>
+                    </div>
+
+                    <!-- Dropout Range -->
+                    <div class="parameter-group">
+                        <label>Dropout Range</label>
+                        <div class="range-input-group">
+                            <div>
+                                <label for="lstm_dropout_min">Minimum</label>
+                                <input type="number" id="lstm_dropout_min" name="lstm_dropout_min" value="0.0" min="0.0" max="0.5" step="0.1">
+                            </div>
+                            <div>
+                                <label for="lstm_dropout_max">Maximum</label>
+                                <input type="number" id="lstm_dropout_max" name="lstm_dropout_max" value="0.3" min="0.0" max="0.5" step="0.1">
+                            </div>
+                            <div>
+                                <label for="lstm_dropout_step">Step</label>
+                                <input type="number" id="lstm_dropout_step" name="lstm_dropout_step" value="0.1" min="0.05" max="0.2" step="0.05">
+                            </div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 0.0 to 0.3 by 0.1 → tests [0.0, 0.1, 0.2, 0.3]</small>
+                    </div>
+
+                    <!-- Learning Rate Range -->
+                    <div class="parameter-group">
+                        <label>Learning Rate Range</label>
+                        <div class="range-input-group">
+                            <div>
+                                <label for="lstm_learning_rate_min">Minimum</label>
+                                <input type="number" id="lstm_learning_rate_min" name="lstm_learning_rate_min" value="0.0005" min="0.0001" max="0.01" step="0.0001">
+                            </div>
+                            <div>
+                                <label for="lstm_learning_rate_max">Maximum</label>
+                                <input type="number" id="lstm_learning_rate_max" name="lstm_learning_rate_max" value="0.005" min="0.0001" max="0.01" step="0.0001">
+                            </div>
+                            <div>
+                                <label for="lstm_learning_rate_step">Step</label>
+                                <input type="number" id="lstm_learning_rate_step" name="lstm_learning_rate_step" value="0.001" min="0.0001" max="0.005" step="0.0001">
+                            </div>
+                        </div>
+                        <small class="help-text-small">⚙️ Optimizer step size for training</small>
+                    </div>
+
+                    <!-- Weight Decay Range -->
+                    <div class="parameter-group">
+                        <label>Weight Decay Range</label>
+                        <div class="range-input-group">
+                            <div>
+                                <label for="lstm_weight_decay_min">Minimum</label>
+                                <input type="number" id="lstm_weight_decay_min" name="lstm_weight_decay_min" value="0.00001" min="0.00001" max="0.001" step="0.00001">
+                            </div>
+                            <div>
+                                <label for="lstm_weight_decay_max">Maximum</label>
+                                <input type="number" id="lstm_weight_decay_max" name="lstm_weight_decay_max" value="0.0005" min="0.00001" max="0.001" step="0.00001">
+                            </div>
+                            <div>
+                                <label for="lstm_weight_decay_step">Step</label>
+                                <input type="number" id="lstm_weight_decay_step" name="lstm_weight_decay_step" value="0.0001" min="0.00001" max="0.0005" step="0.00001">
+                            </div>
+                        </div>
+                        <small class="help-text-small">📊 L2 regularization strength</small>
+                    </div>
+
+                    <!-- Huber Delta Range -->
+                    <div class="parameter-group">
+                        <label>Huber Delta Range</label>
+                        <div class="range-input-group">
+                            <div>
+                                <label for="lstm_huber_delta_min">Minimum</label>
+                                <input type="number" id="lstm_huber_delta_min" name="lstm_huber_delta_min" value="0.7" min="0.5" max="2.0" step="0.1">
+                            </div>
+                            <div>
+                                <label for="lstm_huber_delta_max">Maximum</label>
+                                <input type="number" id="lstm_huber_delta_max" name="lstm_huber_delta_max" value="1.5" min="0.5" max="2.0" step="0.1">
+                            </div>
+                            <div>
+                                <label for="lstm_huber_delta_step">Step</label>
+                                <input type="number" id="lstm_huber_delta_step" name="lstm_huber_delta_step" value="0.4" min="0.1" max="1.0" step="0.1">
+                            </div>
+                        </div>
+                        <small class="help-text-small">🎯 Loss function robustness parameter</small>
+                    </div>
+
+                    <!-- Patience Range -->
+                    <div class="parameter-group">
+                        <label>Early Stopping Patience Range</label>
+                        <div class="range-input-group">
+                            <div>
+                                <label for="lstm_patience_min">Minimum</label>
+                                <input type="number" id="lstm_patience_min" name="lstm_patience_min" value="20" min="10" max="100" step="10">
+                            </div>
+                            <div>
+                                <label for="lstm_patience_max">Maximum</label>
+                                <input type="number" id="lstm_patience_max" name="lstm_patience_max" value="50" min="10" max="100" step="10">
+                            </div>
+                            <div>
+                                <label for="lstm_patience_step">Step</label>
+                                <input type="number" id="lstm_patience_step" name="lstm_patience_step" value="10" min="5" max="20">
+                            </div>
+                        </div>
+                        <small class="help-text-small">⏱️ Epochs to wait before early stopping</small>
+                    </div>
+
+                    <!-- Epochs Range -->
+                    <div class="parameter-group">
+                        <label>Number of Epochs Range</label>
+                        <div class="range-input-group">
+                            <div>
+                                <label for="lstm_epochs_min">Minimum</label>
+                                <input type="number" id="lstm_epochs_min" name="lstm_epochs_min" value="100" min="50" max="500" step="50">
+                            </div>
+                            <div>
+                                <label for="lstm_epochs_max">Maximum</label>
+                                <input type="number" id="lstm_epochs_max" name="lstm_epochs_max" value="300" min="50" max="500" step="50">
+                            </div>
+                            <div>
+                                <label for="lstm_epochs_step">Step</label>
+                                <input type="number" id="lstm_epochs_step" name="lstm_epochs_step" value="100" min="50" max="200">
+                            </div>
+                        </div>
+                        <small class="help-text-small">🔄 Maximum training epochs. Example: 100 to 300 by 100 → tests [100, 200, 300]</small>
+                    </div>
+
+                    <!-- Combination Estimate -->
+                    <div id="lstm_combination_estimate" class="combination-estimate warning">
+                        <strong>⚠️ Estimated Combinations:</strong>
+                        <span id="lstm_total_combinations">Calculating...</span>
+                        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+                            💡 Tip: Fewer combinations = faster training. Adjust ranges to balance speed vs thoroughness.
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Manual Parameters Section -->
+                <div id="lstm_manual_section" class="manual-section" style="display: none;">
+                    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+                    
+                    <label for="hidden_size">Hidden Size</label>
+                    <input type="number" id="hidden_size" name="hidden_size" value="8">
+
+                    <label for="num_layers">Number of Layers</label>
+                    <input type="number" id="num_layers" name="num_layers" value="2">
+
+                    <label for="dropout">Dropout Rate</label>
+                    <input type="number" step="0.05" id="dropout" name="dropout" value="0.3">
+                    
+                    <label for="learning_rate">Learning Rate</label>
+                    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003">
+
+                    <label for="weight_decay">Weight Decay</label>
+                    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001">
+
+                    <label for="epochs">Number of Epochs</label>
+                    <input type="number" id="epochs" name="epochs" value="200">
+
+                    <label for="patience">Early Stopping Patience</label>
+                    <input type="number" id="patience" name="patience" value="30">
+
+                    <label for="huber_delta">Huber Loss Delta</label>
+                    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0">
+                </div>
+
+                <div class="help-text">
+                    <strong>💡 Note:</strong> If "Auto-Tune" is checked, grid search will test all combinations within the specified ranges to find the optimal hyperparameters.
+                </div>
+
+                <script>
+                document.getElementById('auto_tune_lstm').addEventListener('change', function() {
+                    document.getElementById('lstm_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+                    document.getElementById('lstm_manual_section').style.display = this.checked ? 'none' : 'block';
+                });
+
+                document.getElementById('lstm_grid_search_ranges').style.display = 
+                    document.getElementById('auto_tune_lstm').checked ? 'block' : 'none';
+                document.getElementById('lstm_manual_section').style.display = 
+                    document.getElementById('auto_tune_lstm').checked ? 'none' : 'block';
+
+                function calculateLSTMCombinations() {
+                    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const h = calc(parseFloat(document.querySelector('[name="lstm_hidden_size_min"]').value), parseFloat(document.querySelector('[name="lstm_hidden_size_max"]').value), parseFloat(document.querySelector('[name="lstm_hidden_size_step"]').value));
+                    const l = calc(parseFloat(document.querySelector('[name="lstm_num_layers_min"]').value), parseFloat(document.querySelector('[name="lstm_num_layers_max"]').value), parseFloat(document.querySelector('[name="lstm_num_layers_step"]').value));
+                    const d = calc(parseFloat(document.querySelector('[name="lstm_dropout_min"]').value), parseFloat(document.querySelector('[name="lstm_dropout_max"]').value), parseFloat(document.querySelector('[name="lstm_dropout_step"]').value));
+                    const lr = calc(parseFloat(document.querySelector('[name="lstm_learning_rate_min"]').value), parseFloat(document.querySelector('[name="lstm_learning_rate_max"]').value), parseFloat(document.querySelector('[name="lstm_learning_rate_step"]').value));
+                    const wd = calc(parseFloat(document.querySelector('[name="lstm_weight_decay_min"]').value), parseFloat(document.querySelector('[name="lstm_weight_decay_max"]').value), parseFloat(document.querySelector('[name="lstm_weight_decay_step"]').value));
+                    const hd = calc(parseFloat(document.querySelector('[name="lstm_huber_delta_min"]').value), parseFloat(document.querySelector('[name="lstm_huber_delta_max"]').value), parseFloat(document.querySelector('[name="lstm_huber_delta_step"]').value));
+                    const p = calc(parseFloat(document.querySelector('[name="lstm_patience_min"]').value), parseFloat(document.querySelector('[name="lstm_patience_max"]').value), parseFloat(document.querySelector('[name="lstm_patience_step"]').value));
+                    const epochs = calc(parseFloat(document.querySelector('[name="lstm_epochs_min"]').value), parseFloat(document.querySelector('[name="lstm_epochs_max"]').value), parseFloat(document.querySelector('[name="lstm_epochs_step"]').value));
+                    
+                    const total = h * l * d * lr * wd * hd * p * epochs;
+                    document.getElementById('lstm_total_combinations').textContent = total.toLocaleString() + ' combinations';
+                    
+                    const estimateDiv = document.getElementById('lstm_combination_estimate');
+                    estimateDiv.className = 'combination-estimate';
+                    if (total < 100) estimateDiv.classList.add('good');
+                    else if (total < 1000) estimateDiv.classList.add('warning');
+                    else estimateDiv.classList.add('danger');
+                }
+
+                document.querySelectorAll('[name^="lstm_"]').forEach(input => {
+                    input.addEventListener('input', calculateLSTMCombinations);
+                });
+                calculateLSTMCombinations();
+                </script>
+
+                {% endif %}
+
+                <!-- ========================= -->
+                <!-- TRANSFORMER PARAMS -->
+                <!-- ========================= -->
+                {% if model_name == "transformer" %}
+
+                <div class="auto-tune-section">
+                    <label for="auto_tune_transformer">
+                        <input type="checkbox" id="auto_tune_transformer" name="auto_tune_transformer" value="true" checked>
+                        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+                    </label>
+                </div>
+
+                <div id="transformer_grid_search_ranges" class="grid-search-section">
+                    <h4>Grid Search Configuration</h4>
+                    <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
+                    
+                    <div class="parameter-group">
+                        <label>Embedding Dimension (d_model) Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_d_model_min">Minimum</label><input type="number" id="transformer_d_model_min" name="transformer_d_model_min" value="8" min="4"></div>
+                            <div><label for="transformer_d_model_max">Maximum</label><input type="number" id="transformer_d_model_max" name="transformer_d_model_max" value="16" min="4"></div>
+                            <div><label for="transformer_d_model_step">Step</label><input type="number" id="transformer_d_model_step" name="transformer_d_model_step" value="4" min="2"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 8 to 16 by 4 → tests [8, 12, 16]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of Attention Heads Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_nhead_min">Minimum</label><input type="number" id="transformer_nhead_min" name="transformer_nhead_min" value="2" min="1"></div>
+                            <div><label for="transformer_nhead_max">Maximum</label><input type="number" id="transformer_nhead_max" name="transformer_nhead_max" value="4" min="1"></div>
+                            <div><label for="transformer_nhead_step">Step</label><input type="number" id="transformer_nhead_step" name="transformer_nhead_step" value="2" min="1"></div>
+                        </div>
+                        <small class="help-text-small">💡 Must divide d_model evenly</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of Encoder Layers Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_num_layers_min">Minimum</label><input type="number" id="transformer_num_layers_min" name="transformer_num_layers_min" value="1" min="1"></div>
+                            <div><label for="transformer_num_layers_max">Maximum</label><input type="number" id="transformer_num_layers_max" name="transformer_num_layers_max" value="3" min="1"></div>
+                            <div><label for="transformer_num_layers_step">Step</label><input type="number" id="transformer_num_layers_step" name="transformer_num_layers_step" value="1" min="1"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 1 to 3 by 1 → tests [1, 2, 3]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Feedforward Dimension Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_dim_feedforward_min">Minimum</label><input type="number" id="transformer_dim_feedforward_min" name="transformer_dim_feedforward_min" value="16" min="8"></div>
+                            <div><label for="transformer_dim_feedforward_max">Maximum</label><input type="number" id="transformer_dim_feedforward_max" name="transformer_dim_feedforward_max" value="32" min="8"></div>
+                            <div><label for="transformer_dim_feedforward_step">Step</label><input type="number" id="transformer_dim_feedforward_step" name="transformer_dim_feedforward_step" value="8" min="4"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 16 to 32 by 8 → tests [16, 24, 32]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Dropout Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_dropout_min">Minimum</label><input type="number" step="0.05" id="transformer_dropout_min" name="transformer_dropout_min" value="0.0" min="0" max="0.9"></div>
+                            <div><label for="transformer_dropout_max">Maximum</label><input type="number" step="0.05" id="transformer_dropout_max" name="transformer_dropout_max" value="0.2" min="0" max="0.9"></div>
+                            <div><label for="transformer_dropout_step">Step</label><input type="number" step="0.05" id="transformer_dropout_step" name="transformer_dropout_step" value="0.1" min="0.05" max="0.5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 0.0 to 0.2 by 0.1 → tests [0.0, 0.1, 0.2]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning Rate Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_learning_rate_min">Minimum</label><input type="number" step="0.0001" id="transformer_learning_rate_min" name="transformer_learning_rate_min" value="0.0005"></div>
+                            <div><label for="transformer_learning_rate_max">Maximum</label><input type="number" step="0.0001" id="transformer_learning_rate_max" name="transformer_learning_rate_max" value="0.005"></div>
+                            <div><label for="transformer_learning_rate_step">Step</label><input type="number" step="0.0001" id="transformer_learning_rate_step" name="transformer_learning_rate_step" value="0.001"></div>
+                        </div>
+                        <small class="help-text-small">⚙️ Optimizer step size</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Weight Decay Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_weight_decay_min">Minimum</label><input type="number" step="0.00001" id="transformer_weight_decay_min" name="transformer_weight_decay_min" value="0.00001"></div>
+                            <div><label for="transformer_weight_decay_max">Maximum</label><input type="number" step="0.00001" id="transformer_weight_decay_max" name="transformer_weight_decay_max" value="0.0005"></div>
+                            <div><label for="transformer_weight_decay_step">Step</label><input type="number" step="0.00001" id="transformer_weight_decay_step" name="transformer_weight_decay_step" value="0.0001"></div>
+                        </div>
+                        <small class="help-text-small">📊 L2 regularization strength</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Huber Delta Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_huber_delta_min">Minimum</label><input type="number" step="0.1" id="transformer_huber_delta_min" name="transformer_huber_delta_min" value="0.7"></div>
+                            <div><label for="transformer_huber_delta_max">Maximum</label><input type="number" step="0.1" id="transformer_huber_delta_max" name="transformer_huber_delta_max" value="1.5"></div>
+                            <div><label for="transformer_huber_delta_step">Step</label><input type="number" step="0.1" id="transformer_huber_delta_step" name="transformer_huber_delta_step" value="0.4"></div>
+                        </div>
+                        <small class="help-text-small">🎯 Loss function robustness parameter</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of Epochs Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_epochs_min">Minimum</label><input type="number" id="transformer_epochs_min" name="transformer_epochs_min" value="100" min="50"></div>
+                            <div><label for="transformer_epochs_max">Maximum</label><input type="number" id="transformer_epochs_max" name="transformer_epochs_max" value="300" min="50"></div>
+                            <div><label for="transformer_epochs_step">Step</label><input type="number" id="transformer_epochs_step" name="transformer_epochs_step" value="100" min="50"></div>
+                        </div>
+                        <small class="help-text-small">🔄 Maximum training epochs</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Early Stopping Patience Range</label>
+                        <div class="range-input-group">
+                            <div><label for="transformer_patience_min">Minimum</label><input type="number" id="transformer_patience_min" name="transformer_patience_min" value="20" min="5"></div>
+                            <div><label for="transformer_patience_max">Maximum</label><input type="number" id="transformer_patience_max" name="transformer_patience_max" value="50" min="5"></div>
+                            <div><label for="transformer_patience_step">Step</label><input type="number" id="transformer_patience_step" name="transformer_patience_step" value="10" min="5"></div>
+                        </div>
+                        <small class="help-text-small">⏱️ Epochs to wait before early stopping</small>
+                    </div>
+                    
+                    <div id="transformer_combination_estimate" class="combination-estimate warning">
+                        <strong>⚠️ Estimated Combinations:</strong>
+                        <span id="transformer_total_combinations">Calculating...</span>
+                        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+                            💡 Note: Activation function adds 2x multiplier (relu, gelu tested separately)
+                        </small>
+                    </div>
+                </div>
+
+                <div id="transformer_manual_section" class="manual-section" style="display: none;">
+                    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+                    
+                    <label for="d_model">Embedding Dimension (d_model)</label>
+                    <input type="number" id="d_model" name="d_model" value="8" min="4">
+
+                    <label for="nhead">Attention Heads</label>
+                    <input type="number" id="nhead" name="nhead" value="2" min="1">
+
+                    <label for="num_layers">Number of Encoder Layers</label>
+                    <input type="number" id="num_layers" name="num_layers" value="2" min="1">
+
+                    <label for="dim_feedforward">Feedforward Dimension</label>
+                    <input type="number" id="dim_feedforward" name="dim_feedforward" value="16" min="8">
+
+                    <label for="dropout">Dropout Rate</label>
+                    <input type="number" step="0.05" id="dropout" name="dropout" value="0.2" min="0" max="0.9">
+
+                    <label for="activation">Activation Function</label>
+                    <select id="activation" name="activation">
+                        <option value="relu">ReLU</option>
+                        <option value="gelu" selected>GELU (recommended)</option>
+                    </select>
+                    
+                    <label for="learning_rate">Learning Rate</label>
+                    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003">
+
+                    <label for="weight_decay">Weight Decay</label>
+                    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001">
+
+                    <label for="epochs">Number of Epochs</label>
+                    <input type="number" id="epochs" name="epochs" value="200">
+
+                    <label for="patience">Early Stopping Patience</label>
+                    <input type="number" id="patience" name="patience" value="30">
+
+                    <label for="huber_delta">Huber Loss Delta</label>
+                    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0">
+                </div>
+
+                <div class="help-text">
+                    <strong>💡 Note:</strong> Grid search tests both relu and gelu activation functions automatically when auto-tune is enabled.
+                </div>
+
+                <script>
+                document.getElementById('auto_tune_transformer').addEventListener('change', function() {
+                    document.getElementById('transformer_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+                    document.getElementById('transformer_manual_section').style.display = this.checked ? 'none' : 'block';
+                });
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const autoTuneCheckbox = document.getElementById('auto_tune_transformer');
+                    document.getElementById('transformer_grid_search_ranges').style.display = autoTuneCheckbox.checked ? 'block' : 'none';
+                    document.getElementById('transformer_manual_section').style.display = autoTuneCheckbox.checked ? 'none' : 'block';
+                });
+
+                function calculateTransformerCombinations() {
+                    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const dModel = calc(parseFloat(document.getElementById('transformer_d_model_min').value), parseFloat(document.getElementById('transformer_d_model_max').value), parseFloat(document.getElementById('transformer_d_model_step').value));
+                    const nhead = calc(parseFloat(document.getElementById('transformer_nhead_min').value), parseFloat(document.getElementById('transformer_nhead_max').value), parseFloat(document.getElementById('transformer_nhead_step').value));
+                    const numLayers = calc(parseFloat(document.getElementById('transformer_num_layers_min').value), parseFloat(document.getElementById('transformer_num_layers_max').value), parseFloat(document.getElementById('transformer_num_layers_step').value));
+                    const dimFeedforward = calc(parseFloat(document.getElementById('transformer_dim_feedforward_min').value), parseFloat(document.getElementById('transformer_dim_feedforward_max').value), parseFloat(document.getElementById('transformer_dim_feedforward_step').value));
+                    const dropout = calc(parseFloat(document.getElementById('transformer_dropout_min').value), parseFloat(document.getElementById('transformer_dropout_max').value), parseFloat(document.getElementById('transformer_dropout_step').value));
+                    const lr = calc(parseFloat(document.getElementById('transformer_learning_rate_min').value), parseFloat(document.getElementById('transformer_learning_rate_max').value), parseFloat(document.getElementById('transformer_learning_rate_step').value));
+                    const wd = calc(parseFloat(document.getElementById('transformer_weight_decay_min').value), parseFloat(document.getElementById('transformer_weight_decay_max').value), parseFloat(document.getElementById('transformer_weight_decay_step').value));
+                    const hd = calc(parseFloat(document.getElementById('transformer_huber_delta_min').value), parseFloat(document.getElementById('transformer_huber_delta_max').value), parseFloat(document.getElementById('transformer_huber_delta_step').value));
+                    const epochs = calc(parseFloat(document.getElementById('transformer_epochs_min').value), parseFloat(document.getElementById('transformer_epochs_max').value), parseFloat(document.getElementById('transformer_epochs_step').value));
+                    const patience = calc(parseFloat(document.getElementById('transformer_patience_min').value), parseFloat(document.getElementById('transformer_patience_max').value), parseFloat(document.getElementById('transformer_patience_step').value));
+                    
+                    const total = dModel * nhead * numLayers * dimFeedforward * dropout * lr * wd * hd * epochs * patience * 2;
+                    document.getElementById('transformer_total_combinations').textContent = total.toLocaleString() + ' combinations';
+                    
+                    const estimateDiv = document.getElementById('transformer_combination_estimate');
+                    estimateDiv.className = 'combination-estimate';
+                    if (total < 100) estimateDiv.classList.add('good');
+                    else if (total < 1000) estimateDiv.classList.add('warning');
+                    else estimateDiv.classList.add('danger');
+                }
+
+                document.querySelectorAll('[id^="transformer_"]').forEach(input => {
+                    input.addEventListener('input', calculateTransformerCombinations);
+                });
+
+                document.addEventListener('DOMContentLoaded', calculateTransformerCombinations);
+                </script>
+
+                {% endif %}
+
+                <!-- ========================= -->
+                <!-- RNN PARAMS -->
+                <!-- ========================= -->
+                {% if model_name == "rnn" %}
+
+                <div class="auto-tune-section">
+                    <label for="auto_tune_rnn">
+                        <input type="checkbox" id="auto_tune_rnn" name="auto_tune_rnn" value="true" checked>
+                        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+                    </label>
+                </div>
+
+                <div id="rnn_grid_search_ranges" class="grid-search-section">
+                    <h4>Grid Search Configuration</h4>
+                    <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
+                    
+                    <div class="parameter-group">
+                        <label>Hidden Size Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_hidden_size_min">Minimum</label><input type="number" id="rnn_hidden_size_min" name="rnn_hidden_size_min" value="4" min="1"></div>
+                            <div><label for="rnn_hidden_size_max">Maximum</label><input type="number" id="rnn_hidden_size_max" name="rnn_hidden_size_max" value="16" min="1"></div>
+                            <div><label for="rnn_hidden_size_step">Step</label><input type="number" id="rnn_hidden_size_step" name="rnn_hidden_size_step" value="4" min="1"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 4 to 16 by 4 → tests [4, 8, 12, 16]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of Layers Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_num_layers_min">Minimum</label><input type="number" id="rnn_num_layers_min" name="rnn_num_layers_min" value="1" min="1"></div>
+                            <div><label for="rnn_num_layers_max">Maximum</label><input type="number" id="rnn_num_layers_max" name="rnn_num_layers_max" value="3" min="1"></div>
+                            <div><label for="rnn_num_layers_step">Step</label><input type="number" id="rnn_num_layers_step" name="rnn_num_layers_step" value="1" min="1"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 1 to 3 by 1 → tests [1, 2, 3]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>RNN Dropout Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_dropout_rnn_min">Minimum</label><input type="number" step="0.05" id="rnn_dropout_rnn_min" name="rnn_dropout_rnn_min" value="0.0" min="0" max="0.9"></div>
+                            <div><label for="rnn_dropout_rnn_max">Maximum</label><input type="number" step="0.05" id="rnn_dropout_rnn_max" name="rnn_dropout_rnn_max" value="0.2" min="0" max="0.9"></div>
+                            <div><label for="rnn_dropout_rnn_step">Step</label><input type="number" step="0.05" id="rnn_dropout_rnn_step" name="rnn_dropout_rnn_step" value="0.1" min="0.05" max="0.5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 0.0 to 0.2 by 0.1 → tests [0.0, 0.1, 0.2]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Fully Connected Dropout Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_dropout_fc_min">Minimum</label><input type="number" step="0.05" id="rnn_dropout_fc_min" name="rnn_dropout_fc_min" value="0.1" min="0" max="0.9"></div>
+                            <div><label for="rnn_dropout_fc_max">Maximum</label><input type="number" step="0.05" id="rnn_dropout_fc_max" name="rnn_dropout_fc_max" value="0.3" min="0" max="0.9"></div>
+                            <div><label for="rnn_dropout_fc_step">Step</label><input type="number" step="0.05" id="rnn_dropout_fc_step" name="rnn_dropout_fc_step" value="0.1" min="0.05" max="0.5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 0.1 to 0.3 by 0.1 → tests [0.1, 0.2, 0.3]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning Rate Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_learning_rate_min">Minimum</label><input type="number" step="0.0001" id="rnn_learning_rate_min" name="rnn_learning_rate_min" value="0.0005"></div>
+                            <div><label for="rnn_learning_rate_max">Maximum</label><input type="number" step="0.0001" id="rnn_learning_rate_max" name="rnn_learning_rate_max" value="0.005"></div>
+                            <div><label for="rnn_learning_rate_step">Step</label><input type="number" step="0.0001" id="rnn_learning_rate_step" name="rnn_learning_rate_step" value="0.001"></div>
+                        </div>
+                        <small class="help-text-small">⚙️ Optimizer step size</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Weight Decay Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_weight_decay_min">Minimum</label><input type="number" step="0.00001" id="rnn_weight_decay_min" name="rnn_weight_decay_min" value="0.00001"></div>
+                            <div><label for="rnn_weight_decay_max">Maximum</label><input type="number" step="0.00001" id="rnn_weight_decay_max" name="rnn_weight_decay_max" value="0.0005"></div>
+                            <div><label for="rnn_weight_decay_step">Step</label><input type="number" step="0.00001" id="rnn_weight_decay_step" name="rnn_weight_decay_step" value="0.0001"></div>
+                        </div>
+                        <small class="help-text-small">📊 L2 regularization strength</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Huber Delta Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_huber_delta_min">Minimum</label><input type="number" step="0.1" id="rnn_huber_delta_min" name="rnn_huber_delta_min" value="0.7"></div>
+                            <div><label for="rnn_huber_delta_max">Maximum</label><input type="number" step="0.1" id="rnn_huber_delta_max" name="rnn_huber_delta_max" value="1.5"></div>
+                            <div><label for="rnn_huber_delta_step">Step</label><input type="number" step="0.1" id="rnn_huber_delta_step" name="rnn_huber_delta_step" value="0.4"></div>
+                        </div>
+                        <small class="help-text-small">🎯 Loss function robustness parameter</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of Epochs Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_epochs_min">Minimum</label><input type="number" id="rnn_epochs_min" name="rnn_epochs_min" value="100" min="50"></div>
+                            <div><label for="rnn_epochs_max">Maximum</label><input type="number" id="rnn_epochs_max" name="rnn_epochs_max" value="300" min="50"></div>
+                            <div><label for="rnn_epochs_step">Step</label><input type="number" id="rnn_epochs_step" name="rnn_epochs_step" value="100" min="50"></div>
+                        </div>
+                        <small class="help-text-small">🔄 Maximum training epochs</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Early Stopping Patience Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_patience_min">Minimum</label><input type="number" id="rnn_patience_min" name="rnn_patience_min" value="20" min="5"></div>
+                            <div><label for="rnn_patience_max">Maximum</label><input type="number" id="rnn_patience_max" name="rnn_patience_max" value="50" min="5"></div>
+                            <div><label for="rnn_patience_step">Step</label><input type="number" id="rnn_patience_step" name="rnn_patience_step" value="10" min="5"></div>
+                        </div>
+                        <small class="help-text-small">⏱️ Epochs to wait before early stopping</small>
+                    </div>
+                    
+                    <div id="rnn_combination_estimate" class="combination-estimate warning">
+                        <strong>⚠️ Estimated Combinations:</strong>
+                        <span id="rnn_total_combinations">Calculating...</span>
+                        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+                            💡 Note: Nonlinearity function adds 2x multiplier (tanh, relu tested separately)
+                        </small>
+                    </div>
+                </div>
+
+                <div id="rnn_manual_section" class="manual-section" style="display: none;">
+                    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+                    
+                    <label for="hidden_size">Hidden Size</label>
+                    <input type="number" id="hidden_size" name="hidden_size" value="8" min="1">
+
+                    <label for="num_layers">Number of Layers</label>
+                    <input type="number" id="num_layers" name="num_layers" value="2" min="1">
+
+                    <label for="dropout_rnn">RNN Dropout</label>
+                    <input type="number" step="0.05" id="dropout_rnn" name="dropout_rnn" value="0.2" min="0" max="0.9">
+
+                    <label for="dropout_fc">Fully Connected Dropout</label>
+                    <input type="number" step="0.05" id="dropout_fc" name="dropout_fc" value="0.3" min="0" max="0.9">
+
+                    <label for="nonlinearity">RNN Nonlinearity</label>
+                    <select id="nonlinearity" name="nonlinearity">
+                        <option value="tanh" selected>tanh (recommended)</option>
+                        <option value="relu">ReLU</option>
+                    </select>
+                    
+                    <label for="learning_rate">Learning Rate</label>
+                    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003">
+
+                    <label for="weight_decay">Weight Decay</label>
+                    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001">
+
+                    <label for="epochs">Number of Epochs</label>
+                    <input type="number" id="epochs" name="epochs" value="200">
+
+                    <label for="patience">Early Stopping Patience</label>
+                    <input type="number" id="patience" name="patience" value="30">
+
+                    <label for="huber_delta">Huber Loss Delta</label>
+                    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0">
+                </div>
+
+                <div class="help-text">
+                    <strong>💡 Note:</strong> Grid search tests both tanh and relu nonlinearity functions automatically when auto-tune is enabled.
+                </div>
+
+                <script>
+                document.getElementById('auto_tune_rnn').addEventListener('change', function() {
+                    document.getElementById('rnn_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+                    document.getElementById('rnn_manual_section').style.display = this.checked ? 'none' : 'block';
+                });
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const autoTuneCheckbox = document.getElementById('auto_tune_rnn');
+                    document.getElementById('rnn_grid_search_ranges').style.display = autoTuneCheckbox.checked ? 'block' : 'none';
+                    document.getElementById('rnn_manual_section').style.display = autoTuneCheckbox.checked ? 'none' : 'block';
+                });
+
+                function calculateRNNCombinations() {
+                    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const hiddenSize = calc(parseFloat(document.getElementById('rnn_hidden_size_min').value), parseFloat(document.getElementById('rnn_hidden_size_max').value), parseFloat(document.getElementById('rnn_hidden_size_step').value));
+                    const numLayers = calc(parseFloat(document.getElementById('rnn_num_layers_min').value), parseFloat(document.getElementById('rnn_num_layers_max').value), parseFloat(document.getElementById('rnn_num_layers_step').value));
+                    const dropoutRnn = calc(parseFloat(document.getElementById('rnn_dropout_rnn_min').value), parseFloat(document.getElementById('rnn_dropout_rnn_max').value), parseFloat(document.getElementById('rnn_dropout_rnn_step').value));
+                    const dropoutFc = calc(parseFloat(document.getElementById('rnn_dropout_fc_min').value), parseFloat(document.getElementById('rnn_dropout_fc_max').value), parseFloat(document.getElementById('rnn_dropout_fc_step').value));
+                    const lr = calc(parseFloat(document.getElementById('rnn_learning_rate_min').value), parseFloat(document.getElementById('rnn_learning_rate_max').value), parseFloat(document.getElementById('rnn_learning_rate_step').value));
+                    const wd = calc(parseFloat(document.getElementById('rnn_weight_decay_min').value), parseFloat(document.getElementById('rnn_weight_decay_max').value), parseFloat(document.getElementById('rnn_weight_decay_step').value));
+                    const hd = calc(parseFloat(document.getElementById('rnn_huber_delta_min').value), parseFloat(document.getElementById('rnn_huber_delta_max').value), parseFloat(document.getElementById('rnn_huber_delta_step').value));
+                    const epochs = calc(parseFloat(document.getElementById('rnn_epochs_min').value), parseFloat(document.getElementById('rnn_epochs_max').value), parseFloat(document.getElementById('rnn_epochs_step').value));
+                    const patience = calc(parseFloat(document.getElementById('rnn_patience_min').value), parseFloat(document.getElementById('rnn_patience_max').value), parseFloat(document.getElementById('rnn_patience_step').value));
+                    
+                    const total = hiddenSize * numLayers * dropoutRnn * dropoutFc * lr * wd * hd * epochs * patience * 2;
+                    document.getElementById('rnn_total_combinations').textContent = total.toLocaleString() + ' combinations';
+                    
+                    const estimateDiv = document.getElementById('rnn_combination_estimate');
+                    estimateDiv.className = 'combination-estimate';
+                    if (total < 100) estimateDiv.classList.add('good');
+                    else if (total < 1000) estimateDiv.classList.add('warning');
+                    else estimateDiv.classList.add('danger');
+                }
+
+                document.querySelectorAll('[id^="rnn_"]').forEach(input => {
+                    input.addEventListener('input', calculateRNNCombinations);
+                });
+
+                document.addEventListener('DOMContentLoaded', calculateRNNCombinations);
+                </script>
+
+                {% endif %}
+
+                <!-- ========================= -->
+                <!-- GRU PARAMS -->
+                <!-- ========================= -->
+                {% if model_name == "gru" %}
+
+                <div class="auto-tune-section">
+                    <label for="auto_tune_gru">
+                        <input type="checkbox" id="auto_tune_gru" name="auto_tune_gru" value="true" checked>
+                        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+                    </label>
+                </div>
+
+                <div id="gru_grid_search_ranges" class="grid-search-section">
+                    <h4>Grid Search Configuration</h4>
+                    <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
+                    
+                    <div class="parameter-group">
+                        <label>Hidden Size Range</label>
+                        <div class="range-input-group">
+                            <div><label for="gru_hidden_size_min">Minimum</label><input type="number" id="gru_hidden_size_min" name="gru_hidden_size_min" value="4" min="1"></div>
+                            <div><label for="gru_hidden_size_max">Maximum</label><input type="number" id="gru_hidden_size_max" name="gru_hidden_size_max" value="16" min="1"></div>
+                            <div><label for="gru_hidden_size_step">Step</label><input type="number" id="gru_hidden_size_step" name="gru_hidden_size_step" value="4" min="1"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 4 to 16 by 4 → tests [4, 8, 12, 16]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of Layers Range</label>
+                        <div class="range-input-group">
+                            <div><label for="gru_num_layers_min">Minimum</label><input type="number" id="gru_num_layers_min" name="gru_num_layers_min" value="1" min="1"></div>
+                            <div><label for="gru_num_layers_max">Maximum</label><input type="number" id="gru_num_layers_max" name="gru_num_layers_max" value="3" min="1"></div>
+                            <div><label for="gru_num_layers_step">Step</label><input type="number" id="gru_num_layers_step" name="gru_num_layers_step" value="1" min="1"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 1 to 3 by 1 → tests [1, 2, 3]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>GRU Dropout Range</label>
+                        <div class="range-input-group">
+                            <div><label for="gru_gru_dropout_min">Minimum</label><input type="number" step="0.05" id="gru_gru_dropout_min" name="gru_gru_dropout_min" value="0.0" min="0" max="0.9"></div>
+                            <div><label for="gru_gru_dropout_max">Maximum</label><input type="number" step="0.05" id="gru_gru_dropout_max" name="gru_gru_dropout_max" value="0.2" min="0" max="0.9"></div>
+                            <div><label for="gru_gru_dropout_step">Step</label><input type="number" step="0.05" id="gru_gru_dropout_step" name="gru_gru_dropout_step" value="0.1" min="0.05" max="0.5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 0.0 to 0.2 by 0.1 → tests [0.0, 0.1, 0.2]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Fully Connected Dropout Range</label>
+                        <div class="range-input-group">
+                            <div><label for="gru_fc_dropout_min">Minimum</label><input type="number" step="0.05" id="gru_fc_dropout_min" name="gru_fc_dropout_min" value="0.1" min="0" max="0.9"></div>
+                            <div><label for="gru_fc_dropout_max">Maximum</label><input type="number" step="0.05" id="gru_fc_dropout_max" name="gru_fc_dropout_max" value="0.3" min="0" max="0.9"></div>
+                            <div><label for="gru_fc_dropout_step">Step</label><input type="number" step="0.05" id="gru_fc_dropout_step" name="gru_fc_dropout_step" value="0.1" min="0.05" max="0.5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 0.1 to 0.3 by 0.1 → tests [0.1, 0.2, 0.3]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning Rate Range</label>
+                        <div class="range-input-group">
+                            <div><label for="gru_learning_rate_min">Minimum</label><input type="number" step="0.0001" id="gru_learning_rate_min" name="gru_learning_rate_min" value="0.0005"></div>
+                            <div><label for="gru_learning_rate_max">Maximum</label><input type="number" step="0.0001" id="gru_learning_rate_max" name="gru_learning_rate_max" value="0.005"></div>
+                            <div><label for="gru_learning_rate_step">Step</label><input type="number" step="0.0001" id="gru_learning_rate_step" name="gru_learning_rate_step" value="0.001"></div>
+                        </div>
+                        <small class="help-text-small">⚙️ Optimizer step size</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Weight Decay Range</label>
+                        <div class="range-input-group">
+                            <div><label for="gru_weight_decay_min">Minimum</label><input type="number" step="0.00001" id="gru_weight_decay_min" name="gru_weight_decay_min" value="0.00001"></div>
+                            <div><label for="gru_weight_decay_max">Maximum</label><input type="number" step="0.00001" id="gru_weight_decay_max" name="gru_weight_decay_max" value="0.0005"></div>
+                            <div><label for="gru_weight_decay_step">Step</label><input type="number" step="0.00001" id="gru_weight_decay_step" name="gru_weight_decay_step" value="0.0001"></div>
+                        </div>
+                        <small class="help-text-small">📊 L2 regularization strength</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Huber Delta Range</label>
+                        <div class="range-input-group">
+                            <div><label for="gru_huber_delta_min">Minimum</label><input type="number" step="0.1" id="gru_huber_delta_min" name="gru_huber_delta_min" value="0.7"></div>
+                            <div><label for="gru_huber_delta_max">Maximum</label><input type="number" step="0.1" id="gru_huber_delta_max" name="gru_huber_delta_max" value="1.5"></div>
+                            <div><label for="gru_huber_delta_step">Step</label><input type="number" step="0.1" id="gru_huber_delta_step" name="gru_huber_delta_step" value="0.4"></div>
+                        </div>
+                        <small class="help-text-small">🎯 Loss function robustness parameter</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of Epochs Range</label>
+                        <div class="range-input-group">
+                            <div><label for="gru_epochs_min">Minimum</label><input type="number" id="gru_epochs_min" name="gru_epochs_min" value="100" min="50"></div>
+                            <div><label for="gru_epochs_max">Maximum</label><input type="number" id="gru_epochs_max" name="gru_epochs_max" value="300" min="50"></div>
+                            <div><label for="gru_epochs_step">Step</label><input type="number" id="gru_epochs_step" name="gru_epochs_step" value="100" min="50"></div>
+                        </div>
+                        <small class="help-text-small">🔄 Maximum training epochs</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Early Stopping Patience Range</label>
+                        <div class="range-input-group">
+                            <div><label for="gru_patience_min">Minimum</label><input type="number" id="gru_patience_min" name="gru_patience_min" value="20" min="5"></div>
+                            <div><label for="gru_patience_max">Maximum</label><input type="number" id="gru_patience_max" name="gru_patience_max" value="50" min="5"></div>
+                            <div><label for="gru_patience_step">Step</label><input type="number" id="gru_patience_step" name="gru_patience_step" value="10" min="5"></div>
+                        </div>
+                        <small class="help-text-small">⏱️ Epochs to wait before early stopping</small>
+                    </div>
+                    
+                    <div id="gru_combination_estimate" class="combination-estimate warning">
+                        <strong>⚠️ Estimated Combinations:</strong>
+                        <span id="gru_total_combinations">Calculating...</span>
+                        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+                            💡 Tip: Fewer combinations = faster training. Adjust ranges to balance speed vs thoroughness.
+                        </small>
+                    </div>
+                </div>
+
+                <div id="gru_manual_section" class="manual-section" style="display: none;">
+                    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+                    
+                    <label for="hidden_size">Hidden Size</label>
+                    <input type="number" id="hidden_size" name="hidden_size" value="8" min="1">
+
+                    <label for="num_layers">Number of Layers</label>
+                    <input type="number" id="num_layers" name="num_layers" value="2" min="1">
+
+                    <label for="gru_dropout">GRU Dropout</label>
+                    <input type="number" step="0.05" id="gru_dropout" name="gru_dropout" value="0.0" min="0" max="0.9">
+
+                    <label for="fc_dropout">Fully Connected Dropout</label>
+                    <input type="number" step="0.05" id="fc_dropout" name="fc_dropout" value="0.3" min="0" max="0.9">
+                    
+                    <label for="learning_rate">Learning Rate</label>
+                    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003">
+
+                    <label for="weight_decay">Weight Decay</label>
+                    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001">
+
+                    <label for="epochs">Number of Epochs</label>
+                    <input type="number" id="epochs" name="epochs" value="200">
+
+                    <label for="patience">Early Stopping Patience</label>
+                    <input type="number" id="patience" name="patience" value="30">
+
+                    <label for="huber_delta">Huber Loss Delta</label>
+                    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0">
+                </div>
+
+                <div class="help-text">
+                    <strong>💡 Note:</strong> If "Auto-Tune" is checked, grid search will test all combinations within the specified ranges to find the optimal hyperparameters.
+                </div>
+
+                <script>
+                document.getElementById('auto_tune_gru').addEventListener('change', function() {
+                    document.getElementById('gru_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+                    document.getElementById('gru_manual_section').style.display = this.checked ? 'none' : 'block';
+                });
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const autoTuneCheckbox = document.getElementById('auto_tune_gru');
+                    document.getElementById('gru_grid_search_ranges').style.display = autoTuneCheckbox.checked ? 'block' : 'none';
+                    document.getElementById('gru_manual_section').style.display = autoTuneCheckbox.checked ? 'none' : 'block';
+                });
+
+                function calculateGRUCombinations() {
+                    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const hiddenSize = calc(parseFloat(document.getElementById('gru_hidden_size_min').value), parseFloat(document.getElementById('gru_hidden_size_max').value), parseFloat(document.getElementById('gru_hidden_size_step').value));
+                    const numLayers = calc(parseFloat(document.getElementById('gru_num_layers_min').value), parseFloat(document.getElementById('gru_num_layers_max').value), parseFloat(document.getElementById('gru_num_layers_step').value));
+                    const gruDropout = calc(parseFloat(document.getElementById('gru_gru_dropout_min').value), parseFloat(document.getElementById('gru_gru_dropout_max').value), parseFloat(document.getElementById('gru_gru_dropout_step').value));
+                    const fcDropout = calc(parseFloat(document.getElementById('gru_fc_dropout_min').value), parseFloat(document.getElementById('gru_fc_dropout_max').value), parseFloat(document.getElementById('gru_fc_dropout_step').value));
+                    const lr = calc(parseFloat(document.getElementById('gru_learning_rate_min').value), parseFloat(document.getElementById('gru_learning_rate_max').value), parseFloat(document.getElementById('gru_learning_rate_step').value));
+                    const wd = calc(parseFloat(document.getElementById('gru_weight_decay_min').value), parseFloat(document.getElementById('gru_weight_decay_max').value), parseFloat(document.getElementById('gru_weight_decay_step').value));
+                    const hd = calc(parseFloat(document.getElementById('gru_huber_delta_min').value), parseFloat(document.getElementById('gru_huber_delta_max').value), parseFloat(document.getElementById('gru_huber_delta_step').value));
+                    const epochs = calc(parseFloat(document.getElementById('gru_epochs_min').value), parseFloat(document.getElementById('gru_epochs_max').value), parseFloat(document.getElementById('gru_epochs_step').value));
+                    const patience = calc(parseFloat(document.getElementById('gru_patience_min').value), parseFloat(document.getElementById('gru_patience_max').value), parseFloat(document.getElementById('gru_patience_step').value));
+                    
+                    const total = hiddenSize * numLayers * gruDropout * fcDropout * lr * wd * hd * epochs * patience;
+                    document.getElementById('gru_total_combinations').textContent = total.toLocaleString() + ' combinations';
+                    
+                    const estimateDiv = document.getElementById('gru_combination_estimate');
+                    estimateDiv.className = 'combination-estimate';
+                    if (total < 100) estimateDiv.classList.add('good');
+                    else if (total < 1000) estimateDiv.classList.add('warning');
+                    else estimateDiv.classList.add('danger');
+                }
+
+                document.querySelectorAll('[id^="gru_"]').forEach(input => {
+                    input.addEventListener('input', calculateGRUCombinations);
+                });
+
+                document.addEventListener('DOMContentLoaded', calculateGRUCombinations);
+                </script>
+
+                {% endif %}
+
+                <!-- ========================= -->
+                <!-- ANN PARAMS -->
+                <!-- ========================= -->
+                {% if model_name == "ann" %}
+
+                <div class="auto-tune-section">
+                    <label for="auto_tune_ann">
+                        <input type="checkbox" id="auto_tune_ann" name="auto_tune_ann" value="true" checked>
+                        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+                    </label>
+                </div>
+
+                <div id="ann_grid_search_ranges" class="grid-search-section">
+                    <h4>Grid Search Configuration</h4>
+                    <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
+                    
+                    <div class="parameter-group">
+                        <label>Hidden Layer 1 Size Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_hidden_layer_1_min">Minimum</label><input type="number" id="ann_hidden_layer_1_min" name="ann_hidden_layer_1_min" value="8" min="4"></div>
+                            <div><label for="ann_hidden_layer_1_max">Maximum</label><input type="number" id="ann_hidden_layer_1_max" name="ann_hidden_layer_1_max" value="16" min="4"></div>
+                            <div><label for="ann_hidden_layer_1_step">Step</label><input type="number" id="ann_hidden_layer_1_step" name="ann_hidden_layer_1_step" value="4" min="2"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 8 to 16 by 4 → tests [8, 12, 16]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Hidden Layer 2 Size Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_hidden_layer_2_min">Minimum</label><input type="number" id="ann_hidden_layer_2_min" name="ann_hidden_layer_2_min" value="4" min="2"></div>
+                            <div><label for="ann_hidden_layer_2_max">Maximum</label><input type="number" id="ann_hidden_layer_2_max" name="ann_hidden_layer_2_max" value="8" min="2"></div>
+                            <div><label for="ann_hidden_layer_2_step">Step</label><input type="number" id="ann_hidden_layer_2_step" name="ann_hidden_layer_2_step" value="2" min="1"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 4 to 8 by 2 → tests [4, 6, 8]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Dropout after Hidden Layer 1 Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_dropout_1_min">Minimum</label><input type="number" step="0.05" id="ann_dropout_1_min" name="ann_dropout_1_min" value="0.1" min="0" max="0.9"></div>
+                            <div><label for="ann_dropout_1_max">Maximum</label><input type="number" step="0.05" id="ann_dropout_1_max" name="ann_dropout_1_max" value="0.3" min="0" max="0.9"></div>
+                            <div><label for="ann_dropout_1_step">Step</label><input type="number" step="0.05" id="ann_dropout_1_step" name="ann_dropout_1_step" value="0.1" min="0.05" max="0.5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 0.1 to 0.3 by 0.1 → tests [0.1, 0.2, 0.3]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Dropout after Hidden Layer 2 Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_dropout_2_min">Minimum</label><input type="number" step="0.05" id="ann_dropout_2_min" name="ann_dropout_2_min" value="0.2" min="0" max="0.9"></div>
+                            <div><label for="ann_dropout_2_max">Maximum</label><input type="number" step="0.05" id="ann_dropout_2_max" name="ann_dropout_2_max" value="0.4" min="0" max="0.9"></div>
+                            <div><label for="ann_dropout_2_step">Step</label><input type="number" step="0.05" id="ann_dropout_2_step" name="ann_dropout_2_step" value="0.1" min="0.05" max="0.5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Example: 0.2 to 0.4 by 0.1 → tests [0.2, 0.3, 0.4]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning Rate Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_learning_rate_min">Minimum</label><input type="number" step="0.0001" id="ann_learning_rate_min" name="ann_learning_rate_min" value="0.0005"></div>
+                            <div><label for="ann_learning_rate_max">Maximum</label><input type="number" step="0.0001" id="ann_learning_rate_max" name="ann_learning_rate_max" value="0.005"></div>
+                            <div><label for="ann_learning_rate_step">Step</label><input type="number" step="0.0001" id="ann_learning_rate_step" name="ann_learning_rate_step" value="0.001"></div>
+                        </div>
+                        <small class="help-text-small">⚙️ Optimizer step size</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Weight Decay Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_weight_decay_min">Minimum</label><input type="number" step="0.00001" id="ann_weight_decay_min" name="ann_weight_decay_min" value="0.00001"></div>
+                            <div><label for="ann_weight_decay_max">Maximum</label><input type="number" step="0.00001" id="ann_weight_decay_max" name="ann_weight_decay_max" value="0.0005"></div>
+                            <div><label for="ann_weight_decay_step">Step</label><input type="number" step="0.00001" id="ann_weight_decay_step" name="ann_weight_decay_step" value="0.0001"></div>
+                        </div>
+                        <small class="help-text-small">📊 L2 regularization strength</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Huber Delta Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_huber_delta_min">Minimum</label><input type="number" step="0.1" id="ann_huber_delta_min" name="ann_huber_delta_min" value="0.7"></div>
+                            <div><label for="ann_huber_delta_max">Maximum</label><input type="number" step="0.1" id="ann_huber_delta_max" name="ann_huber_delta_max" value="1.5"></div>
+                            <div><label for="ann_huber_delta_step">Step</label><input type="number" step="0.1" id="ann_huber_delta_step" name="ann_huber_delta_step" value="0.4"></div>
+                        </div>
+                        <small class="help-text-small">🎯 Loss function robustness parameter</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of Epochs Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_epochs_min">Minimum</label><input type="number" id="ann_epochs_min" name="ann_epochs_min" value="100" min="50"></div>
+                            <div><label for="ann_epochs_max">Maximum</label><input type="number" id="ann_epochs_max" name="ann_epochs_max" value="300" min="50"></div>
+                            <div><label for="ann_epochs_step">Step</label><input type="number" id="ann_epochs_step" name="ann_epochs_step" value="100" min="50"></div>
+                        </div>
+                        <small class="help-text-small">🔄 Maximum training epochs</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Early Stopping Patience Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_patience_min">Minimum</label><input type="number" id="ann_patience_min" name="ann_patience_min" value="20" min="5"></div>
+                            <div><label for="ann_patience_max">Maximum</label><input type="number" id="ann_patience_max" name="ann_patience_max" value="50" min="5"></div>
+                            <div><label for="ann_patience_step">Step</label><input type="number" id="ann_patience_step" name="ann_patience_step" value="10" min="5"></div>
+                        </div>
+                        <small class="help-text-small">⏱️ Epochs to wait before early stopping</small>
+                    </div>
+                    
+                    <div id="ann_combination_estimate" class="combination-estimate warning">
+                        <strong>⚠️ Estimated Combinations:</strong>
+                        <span id="ann_total_combinations">Calculating...</span>
+                        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+                            💡 Tip: Fewer combinations = faster training. Adjust ranges to balance speed vs thoroughness.
+                        </small>
+                    </div>
+                </div>
+
+                <div id="ann_manual_section" class="manual-section" style="display: none;">
+                    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+                    
+                    <label for="hidden_layer_1">Hidden Layer 1 Size</label>
+                    <input type="number" id="hidden_layer_1" name="hidden_layer_1" value="16" min="1">
+
+                    <label for="hidden_layer_2">Hidden Layer 2 Size</label>
+                    <input type="number" id="hidden_layer_2" name="hidden_layer_2" value="8" min="1">
+
+                    <label for="dropout_1">Dropout after Hidden Layer 1</label>
+                    <input type="number" step="0.05" id="dropout_1" name="dropout_1" value="0.2" min="0" max="0.9">
+
+                    <label for="dropout_2">Dropout after Hidden Layer 2</label>
+                    <input type="number" step="0.05" id="dropout_2" name="dropout_2" value="0.3" min="0" max="0.9">
+                    
+                    <label for="learning_rate">Learning Rate</label>
+                    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003">
+
+                    <label for="weight_decay">Weight Decay</label>
+                    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001">
+
+                    <label for="epochs">Number of Epochs</label>
+                    <input type="number" id="epochs" name="epochs" value="200">
+
+                    <label for="patience">Early Stopping Patience</label>
+                    <input type="number" id="patience" name="patience" value="30">
+
+                    <label for="huber_delta">Huber Loss Delta</label>
+                    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0">
+                </div>
+
+                <div class="help-text">
+                    <strong>💡 Note:</strong> If "Auto-Tune" is checked, grid search will test all combinations within the specified ranges to find the optimal hyperparameters.
+                </div>
+
+                <script>
+                document.getElementById('auto_tune_ann').addEventListener('change', function() {
+                    document.getElementById('ann_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+                    document.getElementById('ann_manual_section').style.display = this.checked ? 'none' : 'block';
+                });
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const autoTuneCheckbox = document.getElementById('auto_tune_ann');
+                    document.getElementById('ann_grid_search_ranges').style.display = autoTuneCheckbox.checked ? 'block' : 'none';
+                    document.getElementById('ann_manual_section').style.display = autoTuneCheckbox.checked ? 'none' : 'block';
+                });
+
+                function calculateANNCombinations() {
+                    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const hiddenLayer1 = calc(parseFloat(document.getElementById('ann_hidden_layer_1_min').value), parseFloat(document.getElementById('ann_hidden_layer_1_max').value), parseFloat(document.getElementById('ann_hidden_layer_1_step').value));
+                    const hiddenLayer2 = calc(parseFloat(document.getElementById('ann_hidden_layer_2_min').value), parseFloat(document.getElementById('ann_hidden_layer_2_max').value), parseFloat(document.getElementById('ann_hidden_layer_2_step').value));
+                    const dropout1 = calc(parseFloat(document.getElementById('ann_dropout_1_min').value), parseFloat(document.getElementById('ann_dropout_1_max').value), parseFloat(document.getElementById('ann_dropout_1_step').value));
+                    const dropout2 = calc(parseFloat(document.getElementById('ann_dropout_2_min').value), parseFloat(document.getElementById('ann_dropout_2_max').value), parseFloat(document.getElementById('ann_dropout_2_step').value));
+                    const lr = calc(parseFloat(document.getElementById('ann_learning_rate_min').value), parseFloat(document.getElementById('ann_learning_rate_max').value), parseFloat(document.getElementById('ann_learning_rate_step').value));
+                    const wd = calc(parseFloat(document.getElementById('ann_weight_decay_min').value), parseFloat(document.getElementById('ann_weight_decay_max').value), parseFloat(document.getElementById('ann_weight_decay_step').value));
+                    const hd = calc(parseFloat(document.getElementById('ann_huber_delta_min').value), parseFloat(document.getElementById('ann_huber_delta_max').value), parseFloat(document.getElementById('ann_huber_delta_step').value));
+                    const epochs = calc(parseFloat(document.getElementById('ann_epochs_min').value), parseFloat(document.getElementById('ann_epochs_max').value), parseFloat(document.getElementById('ann_epochs_step').value));
+                    const patience = calc(parseFloat(document.getElementById('ann_patience_min').value), parseFloat(document.getElementById('ann_patience_max').value), parseFloat(document.getElementById('ann_patience_step').value));
+                    
+                    const total = hiddenLayer1 * hiddenLayer2 * dropout1 * dropout2 * lr * wd * hd * epochs * patience;
+                    document.getElementById('ann_total_combinations').textContent = total.toLocaleString() + ' combinations';
+                    
+                    const estimateDiv = document.getElementById('ann_combination_estimate');
+                    estimateDiv.className = 'combination-estimate';
+                    if (total < 100) estimateDiv.classList.add('good');
+                    else if (total < 1000) estimateDiv.classList.add('warning');
+                    else estimateDiv.classList.add('danger');
+                }
+
+                document.querySelectorAll('[id^="ann_"]').forEach(input => {
+                    input.addEventListener('input', calculateANNCombinations);
+                });
+
+                document.addEventListener('DOMContentLoaded', calculateANNCombinations);
+                </script>
+
+                {% endif %}
+
+                <!-- ========================= -->
+                <!-- SVR PARAMS -->
+                <!-- ========================= -->
+                {% if model_name == "svr" %}
+
+                <div class="auto-tune-section">
+                    <label for="auto_tune_svr">
+                        <input type="checkbox" id="auto_tune_svr" name="auto_tune_svr" value="true" checked>
+                        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+                    </label>
+                </div>
+
+                <div id="svr_grid_search_section" class="grid-search-section">
+                    <h4>Grid Search Configuration</h4>
+                    <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
+                    
+                    <div class="checkbox-group">
+                        <label>Kernel Functions to Test</label>
+                        <div class="checkbox-options">
+                            <label>
+                                <input type="checkbox" name="svr_kernel_rbf" value="rbf" checked>
+                                <span>RBF (Radial Basis Function)</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="svr_kernel_poly" value="poly" checked>
+                                <span>Polynomial</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="svr_kernel_sigmoid" value="sigmoid" checked>
+                                <span>Sigmoid</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>C (Regularization Parameter) Range</label>
+                        <div class="range-input-group">
+                            <div><label for="svr_C_min">Minimum</label><input type="number" id="svr_C_min" name="svr_C_min" value="0.1" step="any" min="0.01" class="svr-grid-input"></div>
+                            <div><label for="svr_C_max">Maximum</label><input type="number" id="svr_C_max" name="svr_C_max" value="3.0" step="any" min="0.01" class="svr-grid-input"></div>
+                            <div><label for="svr_C_step">Step</label><input type="number" id="svr_C_step" name="svr_C_step" value="0.5" step="any" min="0.01" class="svr-grid-input"></div>
+                        </div>
+                        <small class="help-text-small">💡 Penalty parameter. Example: 0.1 to 3.0 by 0.5 → tests [0.1, 0.6, 1.1, 1.6, 2.1, 2.6]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Epsilon (ε-tube width) Range</label>
+                        <div class="range-input-group">
+                            <div><label for="svr_epsilon_min">Minimum</label><input type="number" id="svr_epsilon_min" name="svr_epsilon_min" value="0.01" step="any" min="0.001" class="svr-grid-input"></div>
+                            <div><label for="svr_epsilon_max">Maximum</label><input type="number" id="svr_epsilon_max" name="svr_epsilon_max" value="0.3" step="any" min="0.001" class="svr-grid-input"></div>
+                            <div><label for="svr_epsilon_step">Step</label><input type="number" id="svr_epsilon_step" name="svr_epsilon_step" value="0.05" step="any" min="0.001" class="svr-grid-input"></div>
+                        </div>
+                        <small class="help-text-small">💡 Margin of tolerance. Example: 0.01 to 0.3 by 0.05 → tests [0.01, 0.06, 0.11, 0.16, 0.21, 0.26]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Gamma (Kernel Coefficient) Range</label>
+                        <div class="range-input-group">
+                            <div><label for="svr_gamma_min">Minimum</label><input type="number" id="svr_gamma_min" name="svr_gamma_min" value="0.1" step="any" min="0.01" class="svr-grid-input"></div>
+                            <div><label for="svr_gamma_max">Maximum</label><input type="number" id="svr_gamma_max" name="svr_gamma_max" value="1.0" step="any" min="0.01" class="svr-grid-input"></div>
+                            <div><label for="svr_gamma_step">Step</label><input type="number" id="svr_gamma_step" name="svr_gamma_step" value="0.2" step="any" min="0.01" class="svr-grid-input"></div>
+                        </div>
+                        <small class="help-text-small">💡 Kernel coefficient. Note: 'scale' and 'auto' will always be tested too</small>
+                    </div>
+                    
+                    <div id="svr_combination_estimate" class="combination-estimate warning">
+                        <strong>⚠️ Estimated Combinations:</strong>
+                        <span id="svr_total_combinations">Calculating...</span>
+                        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+                            📊 Calculation: (kernels) × (C values) × (epsilon values) × (gamma values + 2 for scale/auto)
+                        </small>
+                    </div>
+                </div>
+
+                <div id="svr_manual_section" class="manual-section" style="display: none;">
+                    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+                    
+                    <label for="kernel">Kernel Function</label>
+                    <select id="kernel" name="kernel">
+                        <option value="rbf" selected>RBF (Radial Basis Function)</option>
+                        <option value="poly">Polynomial</option>
+                        <option value="sigmoid">Sigmoid</option>
+                        <option value="linear">Linear</option>
+                    </select>
+                    
+                    <label for="C">C (Regularization Parameter)</label>
+                    <input type="number" id="C" name="C" value="1.0" step="any" min="0.01">
+                    
+                    <label for="epsilon">Epsilon (ε-tube width)</label>
+                    <input type="number" id="epsilon" name="epsilon" value="0.1" step="any" min="0.001">
+                    
+                    <label for="gamma">Gamma (Kernel Coefficient)</label>
+                    <select id="gamma" name="gamma">
+                        <option value="scale" selected>scale (1 / (n_features × X.var()))</option>
+                        <option value="auto">auto (1 / n_features)</option>
+                        <option value="0.1">0.1</option>
+                        <option value="0.3">0.3</option>
+                        <option value="0.5">0.5</option>
+                        <option value="1.0">1.0</option>
+                    </select>
+                </div>
+
+                <div class="help-text">
+                    <strong>💡 Note:</strong> If "Auto-Tune" is checked, the model will use GridSearchCV to find the best hyperparameters from the specified ranges.
+                </div>
+
+                <script>
+                document.getElementById('auto_tune_svr').addEventListener('change', function() {
+                    document.getElementById('svr_grid_search_section').style.display = this.checked ? 'block' : 'none';
+                    document.getElementById('svr_manual_section').style.display = this.checked ? 'none' : 'block';
+                });
+
+                function calculateSVRCombinations() {
+                    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    
+                    const C_min = parseFloat(document.getElementById('svr_C_min').value);
+                    const C_max = parseFloat(document.getElementById('svr_C_max').value);
+                    const C_step = parseFloat(document.getElementById('svr_C_step').value);
+                    
+                    const epsilon_min = parseFloat(document.getElementById('svr_epsilon_min').value);
+                    const epsilon_max = parseFloat(document.getElementById('svr_epsilon_max').value);
+                    const epsilon_step = parseFloat(document.getElementById('svr_epsilon_step').value);
+                    
+                    const gamma_min = parseFloat(document.getElementById('svr_gamma_min').value);
+                    const gamma_max = parseFloat(document.getElementById('svr_gamma_max').value);
+                    const gamma_step = parseFloat(document.getElementById('svr_gamma_step').value);
+                    
+                    const kernels = document.querySelectorAll('input[name^="svr_kernel_"]:checked').length;
+                    
+                    const C_count = calc(C_min, C_max, C_step);
+                    const epsilon_count = calc(epsilon_min, epsilon_max, epsilon_step);
+                    const gamma_count = calc(gamma_min, gamma_max, gamma_step) + 2;
+                    
+                    const total = kernels * C_count * epsilon_count * gamma_count;
+                    
+                    document.getElementById('svr_total_combinations').textContent = total.toLocaleString() + ' combinations';
+                    
+                    const estimateDiv = document.getElementById('svr_combination_estimate');
+                    estimateDiv.className = 'combination-estimate';
+                    if (total < 100) estimateDiv.classList.add('good');
+                    else if (total < 1000) estimateDiv.classList.add('warning');
+                    else estimateDiv.classList.add('danger');
+                }
+
+                document.querySelectorAll('.svr-grid-input, input[name^="svr_kernel_"]').forEach(input => {
+                    input.addEventListener('input', calculateSVRCombinations);
+                });
+
+                calculateSVRCombinations();
+                </script>
+
+                {% endif %}
+
+                <!-- ========================= -->
+                <!-- RANDOM FOREST PARAMS -->
+                <!-- ========================= -->
+                {% if model_name == "rf" %}
+
+                <div class="auto-tune-section">
+                    <label for="auto_tune_rf">
+                        <input type="checkbox" id="auto_tune_rf" name="auto_tune_rf" value="true" checked>
+                        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+                    </label>
+                </div>
+
+                <div id="rf_grid_search_section" class="grid-search-section">
+                    <h4>Grid Search Configuration</h4>
+                    <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
+                    
+                    <div class="parameter-group">
+                        <label>Number of Trees (n_estimators) Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rf_n_estimators_min">Minimum</label><input type="number" id="rf_n_estimators_min" name="rf_n_estimators_min" value="100" min="10" max="1000" step="10" class="rf-grid-input"></div>
+                            <div><label for="rf_n_estimators_max">Maximum</label><input type="number" id="rf_n_estimators_max" name="rf_n_estimators_max" value="500" min="10" max="1000" step="10" class="rf-grid-input"></div>
+                            <div><label for="rf_n_estimators_step">Step</label><input type="number" id="rf_n_estimators_step" name="rf_n_estimators_step" value="100" min="10" max="200" class="rf-grid-input"></div>
+                        </div>
+                        <small class="help-text-small">💡 Number of decision trees. Example: 100 to 500 by 100 → tests [100, 200, 300, 400, 500]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Maximum Tree Depth Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rf_max_depth_min">Minimum</label><input type="number" id="rf_max_depth_min" name="rf_max_depth_min" value="2" min="1" max="20" class="rf-grid-input"></div>
+                            <div><label for="rf_max_depth_max">Maximum</label><input type="number" id="rf_max_depth_max" name="rf_max_depth_max" value="10" min="1" max="20" class="rf-grid-input"></div>
+                            <div><label for="rf_max_depth_step">Step</label><input type="number" id="rf_max_depth_step" name="rf_max_depth_step" value="2" min="1" max="5" class="rf-grid-input"></div>
+                        </div>
+                        <small class="help-text-small">💡 Maximum depth of each tree. Example: 2 to 10 by 2 → tests [2, 4, 6, 8, 10, None]</small>
+                        <label style="margin-top: 10px; display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="rf_max_depth_include_none" value="true" checked>
+                            <span>Include "None" (unlimited depth)</span>
+                        </label>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Min Samples to Split Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rf_min_samples_split_min">Minimum</label><input type="number" id="rf_min_samples_split_min" name="rf_min_samples_split_min" value="2" min="2" max="20" class="rf-grid-input"></div>
+                            <div><label for="rf_min_samples_split_max">Maximum</label><input type="number" id="rf_min_samples_split_max" name="rf_min_samples_split_max" value="10" min="2" max="20" class="rf-grid-input"></div>
+                            <div><label for="rf_min_samples_split_step">Step</label><input type="number" id="rf_min_samples_split_step" name="rf_min_samples_split_step" value="2" min="1" max="5" class="rf-grid-input"></div>
+                        </div>
+                        <small class="help-text-small">💡 Minimum samples required to split a node. Example: 2 to 10 by 2 → tests [2, 4, 6, 8, 10]</small>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Min Samples in Leaf Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rf_min_samples_leaf_min">Minimum</label><input type="number" id="rf_min_samples_leaf_min" name="rf_min_samples_leaf_min" value="1" min="1" max="10" class="rf-grid-input"></div>
+                            <div><label for="rf_min_samples_leaf_max">Maximum</label><input type="number" id="rf_min_samples_leaf_max" name="rf_min_samples_leaf_max" value="4" min="1" max="10" class="rf-grid-input"></div>
+                            <div><label for="rf_min_samples_leaf_step">Step</label><input type="number" id="rf_min_samples_leaf_step" name="rf_min_samples_leaf_step" value="1" min="1" max="3" class="rf-grid-input"></div>
+                        </div>
+                        <small class="help-text-small">💡 Minimum samples required in leaf node. Example: 1 to 4 by 1 → tests [1, 2, 3, 4]</small>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <label>Max Features per Split</label>
+                        <div class="checkbox-options">
+                            <label>
+                                <input type="checkbox" name="rf_max_features_sqrt" value="true" checked>
+                                <span>sqrt (√n_features)</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="rf_max_features_log2" value="true" checked>
+                                <span>log2</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="rf_max_features_none" value="true">
+                                <span>None (all features)</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <label>Bootstrap Sampling</label>
+                        <div class="checkbox-options">
+                            <label>
+                                <input type="checkbox" name="rf_bootstrap_true" value="true" checked>
+                                <span>With Bootstrap (recommended)</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="rf_bootstrap_false" value="true">
+                                <span>Without Bootstrap</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="rf_combination_estimate" class="combination-estimate warning">
+                        <strong>⚠️ Estimated Combinations:</strong>
+                        <span id="rf_total_combinations">Calculating...</span>
+                        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+                            📊 Calculation: (n_estimators) × (max_depth + 1 for None) × (min_samples_split) × (min_samples_leaf) × (max_features) × (bootstrap)
+                        </small>
+                    </div>
+                </div>
+
+                <div id="rf_manual_section" class="manual-section" style="display: none;">
+                    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+                    
+                    <label for="n_estimators">Number of Trees</label>
+                    <input type="number" id="n_estimators" name="n_estimators" value="350">
+
+                    <label for="max_depth">Maximum Tree Depth</label>
+                    <input type="number" id="max_depth" name="max_depth" value="3">
+
+                    <label for="min_samples_split">Min Samples to Split</label>
+                    <input type="number" id="min_samples_split" name="min_samples_split" value="6">
+
+                    <label for="min_samples_leaf">Min Samples in Leaf</label>
+                    <input type="number" id="min_samples_leaf" name="min_samples_leaf" value="1">
+
+                    <label for="max_features">Max Features per Split</label>
+                    <input type="number" id="max_features" name="max_features" value="1">
+
+                    <label for="bootstrap">Bootstrap Samples</label>
+                    <select id="bootstrap" name="bootstrap">
+                        <option value="true" selected>Yes</option>
+                        <option value="false">No</option>
+                    </select>
+
+                    <label for="random_state">Random Seed</label>
+                    <input type="number" id="random_state" name="random_state" value="42">
+                </div>
+
+                <div class="help-text">
+                    <strong>💡 Note:</strong> If "Auto-Tune" is checked, the model will use GridSearchCV to find the best hyperparameters from the specified ranges.
+                </div>
+
+                <script>
+                document.getElementById('auto_tune_rf').addEventListener('change', function() {
+                    document.getElementById('rf_grid_search_section').style.display = this.checked ? 'block' : 'none';
+                    document.getElementById('rf_manual_section').style.display = this.checked ? 'none' : 'block';
+                });
+
+                function calculateRFCombinations() {
+                    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    
+                    const n_estimators = calc(
+                        parseFloat(document.getElementById('rf_n_estimators_min').value),
+                        parseFloat(document.getElementById('rf_n_estimators_max').value),
+                        parseFloat(document.getElementById('rf_n_estimators_step').value)
+                    );
+                    
+                    const max_depth = calc(
+                        parseFloat(document.getElementById('rf_max_depth_min').value),
+                        parseFloat(document.getElementById('rf_max_depth_max').value),
+                        parseFloat(document.getElementById('rf_max_depth_step').value)
+                    );
+                    const max_depth_with_none = max_depth + (document.querySelector('[name="rf_max_depth_include_none"]').checked ? 1 : 0);
+                    
+                    const min_samples_split = calc(
+                        parseFloat(document.getElementById('rf_min_samples_split_min').value),
+                        parseFloat(document.getElementById('rf_min_samples_split_max').value),
+                        parseFloat(document.getElementById('rf_min_samples_split_step').value)
+                    );
+                    
+                    const min_samples_leaf = calc(
+                        parseFloat(document.getElementById('rf_min_samples_leaf_min').value),
+                        parseFloat(document.getElementById('rf_min_samples_leaf_max').value),
+                        parseFloat(document.getElementById('rf_min_samples_leaf_step').value)
+                    );
+                    
+                    const max_features = document.querySelectorAll('input[name^="rf_max_features_"]:checked').length;
+                    const bootstrap = document.querySelectorAll('input[name^="rf_bootstrap_"]:checked').length;
+                    
+                    const total = n_estimators * max_depth_with_none * min_samples_split * min_samples_leaf * max_features * bootstrap;
+                    
+                    document.getElementById('rf_total_combinations').textContent = total.toLocaleString() + ' combinations';
+                    
+                    const estimateDiv = document.getElementById('rf_combination_estimate');
+                    estimateDiv.className = 'combination-estimate';
+                    if (total < 100) estimateDiv.classList.add('good');
+                    else if (total < 1000) estimateDiv.classList.add('warning');
+                    else estimateDiv.classList.add('danger');
+                }
+
+                document.querySelectorAll('.rf-grid-input, input[name^="rf_max_features_"], input[name^="rf_bootstrap_"], input[name="rf_max_depth_include_none"]').forEach(input => {
+                    input.addEventListener('input', calculateRFCombinations);
+                    input.addEventListener('change', calculateRFCombinations);
+                });
+
+                calculateRFCombinations();
+                </script>
+
+                {% endif %}
+
+                <!-- ========================= -->
+                <!-- ARIMA PARAMS -->
+                <!-- ========================= -->
+                {% if model_name == "arima" %}
+
+                <div class="auto-tune-section">
+                    <label for="auto_arima">
+                        <input type="checkbox" id="auto_arima" name="auto_arima" value="true" checked>
+                        <span>🚀 Auto-Select Best ARIMA Order (Recommended)</span>
+                    </label>
+                </div>
+
+                <div id="arima_manual_section" class="manual-section" style="display: none;">
+                    <h4>🎛️ Manual ARIMA Configuration</h4>
+                    
+                    <label for="arima_p">AR Order (p)</label>
+                    <input type="number" id="arima_p" name="arima_p" value="1">
+
+                    <label for="arima_d">Differencing Order (d)</label>
+                    <input type="number" id="arima_d" name="arima_d" value="1">
+
+                    <label for="arima_q">MA Order (q)</label>
+                    <input type="number" id="arima_q" name="arima_q" value="0">
+                </div>
+
+                <div class="help-text">
+                    <strong>💡 Note:</strong> If "Auto-Select" is checked, manual p ,d and q values will be ignored. The model will automatically find the best parameters using statistical tests.
+                </div>
+
+                <script>
+                document.getElementById('auto_arima').addEventListener('change', function() {
+                    document.getElementById('arima_manual_section').style.display = this.checked ? 'none' : 'block';
+                });
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.getElementById('arima_manual_section').style.display = 
+                        document.getElementById('auto_arima').checked ? 'none' : 'block';
+                });
+                </script>
+
+                {% endif %}
+
+                <!-- Submit Button -->
+                <div class="submit-container">
+                    <button type="submit" class="submit-btn">
+                        🚀 Run Model & View Results
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Detailed Predictions - Model Comparison{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+    <h1>📋 Detailed Predictions Comparison</h1>
+    <p style="color: #666; margin-bottom: 30px;">Compare actual vs predicted values for all models</p>
+    
+    <a href="/show_comparison" style="display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-bottom: 30px;">
+        ← Back to Comparison Dashboard
+    </a>
+    
+    {% for model in models %}
+    {% if loop.index == 1 %}
+    <div style="margin: 40px 0; padding: 20px; border: 2px solid #28a745; border-radius: 8px; background: white;">
+        <h2 style="color: #28a745;">
+            🏆 {{ model.name }}
+        </h2>
+    {% else %}
+    <div style="margin: 40px 0; padding: 20px; border: 2px solid #ddd; border-radius: 8px; background: white;">
+        <h2 style="color: #333;">
+            {{ model.name }}
+        </h2>
+    {% endif %}
+        
+        <!-- Training Data -->
+        <h3>Training Set Predictions</h3>
+        <div style="overflow-x: auto; margin: 20px 0;">
+            {{ model.train_table.to_html(classes='table', index=False, border=0) | safe }}
+        </div>
+        
+        <!-- Testing Data -->
+        <h3>Testing Set Predictions</h3>
+        <div style="overflow-x: auto; margin: 20px 0;">
+            {{ model.test_table.to_html(classes='table', index=False, border=0) | safe }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+.table th {
+    background: #f8f9fa;
+    padding: 12px;
+    border: 1px solid #ddd;
+    font-weight: bold;
+    text-align: left;
+}
+.table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+.table tr:nth-child(even) {
+    background: #f9f9f9;
+}
+</style>
+{% endblock %}

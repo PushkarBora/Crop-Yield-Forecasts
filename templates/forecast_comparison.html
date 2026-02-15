@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>🔮 Generate Forecasts</h2>
+
+<p style="background: #e7f3ff; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0;">
+    Generate future forecasts for all trained models ({{ models|length }} models)
+</p>
+
+<form action="/generate_forecasts" method="post">
+    
+    <h3>Future Exogenous Variables</h3>
+    <p style="color: #666;">Enter {{ horizon }} space-separated values for each variable</p>
+    
+    <label for="future_mean_t">Future Mean Temperature (°C)</label><br>
+    <input 
+        type="text" 
+        id="future_mean_t" 
+        name="future_mean_t" 
+        placeholder="e.g., 25.5 26.0 26.5 27.0 27.5"
+        style="width: 100%; padding: 10px; margin: 10px 0;"
+        required
+    ><br>
+    
+    <label for="future_rain">Future Rainfall (mm)</label><br>
+    <input 
+        type="text" 
+        id="future_rain" 
+        name="future_rain" 
+        placeholder="e.g., 150 160 155 170 165"
+        style="width: 100%; padding: 10px; margin: 10px 0;"
+        required
+    ><br><br>
+    
+    <div style="text-align: center; margin: 30px 0;">
+        <button type="submit" style="padding: 15px 40px; font-size: 18px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            🚀 Generate Forecasts
+        </button>
+    </div>
+</form>
+
+<div style="text-align: center; margin-top: 20px;">
+    <a href="/show_comparison" style="color: #007bff; text-decoration: none;">← Back to Comparison</a>
+</div>
+
+{% endblock %}

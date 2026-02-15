@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Team - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page Hero */
+    .page-hero {
+        background: transparent;
+        color: white;
+        padding: 4rem 2rem 2rem;
+        text-align: center;
+    }
+
+    .page-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        animation: fadeInUp 1s ease;
+    }
+
+    .page-hero p {
+        font-size: 1.2rem;
+        max-width: 700px;
+        margin: 0 auto;
+        opacity: 0.95;
+        animation: fadeInUp 1s ease 0.2s backwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Container */
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 4rem 2rem;
+    }
+
+    .section-title {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: white;
+    }
+
+    .section-subtitle {
+        text-align: center;
+        color: rgba(255,255,255,0.9);
+        margin-bottom: 4rem;
+        font-size: 1.1rem;
+    }
+
+    /* Team Grid */
+    .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 3rem;
+        margin-top: 3rem;
+    }
+
+    /* Team Card */
+    .team-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 3rem 2rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        transition: all 0.4s ease;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .team-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: scaleX(0);
+        transition: transform 0.4s;
+    }
+
+    .team-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .team-card:hover {
+        transform: translateY(-15px);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+
+    /* Profile Picture */
+    .profile-picture {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        border: 5px solid transparent;
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #667eea, #764ba2) border-box;
+        overflow: hidden;
+        transition: all 0.4s ease;
+        position: relative;
+    }
+
+    .team-card:hover .profile-picture {
+        transform: scale(1.08);
+        border-width: 6px;
+    }
+
+    .profile-picture img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* Placeholder if no image */
+    .profile-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 4rem;
+        font-weight: bold;
+    }
+
+    /* Team Member Info */
+    .team-name {
+        font-size: 1.8rem;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .team-title {
+        font-size: 1.1rem;
+        color: #667eea;
+        margin-bottom: 0.3rem;
+        font-weight: 600;
+    }
+
+    .team-organization {
+        font-size: 1rem;
+        color: #718096;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+    }
+
+    /* LinkedIn Button */
+    .linkedin-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 2rem;
+        background: #0077b5;
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 119, 181, 0.3);
+    }
+
+    .linkedin-btn:hover {
+        background: #005885;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 119, 181, 0.4);
+    }
+
+    .linkedin-icon {
+        width: 24px;
+        height: 24px;
+        fill: white;
+    }
+
+    /* Divider */
+    .divider {
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        margin: 1rem auto 1.5rem;
+        border-radius: 2px;
+    }
+
+    /* Collaboration Section */
+    .collaboration-section {
+        margin-top: 5rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 3rem;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    }
+
+    .collaboration-section h2 {
+        color: #2d3748;
+        margin-bottom: 1rem;
+        font-size: 2rem;
+    }
+
+    .collaboration-section p {
+        color: #718096;
+        font-size: 1.1rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-hero h1 {
+            font-size: 2.5rem;
+        }
+
+        .team-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Animation on scroll */
+    .fade-in {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Hero -->
+<section class="page-hero">
+    <h1>Meet Our Team</h1>
+    <p>The brilliant minds behind DATAI - dedicated researchers and scientists committed to advancing data analysis through AI</p>
+</section>
+
+<!-- Main Content -->
+<div class="container">
+    <div class="team-grid">
+        <!-- Team Member 1: Dr Ranjit Kumar Paul -->
+        <div class="team-card fade-in">
+            <div class="profile-picture">
+                <img src="{{ url_for('static', filename='images/Ranjit.png') }}" 
+                    alt="Dr. Ranjit Kumar Paul" 
+                    class="profile-img">
+            </div>
+            <h2 class="team-name">Dr. Ranjit Kumar Paul</h2>
+            <div class="divider"></div>
+            <p class="team-title">Senior Scientist</p>
+            <p class="team-organization">ICAR-IASRI, New Delhi</p>
+            <a href="https://www.linkedin.com/in/ranjit-kumar-paul-72b42320?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3BlXuBrO0iTyGJCGT2ZwTq3g%3D%3D" target="_blank" rel="noopener noreferrer" class="linkedin-btn">
+                <svg class="linkedin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                </svg>
+                Connect on LinkedIn
+            </a>
+        </div>
+
+        <!-- Team Member 2: Dr. Md Yeasin -->
+        <div class="team-card fade-in">
+            <div class="profile-picture">
+                <!-- Team Member 2: Dr Md Yeasin -->
+                <img src="{{ url_for('static', filename='images/Yeasin.png') }}" 
+                    alt="Dr. Md Yeasin" 
+                    class="profile-img">
+            </div>
+            <h2 class="team-name">Dr. Md Yeasin</h2>
+            <div class="divider"></div>
+            <p class="team-title">Scientist</p>
+            <p class="team-organization">ICAR-IASRI, New Delhi</p>
+            <a href="https://www.linkedin.com/in/dr-yeasin?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3B6KOLoAc3RbOiiSUd0BfXhw%3D%3D" target="_blank" rel="noopener noreferrer" class="linkedin-btn">
+                <svg class="linkedin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                </svg>
+                Connect on LinkedIn
+            </a>
+        </div>
+
+        <!-- Team Member 3: Pushkar Bora -->
+        <div class="team-card fade-in">
+            <div class="profile-picture">
+                <!-- Team Member 2: Dr Md Yeasin -->
+                <img src="{{ url_for('static', filename='images/Pushkar.jpg') }}" 
+                    alt="Pushkar Bora" 
+                    class="profile-img">
+            </div>
+            <h2 class="team-name">Pushkar Bora</h2>
+            <div class="divider"></div>
+            <p class="team-title">Researcher</p>
+            <p class="team-organization">ICAR-IASRI, New Delhi</p>
+            <a href="https://www.linkedin.com/in/pushkar-bora-461540171" target="_blank" rel="noopener noreferrer" class="linkedin-btn">
+                <svg class="linkedin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                </svg>
+                Connect on LinkedIn
+            </a>
+        </div>
+    </div>
+
+    <!-- Additional Info Section -->
+    <div class="collaboration-section fade-in">
+        <h2>Collaboration & Research</h2>
+        <p>
+            Our team at ICAR-IASRI is dedicated to advancing agricultural statistics and data science. 
+            We specialize in developing cutting-edge AI and machine learning models for crop yield forecasting, 
+            time series analysis, and statistical modeling. Our research aims to empower farmers and policymakers 
+            with data-driven insights for better decision-making.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animation on scroll for team cards
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, observerOptions);
+
+    // Observe all fade-in elements
+    document.querySelectorAll('.fade-in').forEach(element => {
+        observer.observe(element);
+    });
+
+    // Add staggered delay to cards
+    document.querySelectorAll('.team-card').forEach((card, index) => {
+        card.style.transitionDelay = `${index * 0.1}s`;
+    });
+</script>
+{% endblock %}

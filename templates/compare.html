@@ -1,0 +1,1011 @@
+{% extends "base.html" %}
+
+{% block title %}Model Comparison - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page Container */
+    .comparison-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .comparison-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .page-header .subtitle {
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.95);
+    }
+
+    /* Best Model Banner */
+    .best-model-banner {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 2.5rem;
+        border-radius: 20px;
+        margin-bottom: 2.5rem;
+        text-align: center;
+        box-shadow: 0 15px 40px rgba(40, 167, 69, 0.3);
+        animation: fadeInUp 0.8s ease 0.1s backwards;
+    }
+
+    .best-model-banner h2 {
+        margin: 0 0 1rem 0;
+        font-size: 2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .best-model-banner h3 {
+        margin: 0 0 1rem 0;
+        font-size: 2.5rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .best-model-stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        font-size: 1.1rem;
+    }
+
+    .best-model-stats strong {
+        font-weight: 800;
+    }
+
+    /* Content Card */
+    .content-card {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        animation: fadeInUp 0.8s ease backwards;
+    }
+
+    .content-card:nth-child(2) { animation-delay: 0.2s; }
+    .content-card:nth-child(3) { animation-delay: 0.3s; }
+    .content-card:nth-child(4) { animation-delay: 0.4s; }
+    .content-card:nth-child(5) { animation-delay: 0.5s; }
+
+    .content-card h2 {
+        color: #2d3748;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Info Banner */
+    .info-banner {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-left: 4px solid #667eea;
+        padding: 1.2rem;
+        border-radius: 10px;
+        margin: 1.5rem 0;
+        color: #2d3748;
+    }
+
+    .info-banner strong {
+        font-weight: 700;
+    }
+
+    /* Comparison Table */
+    .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .comparison-table thead tr {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .comparison-table th {
+        padding: 1.2rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .comparison-table th.center {
+        text-align: center;
+    }
+
+    .comparison-table th.highlight {
+        background: rgba(255, 243, 205, 0.3);
+    }
+
+    .comparison-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #2d3748;
+    }
+
+    .comparison-table tbody tr {
+        transition: all 0.3s;
+    }
+
+    .comparison-table tbody tr:hover {
+        background: #f7fafc;
+        transform: scale(1.01);
+    }
+
+    .comparison-table tbody tr.winner {
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(32, 201, 151, 0.1) 100%);
+        font-weight: 600;
+    }
+
+    .comparison-table .rank-cell {
+        text-align: center;
+        font-size: 1.8rem;
+    }
+
+    .comparison-table .model-name {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 1.05rem;
+    }
+
+    .comparison-table .auto-tuned-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .comparison-table .auto-tuned-badge.yes {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+    }
+
+    .comparison-table .auto-tuned-badge.no {
+        background: #f8f9fa;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
+    }
+
+    .comparison-table .metric-value {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .comparison-table .highlight-col {
+        background: rgba(255, 243, 205, 0.2);
+    }
+
+    /* Plots Grid */
+    .plots-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+
+    .plot-card {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+
+    .plot-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .plot-card.winner {
+        border-color: #28a745;
+        border-width: 3px;
+        box-shadow: 0 6px 25px rgba(40, 167, 69, 0.2);
+    }
+
+    .plot-card h3 {
+        margin: 0 0 1rem 0;
+        color: #2d3748;
+        font-size: 1.3rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .plot-card.winner h3 {
+        color: #28a745;
+    }
+
+    .plot-card img {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+
+    .plot-stats {
+        text-align: center;
+        font-size: 0.9rem;
+        color: #718096;
+        padding: 0.8rem;
+        background: #f7fafc;
+        border-radius: 8px;
+    }
+
+    /* Forecast Section */
+    .forecast-section {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border: 2px solid #667eea;
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin: 2.5rem 0;
+    }
+
+    .forecast-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .forecast-header h2 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2rem;
+    }
+
+    .forecast-header p {
+        margin: 0;
+        opacity: 0.95;
+        font-size: 1.1rem;
+    }
+
+    /* Forecast Form */
+    .forecast-form-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .forecast-form-container h3 {
+        color: #667eea;
+        margin-top: 0;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .forecast-form-container p {
+        color: #4a5568;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Forecast Table */
+    .forecast-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .forecast-table thead tr {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .forecast-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .forecast-table td {
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .forecast-table tbody tr:nth-child(even) {
+        background: #f9fafb;
+    }
+
+    .forecast-table input {
+        width: 100%;
+        padding: 0.6rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .forecast-table input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Quick Fill Section */
+    .quick-fill {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+        border-left: 4px solid #ffc107;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1.5rem 0;
+    }
+
+    .quick-fill strong {
+        color: #856404;
+        font-size: 1.05rem;
+    }
+
+    .quick-fill-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .quick-fill-btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+        color: white;
+    }
+
+    .quick-fill-btn.success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .quick-fill-btn.info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+    }
+
+    .quick-fill-btn.danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    }
+
+    .quick-fill-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+
+    /* Submit Button */
+    .forecast-submit {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .forecast-submit-btn {
+        padding: 1.2rem 3rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .forecast-submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    }
+
+    /* ARIMA Section */
+    .arima-section {
+        text-align: center;
+        padding: 2rem;
+        margin-top: 2rem;
+        border-top: 2px solid #e2e8f0;
+    }
+
+    .arima-section p {
+        color: #4a5568;
+        margin-bottom: 1.5rem;
+        font-size: 1.05rem;
+    }
+
+    /* Hyperparameters Section */
+    .hyperparams-toggle {
+        text-align: center;
+        margin: 3rem 0;
+    }
+
+    .toggle-btn {
+        padding: 1.2rem 3rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s;
+    }
+
+    .toggle-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    }
+
+    .hyperparams-content {
+        display: none;
+        margin-top: 2rem;
+    }
+
+    .hyperparams-content.show {
+        display: block;
+        animation: fadeInUp 0.5s ease;
+    }
+
+    .hyperparams-content h2 {
+        text-align: center;
+        color: #667eea;
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .hyperparams-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+    }
+
+    .hyperparam-card {
+        background: white;
+        border: 2px solid #667eea;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .hyperparam-card.winner {
+        border-color: #28a745;
+        border-width: 3px;
+        box-shadow: 0 6px 25px rgba(40, 167, 69, 0.2);
+    }
+
+    .hyperparam-card h3 {
+        margin: 0 0 1.5rem 0;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #667eea;
+        color: #667eea;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .hyperparam-card.winner h3 {
+        border-bottom-color: #28a745;
+        color: #28a745;
+    }
+
+    .hyperparam-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .hyperparam-badge.auto {
+        background: #28a745;
+        color: white;
+    }
+
+    .hyperparam-badge.manual {
+        background: #6c757d;
+        color: white;
+    }
+
+    .hyperparam-grid-inner {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .hyperparam-item {
+        background: #f7fafc;
+        padding: 0.8rem;
+        border-radius: 8px;
+    }
+
+    .hyperparam-item strong {
+        color: #667eea;
+        font-size: 0.9rem;
+        display: block;
+        margin-bottom: 0.3rem;
+    }
+
+    .hyperparam-item span {
+        color: #2d3748;
+        font-size: 0.95rem;
+    }
+
+    .no-config {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 2rem;
+        color: #a0aec0;
+        font-style: italic;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin: 3rem 0;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 1.2rem 2.5rem;
+        border-radius: 50px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        text-decoration: none;
+        color: white;
+        transition: all 0.3s;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .action-btn.primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+
+    .action-btn.success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .action-btn.secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
+    .action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .content-card {
+            padding: 1.5rem;
+        }
+
+        .plots-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hyperparams-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .action-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .best-model-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+
+    /* Scrollable container for table */
+    .table-scroll {
+        overflow-x: auto;
+        border-radius: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="comparison-page">
+    <div class="comparison-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            {% if models|length == 1 %}
+            <h1>📊 Model Results</h1>
+            <p class="subtitle">Results for {{ models[0].name }} | Horizon: {{ horizon }} {{ frequency }}(s)</p>
+            {% else %}
+            <h1>📊 Model Comparison Dashboard</h1>
+            <p class="subtitle">Comparing {{ models|length }} models | Horizon: {{ horizon }} {{ frequency }}(s)</p>
+            {% endif %}
+        </div>
+
+        <!-- Best Model Banner -->
+        {% if best_model and models|length > 1 %}
+        <div class="best-model-banner">
+            <h2>🏆 Best Performing Model</h2>
+            <h3>{{ best_model.name }}</h3>
+            <div class="best-model-stats">
+                <span>Test RMSE: <strong>{{ best_model.rmse_test }}</strong></span>
+                <span>R²: <strong>{{ best_model.r2_test }}</strong></span>
+                <span>MAPE: <strong>{{ best_model.mape_test }}%</strong></span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Performance Metrics -->
+        <div class="content-card">
+            {% if models|length == 1 %}
+            <h2>📈 Performance Metrics</h2>
+            {% else %}
+            <h2>📈 Performance Metrics Comparison</h2>
+            {% endif %}
+
+            <div class="table-scroll">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Model</th>
+                            <th class="center">Auto-Tuned</th>
+                            <th class="center highlight">Test RMSE ⭐</th>
+                            <th class="center">Test R²</th>
+                            <th class="center">Test MAPE (%)</th>
+                            <th class="center">Train RMSE</th>
+                            <th class="center">Train R²</th>
+                            <th class="center">Train MAPE (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in models %}
+                        <tr {% if loop.index == 1 %}class="winner"{% endif %}>
+                            <td class="rank-cell">
+                                {% if loop.index == 1 %}🥇
+                                {% elif loop.index == 2 %}🥈
+                                {% elif loop.index == 3 %}🥉
+                                {% else %}{{ loop.index }}
+                                {% endif %}
+                            </td>
+                            <td class="model-name">{{ model.name }}</td>
+                            <td style="text-align: center;">
+                                {% if model.auto_tuned %}
+                                <span class="auto-tuned-badge yes">✅ Yes</span>
+                                {% else %}
+                                <span class="auto-tuned-badge no">Manual</span>
+                                {% endif %}
+                            </td>
+                            <td class="highlight-col" style="text-align: center;">
+                                <span class="metric-value">{{ model.rmse_test }}</span>
+                            </td>
+                            <td style="text-align: center;"><span class="metric-value">{{ model.r2_test }}</span></td>
+                            <td style="text-align: center;"><span class="metric-value">{{ model.mape_test }}</span></td>
+                            <td style="text-align: center; color: #718096;">{{ model.rmse_train }}</td>
+                            <td style="text-align: center; color: #718096;">{{ model.r2_train }}</td>
+                            <td style="text-align: center; color: #718096;">{{ model.mape_train }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-banner">
+                <strong>ℹ️ Note:</strong> Models are ranked by Test RMSE (lower is better). The test set metrics are most important for evaluating model performance.
+            </div>
+        </div>
+
+        <!-- Training Plots -->
+        <div class="content-card">
+            <h2>📊 Training Set Predictions</h2>
+            <div class="plots-grid">
+                {% for model in models %}
+                <div class="plot-card {% if loop.index == 1 %}winner{% endif %}">
+                    <h3>
+                        {% if loop.index == 1 %}🏆 {% endif %}{{ model.name }}
+                    </h3>
+                    <img src="/static/{{ model.key }}_train.png" alt="{{ model.name }} Training">
+                    <div class="plot-stats">
+                        RMSE: <strong>{{ model.rmse_train }}</strong> | R²: <strong>{{ model.r2_train }}</strong>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Testing Plots -->
+        <div class="content-card">
+            <h2>🎯 Testing Set Predictions</h2>
+            <div class="plots-grid">
+                {% for model in models %}
+                <div class="plot-card {% if loop.index == 1 %}winner{% endif %}">
+                    <h3>
+                        {% if loop.index == 1 %}🏆 {% endif %}{{ model.name }}
+                    </h3>
+                    <img src="/static/{{ model.key }}_test.png" alt="{{ model.name }} Testing">
+                    <div class="plot-stats">
+                        RMSE: <strong>{{ model.rmse_test }}</strong> | R²: <strong>{{ model.r2_test }}</strong>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Future Forecasting -->
+        <div class="forecast-section">
+            <div class="forecast-header">
+                <h2>🔮 Generate Future Forecasts</h2>
+                <p>Input future values of exogenous variables to generate forecasts for the next {{ horizon }} period(s)</p>
+            </div>
+
+            {% set ns = namespace(has_multivariate=false, has_arima=false) %}
+            {% for model in models %}
+                {% if model.key == 'arima' %}
+                    {% set ns.has_arima = true %}
+                {% else %}
+                    {% set ns.has_multivariate = true %}
+                {% endif %}
+            {% endfor %}
+
+            {% if ns.has_multivariate %}
+            <div class="forecast-form-container">
+                <h3>📊 Input Future Exogenous Variables</h3>
+                <p>Provide values for the next {{ horizon }} period(s). These will be used by multivariate models to generate forecasts.</p>
+
+                <form method="post" action="/generate_forecasts">
+                    <input type="hidden" name="models" value="{{ models|map(attribute='key')|join(',') }}">
+                    <input type="hidden" name="horizon" value="{{ horizon }}">
+                    <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
+
+                    <div class="table-scroll">
+                        <table class="forecast-table">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Rain (mm)</th>
+                                    <th>Temperature (°C)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in range(1, horizon + 1) %}
+                                <tr>
+                                    <td><strong>Period {{ i }}</strong></td>
+                                    <td>
+                                        <input type="number" name="rain_{{ i }}" step="0.1" 
+                                               placeholder="e.g., 45.2" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="temperature_{{ i }}" step="0.1" 
+                                               placeholder="e.g., 28.5" required>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="quick-fill">
+                        <strong>💡 Quick Fill Options:</strong>
+                        <div class="quick-fill-buttons">
+                            <button type="button" onclick="fillHistoricalAverage()" class="quick-fill-btn success">
+                                📈 Use Random Values
+                            </button>
+                            <button type="button" onclick="fillLastKnown()" class="quick-fill-btn info">
+                                🔄 Use Random Values 2
+                            </button>
+                            <button type="button" onclick="clearAll()" class="quick-fill-btn danger">
+                                🗑️ Clear All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="forecast-submit">
+                        <button type="submit" class="forecast-submit-btn">
+                            🚀 Generate Forecasts for Multivariate Models
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            {% if ns.has_arima %}
+            <div class="arima-section">
+                <p><strong>ARIMA is a univariate model</strong> and doesn't require exogenous inputs.</p>
+                <form method="post" action="/generate_arima_forecast">
+                    <input type="hidden" name="horizon" value="{{ horizon }}">
+                    <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
+                    <button type="submit" class="forecast-submit-btn">
+                        🔮 Generate ARIMA Forecast
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Hyperparameters Section -->
+        <div class="hyperparams-toggle">
+            <button onclick="toggleHyperparams()" class="toggle-btn">
+                ⚙️ View Hyperparameter Details
+            </button>
+        </div>
+
+        <div id="hyperparamsSection" class="hyperparams-content">
+            <h2>🔧 Model Hyperparameter Configuration</h2>
+
+            <div class="hyperparams-grid">
+                {% for model in models %}
+                <div class="hyperparam-card {% if loop.index == 1 %}winner{% endif %}">
+                    <h3>
+                        <span>{% if loop.index == 1 %}🏆 {% endif %}{{ model.name }}</span>
+                        {% if model.auto_tuned %}
+                        <span class="hyperparam-badge auto">AUTO-TUNED</span>
+                        {% else %}
+                        <span class="hyperparam-badge manual">MANUAL</span>
+                        {% endif %}
+                    </h3>
+
+                    <div class="hyperparam-grid-inner">
+                        {% if model.model_config %}
+                            {% for param, value in model.model_config.items() %}
+                            <div class="hyperparam-item">
+                                <strong>{{ param.replace('_', ' ').title() }}</strong>
+                                <span>{{ value }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-config">No configuration details available</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="info-banner" style="margin-top: 2rem;">
+                <strong>ℹ️ Note:</strong> Auto-tuned models used grid search to find optimal hyperparameters. Manual models used user-specified or default values.
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="/detailed_comparison" class="action-btn primary">
+                📋 View Detailed Predictions
+            </a>
+            <a href="/models" class="action-btn success">
+                🔄 Start New Comparison
+            </a>
+            <a href="/" class="action-btn secondary">
+                🏠 Home
+            </a>
+        </div>
+    </div>
+</div>
+
+<script id="forecast-data" type="application/json">
+{
+    "historicalAvg": {
+        "rain": {{ historical_avg_rain|default(50.0) }},
+        "temperature": {{ historical_avg_temp|default(25.0) }}
+    },
+    "lastKnown": {
+        "rain": {{ last_rain|default(45.0) }},
+        "temperature": {{ last_temp|default(28.0) }}
+    },
+    "horizon": {{ horizon }}
+}
+</script>
+
+<script>
+    const forecastData = JSON.parse(document.getElementById('forecast-data').textContent);
+    
+    function fillHistoricalAverage() {
+        const horizon = forecastData.horizon;
+        const avg = forecastData.historicalAvg;
+        
+        for (let i = 1; i <= horizon; i++) {
+            const rainInput = document.querySelector(`input[name="rain_${i}"]`);
+            const tempInput = document.querySelector(`input[name="temperature_${i}"]`);
+            if (rainInput) rainInput.value = avg.rain.toFixed(1);
+            if (tempInput) tempInput.value = avg.temperature.toFixed(1);
+        }
+    }
+    
+    function fillLastKnown() {
+        const horizon = forecastData.horizon;
+        const last = forecastData.lastKnown;
+        
+        for (let i = 1; i <= horizon; i++) {
+            const rainInput = document.querySelector(`input[name="rain_${i}"]`);
+            const tempInput = document.querySelector(`input[name="temperature_${i}"]`);
+            if (rainInput) rainInput.value = last.rain.toFixed(1);
+            if (tempInput) tempInput.value = last.temperature.toFixed(1);
+        }
+    }
+    
+    function clearAll() {
+        const horizon = forecastData.horizon;
+        
+        for (let i = 1; i <= horizon; i++) {
+            const rainInput = document.querySelector(`input[name="rain_${i}"]`);
+            const tempInput = document.querySelector(`input[name="temperature_${i}"]`);
+            if (rainInput) rainInput.value = '';
+            if (tempInput) tempInput.value = '';
+        }
+    }
+    
+    function toggleHyperparams() {
+        const section = document.getElementById('hyperparamsSection');
+        const button = event.target;
+        
+        if (section.classList.contains('show')) {
+            section.classList.remove('show');
+            button.textContent = '⚙️ View Hyperparameter Details';
+        } else {
+            section.classList.add('show');
+            button.textContent = '⚙️ Hide Hyperparameter Details';
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+</script>
+{% endblock %}

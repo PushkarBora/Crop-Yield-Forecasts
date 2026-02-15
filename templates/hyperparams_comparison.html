@@ -1,0 +1,670 @@
+{% extends "base.html" %}
+
+{% block title %}Configure Models - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page Container */
+    .multi-config-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .multi-config-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .page-header .subtitle {
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.9);
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    /* Info Banner */
+    .info-banner {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        animation: fadeInUp 0.8s ease 0.1s backwards;
+    }
+
+    .info-banner strong {
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .info-banner p {
+        color: rgba(255,255,255,0.95);
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    /* Selected Models Display */
+    .selected-models-card {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        animation: fadeInUp 0.8s ease 0.2s backwards;
+    }
+
+    .selected-models-card h3 {
+        color: #2d3748;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .model-count {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.3rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .models-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .model-chip {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border: 2px solid #667eea;
+        color: #667eea;
+        padding: 0.8rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s;
+    }
+
+    .model-chip:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .model-chip::before {
+        content: '✓';
+        font-weight: bold;
+    }
+
+    /* Model Configuration Card */
+    .model-config-card {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 15px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+        animation: fadeInUp 0.8s ease backwards;
+    }
+
+    .model-config-card:nth-child(1) { animation-delay: 0.3s; }
+    .model-config-card:nth-child(2) { animation-delay: 0.35s; }
+    .model-config-card:nth-child(3) { animation-delay: 0.4s; }
+    .model-config-card:nth-child(4) { animation-delay: 0.45s; }
+    .model-config-card:nth-child(5) { animation-delay: 0.5s; }
+
+    .model-config-card.active {
+        border: 2px solid #667eea;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Model Header */
+    .model-config-header {
+        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        padding: 1.5rem 2rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        -webkit-user-select: none;
+        user-select: none;
+        transition: all 0.3s;
+    }
+
+    .model-config-header:hover {
+        background: linear-gradient(135deg, #e6f2ff 0%, #d4e7ff 100%);
+    }
+
+    .model-config-header.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .model-header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .model-config-header h3 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #2d3748;
+    }
+
+    .model-config-header.active h3 {
+        color: white;
+    }
+
+    .model-icon {
+        font-size: 2rem;
+        transition: transform 0.3s;
+    }
+
+    .model-config-header:hover .model-icon {
+        transform: scale(1.1);
+    }
+
+    /* Status Badge */
+    .model-status-badge {
+        display: inline-block;
+        padding: 0.5rem 1.2rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #d4edda;
+        color: #155724;
+        border: 2px solid #28a745;
+        transition: all 0.3s;
+    }
+
+    .model-config-header.active .model-status-badge {
+        background: rgba(255, 255, 255, 0.95);
+        color: #667eea;
+        border-color: white;
+    }
+
+    /* Expand Icon */
+    .expand-icon {
+        font-size: 1.8rem;
+        transition: transform 0.3s ease;
+        color: #4a5568;
+    }
+
+    .model-config-header.active .expand-icon {
+        color: white;
+    }
+
+    .expand-icon.rotated {
+        transform: rotate(180deg);
+    }
+
+    /* Model Body */
+    .model-config-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease;
+        background: #fafafa;
+    }
+
+    .model-config-body.expanded {
+        max-height: 10000px;
+    }
+
+    .model-config-content {
+        padding: 2rem;
+    }
+
+    /* Grid Search Section Styling (for partials) */
+    .grid-search-section {
+        margin-top: 1.5rem;
+        padding: 2rem;
+        border: 2px solid #667eea;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);
+    }
+
+    .grid-search-section h4 {
+        color: #667eea;
+        margin-top: 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    /* Auto-tune checkbox styling */
+    .auto-tune-section {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-left: 4px solid #667eea;
+        padding: 1.2rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+
+    .auto-tune-section label {
+        display: flex;
+        align-items: center;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #2d3748;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .auto-tune-section input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+        margin-right: 0.8rem;
+        cursor: pointer;
+        accent-color: #667eea;
+    }
+
+    /* Range Input Groups */
+    .range-input-group {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .range-input-group > div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .range-input-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .range-input-group input {
+        padding: 0.7rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .range-input-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Help Text */
+    .help-text-small {
+        color: #718096;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        font-style: italic;
+    }
+
+    /* Combination Estimate */
+    .combination-estimate {
+        margin-top: 1.5rem;
+        padding: 1.2rem;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+
+    .combination-estimate strong {
+        font-size: 1.05rem;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .combination-estimate.good {
+        background: #d4edda;
+        border-color: #28a745;
+        color: #155724;
+    }
+
+    .combination-estimate.warning {
+        background: #fff3cd;
+        border-color: #ffc107;
+        color: #856404;
+    }
+
+    .combination-estimate.danger {
+        background: #f8d7da;
+        border-color: #dc3545;
+        color: #721c24;
+    }
+
+    /* Submit Section */
+    .submit-section {
+        text-align: center;
+        margin: 3rem 0 2rem;
+        animation: fadeInUp 0.8s ease 0.6s backwards;
+    }
+
+    .submit-btn {
+        padding: 1.2rem 4rem;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(40, 167, 69, 0.5);
+        background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    }
+
+    .submit-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* Back Link */
+    .back-link {
+        text-align: center;
+        margin-top: 2rem;
+        animation: fadeInUp 0.8s ease 0.7s backwards;
+    }
+
+    .back-link a {
+        color: rgba(255,255,255,0.9);
+        text-decoration: none;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .back-link a:hover {
+        color: white;
+        transform: translateX(-5px);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .model-config-header {
+            padding: 1.2rem 1rem;
+        }
+
+        .model-config-content {
+            padding: 1.5rem 1rem;
+        }
+
+        .range-input-group {
+            grid-template-columns: 1fr;
+        }
+
+        .submit-btn {
+            padding: 1rem 2.5rem;
+            font-size: 1rem;
+        }
+
+        .models-list {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="multi-config-page">
+    <div class="multi-config-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>⚙️ Configure Model Hyperparameters</h1>
+            <p class="subtitle">Fine-tune each model individually or use auto-tuning for optimal performance across all models.</p>
+        </div>
+
+        <!-- Info Banner -->
+        <div class="info-banner">
+            <p><strong>ℹ️ Multi-Model Training:</strong> You selected {{ models|length }} models. Click on each model below to configure its hyperparameters, or leave auto-tuning enabled for optimal performance.</p>
+        </div>
+
+        <form action="/train_comparison" method="post">
+
+            <!-- Hidden inputs -->
+            <input type="hidden" name="frequency" value="{{ frequency }}">
+            <input type="hidden" name="horizon" value="{{ horizon }}">
+            <input type="hidden" name="window" value="{{ window }}">
+            <input type="hidden" name="lags" value="{{ lags }}">
+            <input type="hidden" name="split" value="{{ split }}">
+
+            <!-- Selected Models Display -->
+            <div class="selected-models-card">
+                <h3>
+                    <span>📋 Selected Models</span>
+                    <span class="model-count">{{ models|length }} Models</span>
+                </h3>
+                <div class="models-list">
+                    {% for model in models %}
+                    <div class="model-chip">{{ model.upper() }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Individual Model Configuration Cards -->
+            {% for model_name in models %}
+            <div class="model-config-card" id="config_card_{{ model_name }}">
+                <div class="model-config-header" onclick="toggleModelConfig('{{ model_name }}')">
+                    <div class="model-header-left">
+                        <span class="model-icon">
+                            {% if model_name == "lstm" %}🧠
+                            {% elif model_name == "gru" %}⚡
+                            {% elif model_name == "rnn" %}🔄
+                            {% elif model_name == "transformer" %}🔮
+                            {% elif model_name == "ann" %}🌐
+                            {% elif model_name == "svr" %}📊
+                            {% elif model_name == "rf" %}🌲
+                            {% elif model_name == "arima" %}📉
+                            {% endif %}
+                        </span>
+                        <h3>{{ model_name|upper }} Configuration</h3>
+                        <span class="model-status-badge" id="status_{{ model_name }}">Auto-Tune Enabled</span>
+                    </div>
+                    <span class="expand-icon" id="icon_{{ model_name }}">▼</span>
+                </div>
+                <div class="model-config-body" id="body_{{ model_name }}">
+                    <div class="model-config-content">
+                        
+                        {% if model_name == "lstm" %}
+                            {% include 'partials/lstm_config.html' %}
+                        {% elif model_name == "gru" %}
+                            {% include 'partials/gru_config.html' %}
+                        {% elif model_name == "rnn" %}
+                            {% include 'partials/rnn_config.html' %}
+                        {% elif model_name == "transformer" %}
+                            {% include 'partials/transformer_config.html' %}
+                        {% elif model_name == "ann" %}
+                            {% include 'partials/ann_config.html' %}
+                        {% elif model_name == "svr" %}
+                            {% include 'partials/svr_config.html' %}
+                        {% elif model_name == "rf" %}
+                            {% include 'partials/rf_config.html' %}
+                        {% elif model_name == "arima" %}
+                            {% include 'partials/arima_config.html' %}
+                        {% endif %}
+                        
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Submit Button -->
+            <div class="submit-section">
+                <button type="submit" class="submit-btn">
+                    🚀 Train All Models & Compare
+                </button>
+            </div>
+
+        </form>
+
+        <!-- Back Link -->
+        <div class="back-link">
+            <a href="/models">← Back to Model Selection</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleModelConfig(modelName) {
+    const card = document.getElementById('config_card_' + modelName);
+    const body = document.getElementById('body_' + modelName);
+    const icon = document.getElementById('icon_' + modelName);
+    const header = card.querySelector('.model-config-header');
+    
+    const isExpanded = body.classList.contains('expanded');
+    
+    if (isExpanded) {
+        body.classList.remove('expanded');
+        icon.classList.remove('rotated');
+        card.classList.remove('active');
+        header.classList.remove('active');
+    } else {
+        body.classList.add('expanded');
+        icon.classList.add('rotated');
+        card.classList.add('active');
+        header.classList.add('active');
+    }
+}
+
+// Update status badges
+function updateStatusBadge(modelName, isAutoTune) {
+    const badge = document.getElementById('status_' + modelName);
+    if (badge) {
+        badge.textContent = isAutoTune ? 'Auto-Tune Enabled' : 'Manual Config';
+        badge.style.backgroundColor = isAutoTune ? '#d4edda' : '#fff3cd';
+        badge.style.color = isAutoTune ? '#155724' : '#856404';
+        badge.style.borderColor = isAutoTune ? '#28a745' : '#ffc107';
+    }
+}
+
+// Add listeners on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // LSTM
+    const lstmCheckbox = document.getElementById('auto_tune_lstm');
+    if (lstmCheckbox) {
+        lstmCheckbox.addEventListener('change', function() {
+            updateStatusBadge('lstm', this.checked);
+        });
+        updateStatusBadge('lstm', lstmCheckbox.checked);
+    }
+    
+    // GRU
+    const gruCheckbox = document.getElementById('auto_tune_gru');
+    if (gruCheckbox) {
+        gruCheckbox.addEventListener('change', function() {
+            updateStatusBadge('gru', this.checked);
+        });
+        updateStatusBadge('gru', gruCheckbox.checked);
+    }
+    
+    // RNN
+    const rnnCheckbox = document.getElementById('auto_tune_rnn');
+    if (rnnCheckbox) {
+        rnnCheckbox.addEventListener('change', function() {
+            updateStatusBadge('rnn', this.checked);
+        });
+        updateStatusBadge('rnn', rnnCheckbox.checked);
+    }
+    
+    // Transformer
+    const transformerCheckbox = document.getElementById('auto_tune_transformer');
+    if (transformerCheckbox) {
+        transformerCheckbox.addEventListener('change', function() {
+            updateStatusBadge('transformer', this.checked);
+        });
+        updateStatusBadge('transformer', transformerCheckbox.checked);
+    }
+    
+    // ANN
+    const annCheckbox = document.getElementById('auto_tune_ann');
+    if (annCheckbox) {
+        annCheckbox.addEventListener('change', function() {
+            updateStatusBadge('ann', this.checked);
+        });
+        updateStatusBadge('ann', annCheckbox.checked);
+    }
+    
+    // SVR
+    const svrCheckbox = document.getElementById('auto_tune_svr');
+    if (svrCheckbox) {
+        svrCheckbox.addEventListener('change', function() {
+            updateStatusBadge('svr', this.checked);
+        });
+        updateStatusBadge('svr', svrCheckbox.checked);
+    }
+    
+    // RF
+    const rfCheckbox = document.getElementById('auto_tune_rf');
+    if (rfCheckbox) {
+        rfCheckbox.addEventListener('change', function() {
+            updateStatusBadge('rf', this.checked);
+        });
+        updateStatusBadge('rf', rfCheckbox.checked);
+    }
+
+    // ARIMA
+    const arimaCheckbox = document.getElementById('auto_arima');
+    if (arimaCheckbox) {
+        arimaCheckbox.addEventListener('change', function() {
+            updateStatusBadge('arima', this.checked);
+        });
+        updateStatusBadge('arima', arimaCheckbox.checked);
+    }
+});
+</script>
+
+{% endblock %}

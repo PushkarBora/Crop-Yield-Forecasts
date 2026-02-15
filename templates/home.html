@@ -1,0 +1,693 @@
+{% extends "base.html" %}
+
+{% block title %}DATAI - Crop Yield Forecasting System{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Section */
+    .hero {
+        background: transparent;
+        color: white;
+        padding: 6rem 2rem;
+        text-align: center;
+        position: relative;
+    }
+
+    .hero h1 {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        animation: fadeInUp 1s ease;
+    }
+
+    .hero p {
+        font-size: 1.3rem;
+        max-width: 800px;
+        margin: 0 auto 2rem;
+        opacity: 0.95;
+        animation: fadeInUp 1s ease 0.2s backwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        animation: fadeInUp 1s ease 0.4s backwards;
+    }
+
+    .btn {
+        padding: 1rem 2.5rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background: white;
+        color: #667eea;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .btn-secondary {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: 2px solid white;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+    }
+
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    /* Container */
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 4rem 2rem;
+        background: transparent;
+    }
+
+    .section-title {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: white;
+    }
+
+    .section-subtitle {
+        text-align: center;
+        color: rgba(255,255,255,0.9);
+        margin-bottom: 3rem;
+        font-size: 1.1rem;
+    }
+
+    /* Analysis Modules Grid */
+    .modules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+        margin-bottom: 4rem;
+    }
+
+    .module-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        transition: all 0.3s;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .module-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: scaleX(0);
+        transition: transform 0.3s;
+    }
+
+    .module-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .module-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    .module-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        display: inline-block;
+        transition: transform 0.3s;
+    }
+
+    .module-card:hover .module-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .module-card h3 {
+        color: #2d3748;
+        margin-bottom: 0.8rem;
+        font-size: 1.5rem;
+    }
+
+    .module-card p {
+        color: #718096;
+        margin-bottom: 1.5rem;
+    }
+
+    .model-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .model-tag {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: transform 0.2s;
+    }
+
+    .model-tag:hover {
+        transform: scale(1.05);
+    }
+
+    /* Features Section */
+    .features {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 3rem;
+        margin-bottom: 4rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    }
+
+    .features .section-title {
+        color: #2d3748;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2.5rem;
+        margin-top: 2rem;
+    }
+
+    .feature-item {
+        text-align: center;
+        transition: transform 0.3s;
+    }
+
+    .feature-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: inline-block;
+        transition: transform 0.3s;
+    }
+
+    .feature-item:hover .feature-icon {
+        transform: scale(1.2) rotate(360deg);
+    }
+
+    .feature-item h4 {
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .feature-item p {
+        color: #718096;
+    }
+
+    /* Statistics Section */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin: 4rem 0;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 2.5rem;
+        text-align: center;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    .stat-number {
+        font-size: 3.5rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #718096;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    /* How It Works */
+    .how-it-works {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 3rem;
+        margin-bottom: 4rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    }
+
+    .how-it-works .section-title {
+        color: #2d3748;
+    }
+
+    .how-it-works .section-subtitle {
+        color: #718096;
+    }
+
+    .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 3rem;
+        margin-top: 3rem;
+    }
+
+    .step {
+        text-align: center;
+        position: relative;
+        transition: transform 0.3s;
+    }
+
+    .step:hover {
+        transform: translateY(-10px);
+    }
+
+    .step-number {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0 auto 1.5rem;
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s;
+    }
+
+    .step:hover .step-number {
+        transform: scale(1.1);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.6);
+    }
+
+    .step h4 {
+        color: #2d3748;
+        margin-bottom: 0.8rem;
+        font-size: 1.3rem;
+    }
+
+    .step p {
+        color: #718096;
+    }
+
+    /* Model Showcase */
+    .model-showcase {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 3rem;
+        margin-bottom: 4rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    }
+
+    .model-showcase .section-title {
+        color: #2d3748;
+    }
+
+    .model-showcase .section-subtitle {
+        color: #718096;
+    }
+
+    .models-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .model-item {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        text-align: center;
+        color: white;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .model-item:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+    }
+
+    .model-item h4 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .model-item p {
+        font-size: 0.9rem;
+        opacity: 0.95;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero h1 {
+            font-size: 2.5rem;
+        }
+
+        .modules-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Animation on scroll */
+    .fade-in {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <h1>Welcome to DATAI</h1>
+    <p>Your comprehensive platform for crop yield forecasting and data analysis using cutting-edge AI models. Transform your agricultural data into actionable insights with deep learning, machine learning, and statistical time series models.</p>
+    <div class="cta-buttons">
+        <a href="#how-it-works" class="btn btn-secondary">Learn How It Works</a>
+    </div>
+</section>
+
+<!-- Main Content -->
+<div class="container">
+    <!-- Analysis Modules -->
+    <section id="models">
+        <h2 class="section-title">Analysis Modules</h2>
+        <p class="section-subtitle">Choose from our comprehensive suite of AI-powered analysis tools</p>
+        
+        <div class="modules-grid">
+            <!-- Crop Yield Forecasting -->
+            <div class="module-card fade-in" data-link="{{ url_for('models') }}">
+                <div class="module-icon">🌾</div>
+                <h3>Crop Yield Forecasting</h3>
+                <p>Predict agricultural yields using advanced deep learning and time series models with high accuracy</p>
+                <div class="model-list">
+                    <span class="model-tag">LSTM</span>
+                    <span class="model-tag">GRU</span>
+                    <span class="model-tag">Transformer</span>
+                    <span class="model-tag">ARIMA</span>
+                    <span class="model-tag">ANN</span>
+                    <span class="model-tag">RNN</span>
+                    <span class="model-tag">SVR</span>
+                    <span class="model-tag">RF</span>
+                </div>
+            </div>
+
+            <!-- Time Series Analysis -->
+            <div class="module-card fade-in" data-link="{{ url_for('models') }}">
+                <div class="module-icon">📈</div>
+                <h3>Time Series Analysis</h3>
+                <p>Comprehensive time series forecasting with statistical and neural network methods</p>
+                <div class="model-list">
+                    <span class="model-tag">LSTM</span>
+                    <span class="model-tag">GRU</span>
+                    <span class="model-tag">Transformer</span>
+                    <span class="model-tag">ARIMA</span>
+                    <span class="model-tag">ANN</span>
+                    <span class="model-tag">RNN</span>
+                    <span class="model-tag">SVR</span>
+                    <span class="model-tag">RF</span>
+                </div>
+            </div>
+
+
+            <!-- Custom Analysis -->
+            <div class="module-card fade-in">
+                <div class="module-icon">⚙️</div>
+                <h3>Custom Analysis</h3>
+                <p>Upload your own data and configure custom analysis pipelines tailored to your needs</p>
+                <div class="model-list">
+                    <span class="model-tag">Flexible</span>
+                    <span class="model-tag">Configurable</span>
+                    <span class="model-tag">Scalable</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <h2 class="section-title">Why Choose DATAI?</h2>
+        <div class="features-grid">
+            <div class="feature-item fade-in">
+                <div class="feature-icon">🚀</div>
+                <h4>Fast & Efficient</h4>
+                <p>Optimized algorithms for quick analysis and real-time predictions</p>
+            </div>
+            <div class="feature-item fade-in">
+                <div class="feature-icon">🎨</div>
+                <h4>User-Friendly</h4>
+                <p>Intuitive interface designed for both experts and beginners</p>
+            </div>
+            <div class="feature-item fade-in">
+                <div class="feature-icon">🔒</div>
+                <h4>Secure & Private</h4>
+                <p>Your data is encrypted and stored securely</p>
+            </div>
+            <div class="feature-item fade-in">
+                <div class="feature-icon">📱</div>
+                <h4>Responsive Design</h4>
+                <p>Access from any device - desktop, tablet, or mobile</p>
+            </div>
+            <div class="feature-item fade-in">
+                <div class="feature-icon">🔄</div>
+                <h4>Model Comparison</h4>
+                <p>Compare multiple models side-by-side to find the best fit</p>
+            </div>
+            <div class="feature-item fade-in">
+                <div class="feature-icon">📥</div>
+                <h4>Export Results</h4>
+                <p>Download predictions and visualizations in multiple formats</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics -->
+    <section class="stats">
+        <div class="stat-card fade-in">
+            <div class="stat-number">9+</div>
+            <div class="stat-label">AI Models</div>
+        </div>
+        <div class="stat-card fade-in">
+            <div class="stat-number">1000+</div>
+            <div class="stat-label">Analyses Performed</div>
+        </div>
+        <div class="stat-card fade-in">
+            <div class="stat-number">95%</div>
+            <div class="stat-label">Accuracy Rate</div>
+        </div>
+        <div class="stat-card fade-in">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Availability</div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">Get started in three simple steps</p>
+        <div class="steps">
+            <div class="step fade-in">
+                <div class="step-number">1</div>
+                <h4>Upload Your Data</h4>
+                <p>Import your dataset in CSV, Excel, or other supported formats. We handle the rest!</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number">2</div>
+                <h4>Select AI Model</h4>
+                <p>Choose from our suite of AI models or let the system recommend the best one for your data</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number">3</div>
+                <h4>Get Insights</h4>
+                <p>View predictions, interactive visualizations, and download comprehensive results instantly</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Supported Models -->
+    <section class="model-showcase">
+        <h2 class="section-title">Supported AI Models</h2>
+        <p class="section-subtitle">Comprehensive suite of forecasting and analysis models</p>
+        <div class="models-grid">
+            <div class="model-item fade-in">
+                <h4>🔮 Transformer</h4>
+                <p>Attention-based architecture for advanced sequence modeling</p>
+            </div>
+            <div class="model-item fade-in">
+                <h4>🧮 LSTM</h4>
+                <p>Long Short-Term Memory networks for temporal dependencies</p>
+            </div>
+            <div class="model-item fade-in">
+                <h4>⚡ GRU</h4>
+                <p>Gated Recurrent Units for efficient sequence learning</p>
+            </div>
+            <div class="model-item fade-in">
+                <h4>🌐 ANN</h4>
+                <p>Artificial Neural Networks for pattern recognition</p>
+            </div>
+            <div class="model-item fade-in">
+                <h4>🔄 RNN</h4>
+                <p>Recurrent Neural Networks for sequential data analysis</p>
+            </div>
+            <div class="model-item fade-in">
+                <h4>📉 ARIMA</h4>
+                <p>Statistical time series forecasting method</p>
+            </div>
+            <div class="model-item fade-in">
+                <h4>🌲 Random Forest</h4>
+                <p>Ensemble learning for robust predictions</p>
+            </div>
+            <div class="model-item fade-in">
+                <h4>📊 SVR</h4>
+                <p>Support Vector Regression for non-linear patterns</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="how-it-works" id="contact" style="margin-bottom: 0;">
+        <h2 class="section-title">Get In Touch</h2>
+        <p class="section-subtitle">Have questions? We'd love to hear from you</p>
+        <div class="features-grid" style="margin-top: 2rem;">
+            <div class="feature-item fade-in">
+                <div class="feature-icon">📧</div>
+                <h4>Email Us</h4>
+                <p><a href="mailto:contact@datai.com" style="color: #667eea; text-decoration: none;">contact@datai.com</a></p>
+            </div>
+            <div class="feature-item fade-in">
+                <div class="feature-icon">📍</div>
+                <h4>Visit Us</h4>
+                <p>
+                    <a href="https://iasri.res.in/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style="color: #667eea;  text-decoration: none;">
+                        ICAR-IASRI
+                    </a><br>
+                    New Delhi, India
+                </p>
+            </div>
+
+
+            <div class="feature-item fade-in">
+                <div class="feature-icon">🤝</div>
+                <h4>Collaborate</h4>
+                <p>Interested in research collaboration?<br>Reach out to our team!</p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Handle click on cards with data-link attribute
+    document.querySelectorAll('[data-link]').forEach(card => {
+        card.addEventListener('click', function() {
+            window.location.href = this.getAttribute('data-link');
+        });
+    });
+
+    // Animation on scroll for cards
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, observerOptions);
+
+    // Observe all fade-in elements
+    document.querySelectorAll('.fade-in').forEach(element => {
+        observer.observe(element);
+    });
+
+    // Counter animation for stats
+    function animateCounter(element, target) {
+        let current = 0;
+        const increment = target / 50;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                element.textContent = target + (element.dataset.suffix || '');
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.floor(current) + (element.dataset.suffix || '');
+            }
+        }, 30);
+    }
+
+    // Animate stats when visible
+    const statsObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const number = entry.target.querySelector('.stat-number');
+                const targetValue = parseInt(number.textContent);
+                number.dataset.suffix = number.textContent.replace(/[0-9]/g, '');
+                animateCounter(number, targetValue);
+                statsObserver.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.stat-card').forEach(card => {
+        statsObserver.observe(card);
+    });
+</script>
+{% endblock %}

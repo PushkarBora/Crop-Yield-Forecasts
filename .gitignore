@@ -1,0 +1,26 @@
+# Virtual Environment
+
+venv/
+env/
+.venv/
+#Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+#Flask
+instance/
+#Database
+*.db
+*.sqlite
+#Environemnt variables
+.env
+#Model files(if very large)
+*.pt
+*.pth
+#IDE
+.vscode/
+.idea/
+#OS
+.DS_Store
+Thumbs.db

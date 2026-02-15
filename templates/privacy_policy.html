@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       PAGE LAYOUT
+       ======================================== */
+    .privacy-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .privacy-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* ========================================
+       PAGE HEADER
+       ======================================== */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .page-header .subtitle {
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.9);
+        font-weight: 400;
+    }
+
+    .last-updated {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.8);
+        margin-top: 1rem;
+    }
+
+    /* ========================================
+       CONTENT CARD
+       ======================================== */
+    .content-card {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 3rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        animation: fadeInUp 0.8s ease 0.2s backwards;
+    }
+
+    /* ========================================
+       INTRO SECTION
+       ======================================== */
+    .intro-section {
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-left: 5px solid #667eea;
+        border-radius: 12px;
+        margin-bottom: 2.5rem;
+    }
+
+    .intro-section p {
+        font-size: 1.1rem;
+        color: #2d3748;
+        line-height: 1.8;
+        margin-bottom: 1rem;
+    }
+
+    .intro-section p:last-child {
+        margin-bottom: 0;
+    }
+
+    .intro-section strong {
+        color: #667eea;
+        font-weight: 700;
+    }
+
+    /* ========================================
+       SECTION HEADERS
+       ======================================== */
+    .section {
+        margin-bottom: 2.5rem;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 3px solid transparent;
+        border-image: linear-gradient(90deg, #667eea, #764ba2) 1;
+    }
+
+    .section-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+        color: #2d3748;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    /* ========================================
+       CONTENT STYLING
+       ======================================== */
+    .section-content {
+        color: #2d3748;
+        font-size: 1.05rem;
+        line-height: 1.8;
+    }
+
+    .section-content p {
+        margin-bottom: 1rem;
+    }
+
+    .section-content ul {
+        margin: 1rem 0 1rem 2rem;
+        list-style: none;
+    }
+
+    .section-content ul li {
+        margin-bottom: 0.8rem;
+        position: relative;
+        padding-left: 1.5rem;
+    }
+
+    .section-content ul li::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        color: #667eea;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .section-content strong {
+        color: #667eea;
+        font-weight: 700;
+    }
+
+    /* ========================================
+       HIGHLIGHT BOXES
+       ======================================== */
+    .highlight-box {
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        border-left: 4px solid;
+    }
+
+    .highlight-box.info {
+        background: linear-gradient(135deg, rgba(66, 153, 225, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%);
+        border-color: #4299e1;
+    }
+
+    .highlight-box.success {
+        background: linear-gradient(135deg, rgba(72, 187, 120, 0.1) 0%, rgba(56, 178, 172, 0.1) 100%);
+        border-color: #48bb78;
+    }
+
+    .highlight-box.warning {
+        background: linear-gradient(135deg, rgba(237, 137, 54, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+        border-color: #ed8936;
+    }
+
+    .highlight-box-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .highlight-box-content {
+        color: #2d3748;
+        line-height: 1.8;
+    }
+
+    /* ========================================
+       KEY POINTS
+       ======================================== */
+    .key-points {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .key-point {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border-radius: 12px;
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        transition: all 0.3s;
+    }
+
+    .key-point:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        border-color: #667eea;
+    }
+
+    .key-point-icon {
+        font-size: 2rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .key-point-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+    }
+
+    .key-point-text {
+        font-size: 0.95rem;
+        color: #718096;
+        line-height: 1.6;
+    }
+
+    /* ========================================
+       CONTACT SECTION
+       ======================================== */
+    .contact-section {
+        padding: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        text-align: center;
+        color: white;
+        margin-top: 3rem;
+    }
+
+    .contact-section h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .contact-section p {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .contact-section a {
+        color: white;
+        text-decoration: underline;
+        font-weight: 600;
+    }
+
+    .contact-section a:hover {
+        text-decoration: none;
+    }
+
+    /* ========================================
+       RESPONSIVE
+       ======================================== */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .content-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+        }
+
+        .key-points {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="privacy-page">
+    <div class="privacy-container">
+        
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🔒 Privacy Policy</h1>
+            <p class="subtitle">Your Data Security is Our Priority</p>
+            <p class="last-updated">Last Updated: February 2025</p>
+        </div>
+
+        <!-- Main Content Card -->
+        <div class="content-card">
+            
+            <!-- Introduction -->
+            <div class="intro-section">
+                <p>
+                    At <strong>DATAI</strong> (Data Analysis Through AI models), developed under the 
+                    <strong>ICAR-IASRI</strong> project, we are committed to protecting your privacy and ensuring 
+                    the security of your data.
+                </p>
+                <p>
+                    We do not collect or store any personally identifiable information unless explicitly provided 
+                    by the user for communication or support purposes.
+                </p>
+            </div>
+
+            <!-- Key Commitments -->
+            <div class="key-points">
+                <div class="key-point">
+                    <div class="key-point-icon">🚫</div>
+                    <div class="key-point-title">No Data Storage</div>
+                    <div class="key-point-text">Your uploaded files are never permanently stored on our servers</div>
+                </div>
+                <div class="key-point">
+                    <div class="key-point-icon">🔐</div>
+                    <div class="key-point-title">Secure Sessions</div>
+                    <div class="key-point-text">All data is encrypted and deleted when your session ends</div>
+                </div>
+                <div class="key-point">
+                    <div class="key-point-icon">🙅</div>
+                    <div class="key-point-title">No Third Parties</div>
+                    <div class="key-point-text">We never share your data with any external organizations</div>
+                </div>
+                <div class="key-point">
+                    <div class="key-point-icon">✨</div>
+                    <div class="key-point-title">Full Control</div>
+                    <div class="key-point-text">You have complete control over your data at all times</div>
+                </div>
+            </div>
+
+            <!-- Data Collection -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon">📊</div>
+                    <h2 class="section-title">Data Collection</h2>
+                </div>
+                <div class="section-content">
+                    <p>DATAI follows a strict privacy-first approach:</p>
+                    <ul>
+                        <li>We <strong>do not collect</strong> personally identifiable information</li>
+                        <li>We <strong>do not use</strong> third-party advertising tools</li>
+                        <li>We <strong>do not share</strong> your data with any third parties</li>
+                        <li>We collect only <strong>anonymized usage data</strong> (e.g., feature usage frequency) to improve platform performance and user experience</li>
+                    </ul>
+                    
+                    <div class="highlight-box success">
+                        <div class="highlight-box-title">✓ What This Means for You</div>
+                        <div class="highlight-box-content">
+                            Your use of DATAI is secure, and we ensure that no unauthorized access occurs to any 
+                            part of your interaction with the platform. Your privacy is guaranteed at every step.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Policy -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon">🗂️</div>
+                    <h2 class="section-title">Data Policy</h2>
+                </div>
+                <div class="section-content">
+                    <p>DATAI operates on a <strong>temporary, cloud-based computing environment</strong>:</p>
+                    
+                    <div class="highlight-box info">
+                        <div class="highlight-box-title">💡 How It Works</div>
+                        <div class="highlight-box-content">
+                            <p><strong>No uploaded data is stored permanently.</strong></p>
+                            <p>
+                                Every analysis session is a virtual instance. Once the session ends 
+                                (i.e., when the user closes the app or navigates away), all uploaded files, 
+                                temporary outputs, and analysis results are <strong>permanently deleted</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <ul>
+                        <li><strong>No backup copies</strong> are created</li>
+                        <li><strong>No user input</strong> is saved unless explicitly exported by the user</li>
+                        <li><strong>No file retention</strong> - everything is deleted after your session</li>
+                        <li><strong>No metadata storage</strong> beyond the duration of your session</li>
+                    </ul>
+
+                    <div class="highlight-box success">
+                        <div class="highlight-box-title">🔒 Your Data Security</div>
+                        <div class="highlight-box-content">
+                            This ensures that your data remains <strong>confidential</strong> and 
+                            <strong>fully under your control</strong>. We do not retain any files, results, 
+                            or metadata beyond the duration of your session.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session Management -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon">⏱️</div>
+                    <h2 class="section-title">Session Management</h2>
+                </div>
+                <div class="section-content">
+                    <p>Understanding how DATAI handles your analysis sessions:</p>
+
+                    <div class="highlight-box warning">
+                        <div class="highlight-box-title">⚠️ Important to Know</div>
+                        <div class="highlight-box-content">
+                            <p><strong>Once you quit, everything in that session is lost forever.</strong></p>
+                            <p>
+                                No uploaded data is stored anywhere. When your session ends, all data is 
+                                permanently erased from our servers with no possibility of recovery.
+                            </p>
+                        </div>
+                    </div>
+
+                    <p><strong>Session Lifecycle:</strong></p>
+                    <ul>
+                        <li><strong>Upload:</strong> Your data is temporarily loaded into memory</li>
+                        <li><strong>Analysis:</strong> Models process your data in real-time</li>
+                        <li><strong>Results:</strong> You can view and export your results</li>
+                        <li><strong>Session End:</strong> All data is immediately and permanently deleted</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- User Rights -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon">👤</div>
+                    <h2 class="section-title">Your Rights</h2>
+                </div>
+                <div class="section-content">
+                    <p>As a DATAI user, you have the following rights:</p>
+                    <ul>
+                        <li><strong>Right to Privacy:</strong> Your data is never accessed by anyone except you</li>
+                        <li><strong>Right to Control:</strong> You decide what to upload and when to delete it</li>
+                        <li><strong>Right to Export:</strong> Download your results before ending your session</li>
+                        <li><strong>Right to Delete:</strong> Simply close your session to permanently erase all data</li>
+                        <li><strong>Right to Know:</strong> Full transparency about how your data is handled</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Security Measures -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon">🛡️</div>
+                    <h2 class="section-title">Security Measures</h2>
+                </div>
+                <div class="section-content">
+                    <p>DATAI implements industry-standard security practices:</p>
+                    <ul>
+                        <li><strong>Encrypted transmission</strong> of all data between your device and our servers</li>
+                        <li><strong>Isolated sessions</strong> ensuring no data leakage between users</li>
+                        <li><strong>Automatic deletion</strong> of all temporary files after session ends</li>
+                        <li><strong>Secure computing environment</strong> with restricted access</li>
+                        <li><strong>Regular security audits</strong> to maintain platform integrity</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- About DATAI -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon">🌾</div>
+                    <h2 class="section-title">About DATAI</h2>
+                </div>
+                <div class="section-content">
+                    <p>
+                        <strong>DATAI (Data Analysis Through AI models)</strong> is a research project developed under 
+                        <strong>ICAR-IASRI (Indian Council of Agricultural Research - Indian Agricultural Statistics Research Institute)</strong>, 
+                        New Delhi, India.
+                    </p>
+                    <p>
+                        Our mission is to provide cutting-edge AI-powered tools for agricultural data analysis while 
+                        maintaining the highest standards of data privacy and security.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="highlight-box info">
+                <div class="highlight-box-title">💡 In Short</div>
+                <div class="highlight-box-content">
+                    <p><strong>No uploaded data is stored anywhere.</strong></p>
+                    <p>
+                        Once the user quits, everything in that session is <strong>lost forever</strong>. 
+                        Your data remains confidential and fully under your control at all times.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Contact Section -->
+            <div class="contact-section">
+                <h3>Questions About Our Privacy Policy?</h3>
+                <p>
+                    If you have any questions or concerns about our privacy practices, 
+                    please feel free to contact us.
+                </p>
+                <p>
+                    <strong>ICAR-IASRI, New Delhi, India</strong><br>
+                    Email: <a href="mailto:contact@datai.iasri.res.in">contact@datai.iasri.res.in</a>
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

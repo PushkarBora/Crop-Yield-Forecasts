@@ -1,0 +1,644 @@
+{% extends "base.html" %}
+
+{% block title %}Results - {{ results.model_name }} - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page Container */
+    .results-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .results-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .page-header .model-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.6rem 2rem;
+        border-radius: 50px;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    .page-header .subtitle {
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.9);
+    }
+
+    /* Status Badge */
+    .auto-tuned, .manual-config {
+        display: inline-block;
+        padding: 0.8rem 1.5rem;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .auto-tuned {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+        border: 2px solid #28a745;
+    }
+
+    .manual-config {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+        border: 2px solid #ffc107;
+    }
+
+    /* Content Card */
+    .content-card {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        animation: fadeInUp 0.8s ease backwards;
+    }
+
+    .content-card:nth-child(1) { animation-delay: 0.1s; }
+    .content-card:nth-child(2) { animation-delay: 0.2s; }
+    .content-card:nth-child(3) { animation-delay: 0.3s; }
+    .content-card:nth-child(4) { animation-delay: 0.4s; }
+    .content-card:nth-child(5) { animation-delay: 0.5s; }
+
+    .content-card h3 {
+        color: #2d3748;
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .content-card h3::before {
+        font-size: 2rem;
+    }
+
+    /* Section Icons */
+    .content-card.config h3::before { content: '⚙️'; }
+    .content-card.metrics h3::before { content: '📊'; }
+    .content-card.training h3::before { content: '🎯'; }
+    .content-card.testing h3::before { content: '✅'; }
+    .content-card.forecast h3::before { content: '🔮'; }
+
+    /* Metrics Grid */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .metric-card {
+        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        border-color: #667eea;
+    }
+
+    .metric-card .metric-label {
+        font-size: 0.9rem;
+        color: #718096;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-card .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 0.3rem;
+    }
+
+    .metric-card.training .metric-value {
+        color: #667eea;
+    }
+
+    .metric-card.testing .metric-value {
+        color: #28a745;
+    }
+
+    .metric-card .metric-sublabel {
+        font-size: 0.85rem;
+        color: #4a5568;
+        font-weight: 500;
+    }
+
+    /* Tables */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    td {
+        padding: 0.9rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        color: #2d3748;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover {
+        background: #f7fafc;
+    }
+
+    /* Config Table */
+    .config-table th {
+        width: 40%;
+    }
+
+    .config-table td:first-child {
+        font-weight: 600;
+        color: #4a5568;
+    }
+
+    /* Plot Images */
+    .plot-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+
+    .plot-container img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    /* Future Forecast Box */
+    .future-box {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border: 2px solid #667eea;
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+
+    .future-box h3 {
+        color: #667eea;
+        margin-top: 0;
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+    }
+
+    .future-box p {
+        color: #4a5568;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .future-box label {
+        display: block;
+        font-weight: 600;
+        color: #2d3748;
+        margin-top: 1.2rem;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .future-box textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Courier New', monospace;
+        font-size: 1rem;
+        box-sizing: border-box;
+        transition: all 0.3s;
+        resize: vertical;
+    }
+
+    .future-box textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .future-box textarea::placeholder {
+        color: #a0aec0;
+    }
+
+    .forecast-btn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 1rem 3rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        border-radius: 50px;
+        cursor: pointer;
+        margin-top: 1.5rem;
+        transition: all 0.3s;
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .forecast-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+    }
+
+    .forecast-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* No Data Message */
+    .no-data {
+        text-align: center;
+        padding: 3rem;
+        color: #718096;
+        font-style: italic;
+        font-size: 1.1rem;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        text-align: center;
+        margin-top: 3rem;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .action-btn.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .action-btn.primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .action-btn.secondary {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+
+    .action-btn.secondary:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .content-card {
+            padding: 1.5rem;
+        }
+
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .action-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Dataset Badges */
+    .dataset-badge {
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .dataset-badge.train {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+
+    .dataset-badge.test {
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+        border: 2px solid #28a745;
+    }
+
+    /* Scrollable Table Container */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
+
+    /* Loading Animation */
+    @keyframes shimmer {
+        0% {
+            background-position: -1000px 0;
+        }
+        100% {
+            background-position: 1000px 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="results-page">
+    <div class="results-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>📊 Model Performance Results</h1>
+            <div class="model-badge">{{ results.model_name }}</div>
+            <p class="subtitle">Comprehensive analysis of training, testing, and forecasting performance</p>
+        </div>
+
+        <!-- Model Configuration -->
+        {% if results.model_config is defined %}
+        <div class="content-card config">
+            <h3>Model Configuration</h3>
+            
+            {% if results.auto_tuned is defined and results.auto_tuned %}
+            <p class="auto-tuned">
+                ✅ Hyperparameters Auto-Tuned (Optimized via Cross-Validation)
+            </p>
+            {% else %}
+            <p class="manual-config">
+                🔧 Manual Hyperparameters Configuration
+            </p>
+            {% endif %}
+
+            <div class="table-container">
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for param, value in results.model_config.items() %}
+                        <tr>
+                            <td>{{ param.replace('_', ' ').title() }}</td>
+                            <td>{{ value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Accuracy Metrics -->
+        <div class="content-card metrics">
+            <h3>Accuracy Metrics</h3>
+            
+            <div class="metrics-grid">
+                <!-- Training Metrics -->
+                <div class="metric-card training">
+                    <div class="metric-label">Training RMSE</div>
+                    <div class="metric-value">{{ "%.2f"|format(results.rmse_train) }}</div>
+                    <div class="metric-sublabel">Root Mean Square Error</div>
+                </div>
+                
+                <div class="metric-card training">
+                    <div class="metric-label">Training R²</div>
+                    <div class="metric-value">{{ "%.4f"|format(results.r2_train) }}</div>
+                    <div class="metric-sublabel">Coefficient of Determination</div>
+                </div>
+                
+                <div class="metric-card training">
+                    <div class="metric-label">Training MAPE</div>
+                    <div class="metric-value">{{ "%.2f"|format(results.mape_train) }}%</div>
+                    <div class="metric-sublabel">Mean Absolute % Error</div>
+                </div>
+                
+                <!-- Testing Metrics -->
+                <div class="metric-card testing">
+                    <div class="metric-label">Testing RMSE</div>
+                    <div class="metric-value">{{ "%.2f"|format(results.rmse_test) }}</div>
+                    <div class="metric-sublabel">Root Mean Square Error</div>
+                </div>
+                
+                <div class="metric-card testing">
+                    <div class="metric-label">Testing R²</div>
+                    <div class="metric-value">{{ "%.4f"|format(results.r2_test) }}</div>
+                    <div class="metric-sublabel">Coefficient of Determination</div>
+                </div>
+                
+                <div class="metric-card testing">
+                    <div class="metric-label">Testing MAPE</div>
+                    <div class="metric-value">{{ "%.2f"|format(results.mape_test) }}%</div>
+                    <div class="metric-sublabel">Mean Absolute % Error</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Results -->
+        <div class="content-card training">
+            <h3>Training Performance</h3>
+            <div class="dataset-badge train">📚 Training Dataset</div>
+            
+            <div class="table-container">
+                {{ results.train_table.to_html(index=False, classes='data-table') | safe }}
+            </div>
+
+            <div class="plot-container">
+                <img
+                    src="{{ url_for('static', filename=results.model_key ~ '_train.png') }}"
+                    alt="{{ results.model_name }} Training Performance"
+                    title="{{ results.model_name }} Training Performance"
+                >
+            </div>
+        </div>
+
+        <!-- Testing Results -->
+        <div class="content-card testing">
+            <h3>Testing Performance</h3>
+            <div class="dataset-badge test">✅ Testing Dataset</div>
+            
+            <div class="table-container">
+                {{ results.test_table.to_html(index=False, classes='data-table') | safe }}
+            </div>
+
+            <div class="plot-container">
+                <img
+                    src="{{ url_for('static', filename=results.model_key ~ '_test.png') }}"
+                    alt="{{ results.model_name }} Testing Performance"
+                    title="{{ results.model_name }} Testing Performance"
+                >
+            </div>
+        </div>
+
+        <!-- Future Climate Inputs -->
+        {% if show_future_inputs %}
+        <div class="content-card forecast">
+            <h3>Future Forecast</h3>
+            
+            <div class="future-box">
+                {% if is_arima %}
+                <h3>📊 Generate Forecast</h3>
+                <p>
+                    ARIMA is a univariate model and will forecast the next <strong>{{ results.horizon }}</strong> 
+                    years based on historical patterns only.
+                </p>
+                {% else %}
+                <h3>🌧️📈 Future Climate Inputs</h3>
+                <p>
+                    Enter <strong>{{ results.horizon if results else '' }}</strong> future values
+                    (space-separated) to generate predictions.
+                </p>
+                {% endif %}
+                
+                <form method="POST" action="/predict">
+                    <!-- Hidden fields to preserve state -->
+                    <input type="hidden" name="model" value="{{ results.model_key }}">
+                    <input type="hidden" name="horizon" value="{{ request.form.horizon }}">
+                    <input type="hidden" name="frequency" value="{{ request.form.frequency }}">
+                
+                    {% if is_arima %}
+                    <input type="hidden" name="arima_forecast_trigger" value="true">
+                    {% endif %}
+                
+                    {% if not is_arima %}
+                    <label>🌡️ Mean Temperature (°C)</label>
+                    <textarea name="future_mean_t" rows="2"
+                        placeholder="Example: 26.1 26.3 26.5 26.8 27.0" 
+                        required></textarea>
+                
+                    <label>🌧️ Rainfall (mm)</label>
+                    <textarea name="future_rain" rows="2"
+                        placeholder="Example: 820 790 760 745 720" 
+                        required></textarea>
+                    {% endif %}
+                
+                    <button type="submit" class="forecast-btn">
+                        🔮 Generate Forecast
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Forecast Results -->
+        {% if results.forecast_table is defined and results.forecast_table is not none %}
+        <div class="content-card forecast">
+            <h3>Forecast Results (Future Predictions)</h3>
+            
+            <div class="table-container">
+                {{ results.forecast_table.to_html(index=False, classes='data-table') | safe }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="{{ url_for('models') }}" class="action-btn primary">
+                🔄 Run Another Model
+            </a>
+            <a href="{{ url_for('home') }}" class="action-btn secondary">
+                🏠 Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

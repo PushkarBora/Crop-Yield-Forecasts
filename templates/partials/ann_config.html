@@ -1,0 +1,354 @@
+<h3>ANN Architecture</h3>
+
+<label for="auto_tune_ann">
+    <input 
+        type="checkbox" 
+        id="auto_tune_ann" 
+        name="auto_tune_ann" 
+        value="true" 
+        checked
+    >
+    Auto-Tune Hyperparameters (Recommended)
+</label>
+<br><br>
+
+<!-- ============================================================ -->
+<!-- GRID SEARCH CONFIGURATION (visible when auto-tune enabled) -->
+<!-- ============================================================ -->
+<div id="ann_grid_search_ranges" class="grid-search-section">
+    <h4>🔍 Grid Search Configuration</h4>
+    <p style="font-size: 0.9em; color: #666;">Define parameter ranges for exhaustive search (min, max, step)</p>
+    
+    <!-- Hidden Layer 1 Range -->
+    <div>
+        <label>Hidden Layer 1 Size Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="ann_hidden_layer_1_min">Min</label>
+                <input type="number" id="ann_hidden_layer_1_min" name="ann_hidden_layer_1_min" value="8" min="4" aria-label="Hidden layer 1 minimum">
+            </div>
+            <div>
+                <label for="ann_hidden_layer_1_max">Max</label>
+                <input type="number" id="ann_hidden_layer_1_max" name="ann_hidden_layer_1_max" value="16" min="4" aria-label="Hidden layer 1 maximum">
+            </div>
+            <div>
+                <label for="ann_hidden_layer_1_step">Step</label>
+                <input type="number" id="ann_hidden_layer_1_step" name="ann_hidden_layer_1_step" value="4" min="2" aria-label="Hidden layer 1 step">
+            </div>
+        </div>
+        <small class="help-text-small">Example: 8 to 16 by 4 → tests [8, 12, 16]</small>
+    </div>
+    <br>
+    
+    <!-- Hidden Layer 2 Range -->
+    <div>
+        <label>Hidden Layer 2 Size Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="ann_hidden_layer_2_min">Min</label>
+                <input type="number" id="ann_hidden_layer_2_min" name="ann_hidden_layer_2_min" value="4" min="2" aria-label="Hidden layer 2 minimum">
+            </div>
+            <div>
+                <label for="ann_hidden_layer_2_max">Max</label>
+                <input type="number" id="ann_hidden_layer_2_max" name="ann_hidden_layer_2_max" value="8" min="2" aria-label="Hidden layer 2 maximum">
+            </div>
+            <div>
+                <label for="ann_hidden_layer_2_step">Step</label>
+                <input type="number" id="ann_hidden_layer_2_step" name="ann_hidden_layer_2_step" value="2" min="1" aria-label="Hidden layer 2 step">
+            </div>
+        </div>
+        <small class="help-text-small">Example: 4 to 8 by 2 → tests [4, 6, 8]</small>
+    </div>
+    <br>
+    
+    <!-- Dropout 1 Range -->
+    <div>
+        <label>Dropout after Hidden Layer 1 Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="ann_dropout_1_min">Min</label>
+                <input type="number" step="0.05" id="ann_dropout_1_min" name="ann_dropout_1_min" value="0.1" min="0" max="0.9" aria-label="Dropout 1 minimum">
+            </div>
+            <div>
+                <label for="ann_dropout_1_max">Max</label>
+                <input type="number" step="0.05" id="ann_dropout_1_max" name="ann_dropout_1_max" value="0.3" min="0" max="0.9" aria-label="Dropout 1 maximum">
+            </div>
+            <div>
+                <label for="ann_dropout_1_step">Step</label>
+                <input type="number" step="0.05" id="ann_dropout_1_step" name="ann_dropout_1_step" value="0.1" min="0.05" max="0.5" aria-label="Dropout 1 step">
+            </div>
+        </div>
+        <small class="help-text-small">Example: 0.1 to 0.3 by 0.1 → tests [0.1, 0.2, 0.3]</small>
+    </div>
+    <br>
+    
+    <!-- Dropout 2 Range -->
+    <div>
+        <label>Dropout after Hidden Layer 2 Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="ann_dropout_2_min">Min</label>
+                <input type="number" step="0.05" id="ann_dropout_2_min" name="ann_dropout_2_min" value="0.2" min="0" max="0.9" aria-label="Dropout 2 minimum">
+            </div>
+            <div>
+                <label for="ann_dropout_2_max">Max</label>
+                <input type="number" step="0.05" id="ann_dropout_2_max" name="ann_dropout_2_max" value="0.4" min="0" max="0.9" aria-label="Dropout 2 maximum">
+            </div>
+            <div>
+                <label for="ann_dropout_2_step">Step</label>
+                <input type="number" step="0.05" id="ann_dropout_2_step" name="ann_dropout_2_step" value="0.1" min="0.05" max="0.5" aria-label="Dropout 2 step">
+            </div>
+        </div>
+        <small class="help-text-small">Example: 0.2 to 0.4 by 0.1 → tests [0.2, 0.3, 0.4]</small>
+    </div>
+    <br>
+    
+    <!-- Learning Rate Range -->
+    <div>
+        <label>Learning Rate Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="ann_learning_rate_min">Min</label>
+                <input type="number" step="0.0001" id="ann_learning_rate_min" name="ann_learning_rate_min" value="0.0005" aria-label="Learning rate minimum">
+            </div>
+            <div>
+                <label for="ann_learning_rate_max">Max</label>
+                <input type="number" step="0.0001" id="ann_learning_rate_max" name="ann_learning_rate_max" value="0.005" aria-label="Learning rate maximum">
+            </div>
+            <div>
+                <label for="ann_learning_rate_step">Step</label>
+                <input type="number" step="0.0001" id="ann_learning_rate_step" name="ann_learning_rate_step" value="0.001" aria-label="Learning rate step">
+            </div>
+        </div>
+        <small class="help-text-small">Optimizer step size</small>
+    </div>
+    <br>
+    
+    <!-- Weight Decay Range -->
+    <div>
+        <label>Weight Decay Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="ann_weight_decay_min">Min</label>
+                <input type="number" step="0.00001" id="ann_weight_decay_min" name="ann_weight_decay_min" value="0.00001" aria-label="Weight decay minimum">
+            </div>
+            <div>
+                <label for="ann_weight_decay_max">Max</label>
+                <input type="number" step="0.00001" id="ann_weight_decay_max" name="ann_weight_decay_max" value="0.0005" aria-label="Weight decay maximum">
+            </div>
+            <div>
+                <label for="ann_weight_decay_step">Step</label>
+                <input type="number" step="0.00001" id="ann_weight_decay_step" name="ann_weight_decay_step" value="0.0001" aria-label="Weight decay step">
+            </div>
+        </div>
+        <small class="help-text-small">L2 regularization strength</small>
+    </div>
+    <br>
+    
+    <!-- Huber Delta Range -->
+    <div>
+        <label>Huber Delta Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="ann_huber_delta_min">Min</label>
+                <input type="number" step="0.1" id="ann_huber_delta_min" name="ann_huber_delta_min" value="0.7" aria-label="Huber delta minimum">
+            </div>
+            <div>
+                <label for="ann_huber_delta_max">Max</label>
+                <input type="number" step="0.1" id="ann_huber_delta_max" name="ann_huber_delta_max" value="1.5" aria-label="Huber delta maximum">
+            </div>
+            <div>
+                <label for="ann_huber_delta_step">Step</label>
+                <input type="number" step="0.1" id="ann_huber_delta_step" name="ann_huber_delta_step" value="0.4" aria-label="Huber delta step">
+            </div>
+        </div>
+        <small class="help-text-small">Loss function robustness parameter</small>
+    </div>
+    <br>
+    
+    <!-- Epochs Range -->
+    <div>
+        <label>Number of Epochs Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="ann_epochs_min">Min</label>
+                <input type="number" id="ann_epochs_min" name="ann_epochs_min" value="100" min="50" aria-label="Epochs minimum">
+            </div>
+            <div>
+                <label for="ann_epochs_max">Max</label>
+                <input type="number" id="ann_epochs_max" name="ann_epochs_max" value="300" min="50" aria-label="Epochs maximum">
+            </div>
+            <div>
+                <label for="ann_epochs_step">Step</label>
+                <input type="number" id="ann_epochs_step" name="ann_epochs_step" value="100" min="50" aria-label="Epochs step">
+            </div>
+        </div>
+        <small class="help-text-small">Maximum training epochs. Example: 100 to 300 by 100 → tests [100, 200, 300]</small>
+    </div>
+    <br>
+    
+    <!-- Early Stopping Patience Range -->
+    <div>
+        <label>Early Stopping Patience Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="ann_patience_min">Min</label>
+                <input type="number" id="ann_patience_min" name="ann_patience_min" value="20" min="5" aria-label="Patience minimum">
+            </div>
+            <div>
+                <label for="ann_patience_max">Max</label>
+                <input type="number" id="ann_patience_max" name="ann_patience_max" value="50" min="5" aria-label="Patience maximum">
+            </div>
+            <div>
+                <label for="ann_patience_step">Step</label>
+                <input type="number" id="ann_patience_step" name="ann_patience_step" value="10" min="5" aria-label="Patience step">
+            </div>
+        </div>
+        <small class="help-text-small">Epochs to wait before early stopping</small>
+    </div>
+    <br>
+    
+    <!-- Combination Estimate -->
+    <div id="ann_combination_estimate" class="combination-estimate">
+        <strong>⚠️ Estimated Combinations:</strong> <span id="ann_total_combinations">Calculating...</span>
+        <br>
+        <small>Fewer combinations = faster training. Adjust ranges to balance speed vs thoroughness.</small>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MANUAL PARAMETERS (visible when auto-tune disabled) -->
+<!-- ============================================================ -->
+<div id="ann_manual_section" style="display: none;">
+    <h4>Manual Hyperparameter Configuration</h4>
+    
+    <label for="hidden_layer_1">Hidden Layer 1 Size</label><br>
+    <input type="number" id="hidden_layer_1" name="hidden_layer_1" value="16" min="1"><br><br>
+
+    <label for="hidden_layer_2">Hidden Layer 2 Size</label><br>
+    <input type="number" id="hidden_layer_2" name="hidden_layer_2" value="8" min="1"><br><br>
+
+    <label for="dropout_1">Dropout after Hidden Layer 1</label><br>
+    <input type="number" step="0.05" id="dropout_1" name="dropout_1" value="0.2" min="0" max="0.9"><br><br>
+
+    <label for="dropout_2">Dropout after Hidden Layer 2</label><br>
+    <input type="number" step="0.05" id="dropout_2" name="dropout_2" value="0.3" min="0" max="0.9"><br><br>
+    
+    <label for="learning_rate">Learning Rate</label><br>
+    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003"><br><br>
+
+    <label for="weight_decay">Weight Decay</label><br>
+    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001"><br><br>
+
+    <label for="epochs">Number of Epochs</label><br>
+    <input type="number" id="epochs" name="epochs" value="200"><br><br>
+
+    <label for="patience">Early Stopping Patience</label><br>
+    <input type="number" id="patience" name="patience" value="30"><br><br>
+
+    <label for="huber_delta">Huber Loss Delta</label><br>
+    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0"><br><br>
+</div>
+
+<p class="help-text">
+    <i>Note: If "Auto-Tune" is checked, grid search will test all combinations within the specified ranges.</i>
+</p>
+
+<!-- JavaScript for toggle and calculation -->
+<script>
+// Toggle visibility based on checkbox
+document.getElementById('auto_tune_ann').addEventListener('change', function() {
+    document.getElementById('ann_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('ann_manual_section').style.display = this.checked ? 'none' : 'block';
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const autoTuneCheckbox = document.getElementById('auto_tune_ann');
+    document.getElementById('ann_grid_search_ranges').style.display = autoTuneCheckbox.checked ? 'block' : 'none';
+    document.getElementById('ann_manual_section').style.display = autoTuneCheckbox.checked ? 'none' : 'block';
+});
+
+// Calculate estimated combinations
+function calculateANNCombinations() {
+    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+    
+    const hiddenLayer1 = calc(
+        parseFloat(document.getElementById('ann_hidden_layer_1_min').value),
+        parseFloat(document.getElementById('ann_hidden_layer_1_max').value),
+        parseFloat(document.getElementById('ann_hidden_layer_1_step').value)
+    );
+    
+    const hiddenLayer2 = calc(
+        parseFloat(document.getElementById('ann_hidden_layer_2_min').value),
+        parseFloat(document.getElementById('ann_hidden_layer_2_max').value),
+        parseFloat(document.getElementById('ann_hidden_layer_2_step').value)
+    );
+    
+    const dropout1 = calc(
+        parseFloat(document.getElementById('ann_dropout_1_min').value),
+        parseFloat(document.getElementById('ann_dropout_1_max').value),
+        parseFloat(document.getElementById('ann_dropout_1_step').value)
+    );
+    
+    const dropout2 = calc(
+        parseFloat(document.getElementById('ann_dropout_2_min').value),
+        parseFloat(document.getElementById('ann_dropout_2_max').value),
+        parseFloat(document.getElementById('ann_dropout_2_step').value)
+    );
+    
+    const lr = calc(
+        parseFloat(document.getElementById('ann_learning_rate_min').value),
+        parseFloat(document.getElementById('ann_learning_rate_max').value),
+        parseFloat(document.getElementById('ann_learning_rate_step').value)
+    );
+    
+    const wd = calc(
+        parseFloat(document.getElementById('ann_weight_decay_min').value),
+        parseFloat(document.getElementById('ann_weight_decay_max').value),
+        parseFloat(document.getElementById('ann_weight_decay_step').value)
+    );
+    
+    const hd = calc(
+        parseFloat(document.getElementById('ann_huber_delta_min').value),
+        parseFloat(document.getElementById('ann_huber_delta_max').value),
+        parseFloat(document.getElementById('ann_huber_delta_step').value)
+    );
+    
+    const epochs = calc(
+        parseFloat(document.getElementById('ann_epochs_min').value),
+        parseFloat(document.getElementById('ann_epochs_max').value),
+        parseFloat(document.getElementById('ann_epochs_step').value)
+    );
+    
+    const patience = calc(
+        parseFloat(document.getElementById('ann_patience_min').value),
+        parseFloat(document.getElementById('ann_patience_max').value),
+        parseFloat(document.getElementById('ann_patience_step').value)
+    );
+    
+    // Calculate total combinations
+    const total = hiddenLayer1 * hiddenLayer2 * dropout1 * dropout2 * lr * wd * hd * epochs * patience;
+    
+    document.getElementById('ann_total_combinations').textContent = total.toLocaleString() + ' combinations';
+    
+    // Color code based on total
+    const estimateDiv = document.getElementById('ann_combination_estimate');
+    estimateDiv.className = 'combination-estimate';
+    if (total < 100) {
+        estimateDiv.classList.add('good');
+    } else if (total < 1000) {
+        estimateDiv.classList.add('warning');
+    } else {
+        estimateDiv.classList.add('danger');
+    }
+}
+
+// Add event listeners to all ANN inputs
+document.querySelectorAll('[id^="ann_"]').forEach(input => {
+    input.addEventListener('input', calculateANNCombinations);
+});
+
+// Calculate on page load
+document.addEventListener('DOMContentLoaded', calculateANNCombinations);
+</script>

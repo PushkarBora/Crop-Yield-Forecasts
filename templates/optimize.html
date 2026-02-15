@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Optimization</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .box {
+            background: #020617;
+            padding: 30px 40px;
+            border-radius: 12px;
+            width: 420px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+        }
+        .step {
+            margin: 12px 0;
+            opacity: 0.85;
+        }
+    </style>
+
+    <script>
+        // Redirect after 2 seconds (no meta refresh)
+        setTimeout(function () {
+            window.location.href = "/predict";
+        }, 2000);
+    </script>
+</head>
+
+<body>
+<div class="box">
+    <h2>Optimizing Model</h2>
+    <div class="step">✔ Preparing time-series windows</div>
+    <div class="step">✔ Initializing Transformer</div>
+    <div class="step">✔ Training model</div>
+    <div class="step">✔ Selecting best weights</div>
+    <div class="step">⏳ Finalizing results…</div>
+</div>
+</body>
+</html>

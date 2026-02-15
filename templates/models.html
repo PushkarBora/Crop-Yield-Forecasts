@@ -1,0 +1,660 @@
+{% extends "base.html" %}
+
+{% block title %}Select Models - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page Container */
+    .models-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .models-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .page-header p {
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.9);
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    /* Main Form Card */
+    .form-card {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        animation: fadeInUp 0.8s ease 0.2s backwards;
+    }
+
+    /* Section Headers */
+    .section-header {
+        font-size: 1.8rem;
+        color: #2d3748;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 3px solid transparent;
+        border-image: linear-gradient(90deg, #667eea, #764ba2) 1;
+        font-weight: 600;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    /* Form Group */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        font-size: 1rem;
+        color: #2d3748;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-group .hint {
+        font-size: 0.85rem;
+        color: #718096;
+        margin-top: 0.3rem;
+        font-style: italic;
+    }
+
+    .form-group .requirement {
+        font-size: 0.85rem;
+        color: #718096;
+        margin-top: 0.3rem;
+    }
+
+    /* Input Fields */
+    .form-control {
+        padding: 0.9rem 1.2rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        background: white;
+        color: #2d3748;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .form-control:hover {
+        border-color: #cbd5e0;
+    }
+
+    /* File Upload */
+    .file-upload-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .file-upload-wrapper input[type=file] {
+        position: absolute;
+        left: -9999px;
+    }
+
+    .file-upload-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .file-upload-label:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .file-upload-label i {
+        margin-right: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .file-name {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    /* Model Selection */
+    .model-selection {
+        margin: 3rem 0;
+    }
+
+    .selection-controls {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .select-btn {
+        padding: 0.7rem 1.5rem;
+        border: 2px solid #667eea;
+        background: white;
+        color: #667eea;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.95rem;
+    }
+
+    .select-btn:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .deselect-btn {
+        background: #f56565;
+        border-color: #f56565;
+        color: white;
+    }
+
+    .deselect-btn:hover {
+        background: #e53e3e;
+        border-color: #e53e3e;
+    }
+
+    /* Model Categories */
+    .model-category {
+        margin-bottom: 2.5rem;
+    }
+
+    .category-title {
+        font-size: 1.3rem;
+        color: #2d3748;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+
+    .category-title::before {
+        content: '';
+        width: 4px;
+        height: 24px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        margin-right: 1rem;
+        border-radius: 2px;
+    }
+
+    .models-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* Custom Checkbox Card */
+    .model-checkbox-card {
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .model-checkbox-card input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .checkbox-content {
+        padding: 1.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 15px;
+        background: white;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .checkbox-content:hover {
+        border-color: #667eea;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+    }
+
+    .model-checkbox-card input[type="checkbox"]:checked ~ .checkbox-content {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: white;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .checkbox-icon {
+        width: 24px;
+        height: 24px;
+        border: 2px solid #cbd5e0;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .model-checkbox-card input[type="checkbox"]:checked ~ .checkbox-content .checkbox-icon {
+        background: white;
+        border-color: white;
+    }
+
+    .checkbox-icon::after {
+        content: '✓';
+        color: #667eea;
+        font-weight: bold;
+        font-size: 1.1rem;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.2s;
+    }
+
+    .model-checkbox-card input[type="checkbox"]:checked ~ .checkbox-content .checkbox-icon::after {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .model-label-text {
+        font-weight: 600;
+        font-size: 1.05rem;
+    }
+
+    /* Submit Button */
+    .submit-container {
+        text-align: center;
+        margin-top: 3rem;
+    }
+
+    .submit-btn {
+        padding: 1.2rem 4rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    }
+
+    .submit-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* Info Banner */
+    .info-banner {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+
+    .info-banner p {
+        color: #2d3748;
+        margin: 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .info-banner strong {
+        color: #667eea;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .form-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .models-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .submit-btn {
+            padding: 1rem 2.5rem;
+            font-size: 1rem;
+        }
+    }
+
+    /* Loading Animation */
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 40px;
+        height: 40px;
+        margin: -20px 0 0 -20px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="models-page">
+    <div class="models-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🚀 Configure Your Analysis</h1>
+            <p>Upload your data and select the AI models you want to train. Choose one model for detailed analysis or multiple models for comparison.</p>
+        </div>
+
+        <!-- Main Form -->
+        <form action="{{ url_for('configure') }}" method="POST" enctype="multipart/form-data" id="modelForm">
+            <div class="form-card">
+                
+                <!-- Step 1: Upload Data -->
+                <h2 class="section-header">📁 Step 1: Upload Data & Choose Parameters</h2>
+                
+                <div class="info-banner">
+                    <p><strong>📋 Dataset Requirement:</strong> Your file must include columns: <strong>Year, Mean_T, Mean_Rain, Yield</strong></p>
+                </div>
+
+                <div class="form-grid">
+                    <!-- File Upload -->
+                    <div class="form-group">
+                        <label>Upload Excel / CSV File</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" name="dataset" id="fileInput" accept=".csv,.xlsx,.xls" required>
+                            <label for="fileInput" class="file-upload-label">
+                                <span>📂 Choose File</span>
+                            </label>
+                        </div>
+                        <div class="file-name" id="fileName">No file chosen</div>
+                    </div>
+
+                    <!-- Data Frequency -->
+                    <div class="form-group">
+                        <label for="frequency">Data Frequency</label>
+                        <select name="frequency" id="frequency" class="form-control" required>
+                            <option value="annual" selected>Annual</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="daily">Daily</option>
+                            <option value="others">Others</option>
+                        </select>
+                        <span class="hint">How often is your data collected?</span>
+                    </div>
+
+                    <!-- Forecast Horizon -->
+                    <div class="form-group">
+                        <label for="horizon">Forecast Horizon</label>
+                        <input type="number" name="horizon" id="horizon" class="form-control" 
+                               value="1" min="1" max="20" required>
+                        <span class="hint">Number of periods to forecast ahead</span>
+                    </div>
+
+                    <!-- Sliding Window -->
+                    <div class="form-group">
+                        <label for="window">Sliding Window Length</label>
+                        <input type="number" name="window" id="window" class="form-control" 
+                               value="4" min="1" max="30" required>
+                        <span class="hint">Number of past observations to use</span>
+                    </div>
+
+                    <!-- Number of Lags -->
+                    <div class="form-group">
+                        <label for="lags">Number of Lags</label>
+                        <input type="number" name="lags" id="lags" class="form-control" 
+                               value="3" min="1" max="30" required>
+                        <span class="hint">Lagged features for modeling</span>
+                    </div>
+
+                    <!-- Train-Test Split -->
+                    <div class="form-group">
+                        <label for="split">Train-Test Split</label>
+                        <input type="number" name="split" id="split" class="form-control" 
+                               value="0.85" min="0.5" max="0.95" step="0.05" required>
+                        <span class="hint">Proportion of data for training (0.5-0.95)</span>
+                    </div>
+                </div>
+
+                <!-- Step 2: Model Selection -->
+                <h2 class="section-header">🤖 Step 2: Select Forecasting Model(s)</h2>
+                
+                <div class="info-banner">
+                    <p><strong>💡 Pro Tip:</strong> Select <strong>one model</strong> for detailed analysis or <strong>multiple models</strong> (minimum 1, maximum 8) to compare performance side-by-side!</p>
+                </div>
+
+                <div class="model-selection">
+                    <div class="selection-controls">
+                        <button type="button" class="select-btn" onclick="selectAll()">✓ Select All</button>
+                        <button type="button" class="select-btn deselect-btn" onclick="deselectAll()">✗ Deselect All</button>
+                    </div>
+
+                    <!-- Deep Learning Models -->
+                    <div class="model-category">
+                        <h3 class="category-title">🧠 Deep Learning Models</h3>
+                        <div class="models-grid">
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="lstm">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">LSTM</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="gru">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">GRU</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="rnn">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">RNN</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="transformer">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">Transformer</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="ann">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">ANN</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Machine Learning Models -->
+                    <div class="model-category">
+                        <h3 class="category-title">🌲 Machine Learning Models</h3>
+                        <div class="models-grid">
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="rf">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">Random Forest</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="svr">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">SVR</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Statistical Models -->
+                    <div class="model-category">
+                        <h3 class="category-title">📊 Statistical Model</h3>
+                        <div class="models-grid">
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="arima">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">ARIMA</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="submit-container">
+                    <button type="submit" class="submit-btn">Next → Configure Hyperparameters</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // File upload name display
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || 'No file chosen';
+        document.getElementById('fileName').textContent = fileName;
+    });
+
+    // Select all checkboxes
+    function selectAll() {
+        const checkboxes = document.querySelectorAll('input[name="models"]');
+        checkboxes.forEach(cb => cb.checked = true);
+    }
+
+    // Deselect all checkboxes
+    function deselectAll() {
+        const checkboxes = document.querySelectorAll('input[name="models"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+
+    // Form validation
+    document.getElementById('modelForm').addEventListener('submit', function(e) {
+        const checkboxes = document.querySelectorAll('input[name="models"]:checked');
+        
+        if (checkboxes.length === 0) {
+            e.preventDefault();
+            alert('⚠️ Please select at least one model!');
+            return false;
+        }
+
+        if (checkboxes.length > 8) {
+            e.preventDefault();
+            alert('⚠️ Maximum 8 models can be selected at once!');
+            return false;
+        }
+
+        // Show loading state
+        const submitBtn = this.querySelector('.submit-btn');
+        submitBtn.textContent = 'Processing...';
+        submitBtn.disabled = true;
+    });
+
+    // Add smooth scroll behavior
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

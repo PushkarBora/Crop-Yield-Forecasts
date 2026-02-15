@@ -1,0 +1,303 @@
+<h3>SVR Hyperparameters</h3>
+
+<!-- Auto-Tune Checkbox -->
+<label for="auto_tune_svr">
+    <input 
+        type="checkbox" 
+        id="auto_tune_svr" 
+        name="auto_tune_svr" 
+        value="true" 
+        checked
+    >
+    Auto-Tune Hyperparameters (Recommended)
+</label>
+<br><br>
+
+<!-- ============================================================ -->
+<!-- GRID SEARCH RANGES (visible when auto-tune enabled) -->
+<!-- ============================================================ -->
+<div id="svr_grid_search_section" class="grid-search-section">
+    <h4>🔍 Grid Search Configuration</h4>
+    <p style="font-size: 0.9em; color: #666;">Define parameter ranges for exhaustive search (min, max, step)</p>
+    
+    <!-- Kernel Options -->
+    <div>
+        <label style="font-weight: bold; display: block; margin-bottom: 10px;">
+            Kernel Functions to Test
+        </label>
+        <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+            <label>
+                <input type="checkbox" name="svr_kernel_rbf" value="rbf" checked aria-label="Include RBF kernel">
+                RBF (Radial Basis Function)
+            </label>
+            <label>
+                <input type="checkbox" name="svr_kernel_poly" value="poly" checked aria-label="Include Polynomial kernel">
+                Polynomial
+            </label>
+            <label>
+                <input type="checkbox" name="svr_kernel_sigmoid" value="sigmoid" checked aria-label="Include Sigmoid kernel">
+                Sigmoid
+            </label>
+        </div>
+    </div>
+    
+    <!-- C Parameter Range -->
+    <div>
+        <label>C (Regularization Parameter) Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="svr_C_min">Min</label>
+                <input 
+                    type="number" 
+                    id="svr_C_min" 
+                    name="svr_C_min" 
+                    value="0.1" 
+                    step="any" 
+                    min="0.01" 
+                    aria-label="C minimum value"
+                    class="svr-grid-input">
+            </div>
+            <div>
+                <label for="svr_C_max">Max</label>
+                <input 
+                    type="number" 
+                    id="svr_C_max" 
+                    name="svr_C_max" 
+                    value="3.0" 
+                    step="any" 
+                    min="0.01" 
+                    aria-label="C maximum value"
+                    class="svr-grid-input">
+            </div>
+            <div>
+                <label for="svr_C_step">Step</label>
+                <input 
+                    type="number" 
+                    id="svr_C_step" 
+                    name="svr_C_step" 
+                    value="0.5" 
+                    step="any" 
+                    min="0.01" 
+                    aria-label="C step value"
+                    class="svr-grid-input">
+            </div>
+        </div>
+        <small class="help-text-small">Penalty parameter. Example: 0.1 to 3.0 by 0.5 → tests [0.1, 0.6, 1.1, 1.6, 2.1, 2.6]</small>
+    </div>
+    <br>
+    
+    <!-- Epsilon Parameter Range -->
+    <div>
+        <label>Epsilon (ε-tube width) Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="svr_epsilon_min">Min</label>
+                <input 
+                    type="number" 
+                    id="svr_epsilon_min" 
+                    name="svr_epsilon_min" 
+                    value="0.01" 
+                    step="any" 
+                    min="0.001" 
+                    aria-label="Epsilon minimum value"
+                    class="svr-grid-input">
+            </div>
+            <div>
+                <label for="svr_epsilon_max">Max</label>
+                <input 
+                    type="number" 
+                    id="svr_epsilon_max" 
+                    name="svr_epsilon_max" 
+                    value="0.3" 
+                    step="any" 
+                    min="0.001" 
+                    aria-label="Epsilon maximum value"
+                    class="svr-grid-input">
+            </div>
+            <div>
+                <label for="svr_epsilon_step">Step</label>
+                <input 
+                    type="number" 
+                    id="svr_epsilon_step" 
+                    name="svr_epsilon_step" 
+                    value="0.05" 
+                    step="any" 
+                    min="0.001" 
+                    aria-label="Epsilon step value"
+                    class="svr-grid-input">
+            </div>
+        </div>
+        <small class="help-text-small">Margin of tolerance. Example: 0.01 to 0.3 by 0.05 → tests [0.01, 0.06, 0.11, 0.16, 0.21, 0.26]</small>
+    </div>
+    <br>
+    
+    <!-- Gamma Parameter Range -->
+    <div>
+        <label>Gamma (Kernel Coefficient) Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="svr_gamma_min">Min</label>
+                <input 
+                    type="number" 
+                    id="svr_gamma_min" 
+                    name="svr_gamma_min" 
+                    value="0.1" 
+                    step="any" 
+                    min="0.01" 
+                    aria-label="Gamma minimum value"
+                    class="svr-grid-input">
+            </div>
+            <div>
+                <label for="svr_gamma_max">Max</label>
+                <input 
+                    type="number" 
+                    id="svr_gamma_max" 
+                    name="svr_gamma_max" 
+                    value="1.0" 
+                    step="any" 
+                    min="0.01" 
+                    aria-label="Gamma maximum value"
+                    class="svr-grid-input">
+            </div>
+            <div>
+                <label for="svr_gamma_step">Step</label>
+                <input 
+                    type="number" 
+                    id="svr_gamma_step" 
+                    name="svr_gamma_step" 
+                    value="0.2" 
+                    step="any" 
+                    min="0.01" 
+                    aria-label="Gamma step value"
+                    class="svr-grid-input">
+            </div>
+        </div>
+        <small class="help-text-small">Kernel coefficient. Note: 'scale' and 'auto' will always be tested too. Example: 0.1 to 1.0 by 0.2 → tests [0.1, 0.3, 0.5, 0.7, 0.9, scale, auto]</small>
+    </div>
+    <br>
+    
+    <!-- Combination Estimate -->
+    <div id="svr_combination_estimate" class="combination-estimate">
+        <strong>⚠️ Estimated Combinations:</strong> <span id="svr_total_combinations">Calculating...</span>
+        <br>
+        <small>Calculation: (kernels) × (C values) × (epsilon values) × (gamma values + 2 for scale/auto)</small>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MANUAL PARAMETERS (visible when auto-tune disabled) -->
+<!-- ============================================================ -->
+<div id="svr_manual_section" style="display: none;">
+    <h4>Manual Hyperparameter Configuration</h4>
+    
+    <!-- Kernel Function -->
+    <label for="kernel">Kernel Function</label><br>
+    <select id="kernel" name="kernel">
+        <option value="rbf" selected>RBF (Radial Basis Function)</option>
+        <option value="poly">Polynomial</option>
+        <option value="sigmoid">Sigmoid</option>
+        <option value="linear">Linear</option>
+    </select>
+    <br><br>
+    
+    <!-- C Parameter -->
+    <label for="C">C (Regularization Parameter)</label><br>
+    <input 
+        type="number" 
+        id="C" 
+        name="C" 
+        value="1.0" 
+        step="any" 
+        min="0.01"
+        placeholder="e.g. 1.0"
+        title="Penalty parameter of the error term">
+    <br><br>
+    
+    <!-- Epsilon -->
+    <label for="epsilon">Epsilon (ε-tube width)</label><br>
+    <input 
+        type="number" 
+        id="epsilon" 
+        name="epsilon" 
+        value="0.1" 
+        step="any" 
+        min="0.001"
+        placeholder="e.g. 0.1"
+        title="Margin of tolerance where no penalty is given">
+    <br><br>
+    
+    <!-- Gamma -->
+    <label for="gamma">Gamma (Kernel Coefficient)</label><br>
+    <select id="gamma" name="gamma">
+        <option value="scale" selected>scale (1 / (n_features × X.var()))</option>
+        <option value="auto">auto (1 / n_features)</option>
+        <option value="0.1">0.1</option>
+        <option value="0.3">0.3</option>
+        <option value="0.5">0.5</option>
+        <option value="1.0">1.0</option>
+    </select>
+    <br><br>
+</div>
+
+<p class="help-text">
+    <i>Note: If "Auto-Tune" is checked, the model will use GridSearchCV to find the best hyperparameters from the specified ranges. Otherwise, it will use the manual values above.</i>
+</p>
+
+<!-- JavaScript for toggle and calculation -->
+<script>
+// Toggle visibility based on checkbox
+document.getElementById('auto_tune_svr').addEventListener('change', function() {
+    document.getElementById('svr_grid_search_section').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('svr_manual_section').style.display = this.checked ? 'none' : 'block';
+});
+
+// Calculate estimated combinations
+function calculateSVRCombinations() {
+    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+    
+    const C_min = parseFloat(document.getElementById('svr_C_min').value);
+    const C_max = parseFloat(document.getElementById('svr_C_max').value);
+    const C_step = parseFloat(document.getElementById('svr_C_step').value);
+    
+    const epsilon_min = parseFloat(document.getElementById('svr_epsilon_min').value);
+    const epsilon_max = parseFloat(document.getElementById('svr_epsilon_max').value);
+    const epsilon_step = parseFloat(document.getElementById('svr_epsilon_step').value);
+    
+    const gamma_min = parseFloat(document.getElementById('svr_gamma_min').value);
+    const gamma_max = parseFloat(document.getElementById('svr_gamma_max').value);
+    const gamma_step = parseFloat(document.getElementById('svr_gamma_step').value);
+    
+    // Count selected kernels
+    const kernels = document.querySelectorAll('input[name^="svr_kernel_"]:checked').length;
+    
+    // Calculate value counts
+    const C_count = calc(C_min, C_max, C_step);
+    const epsilon_count = calc(epsilon_min, epsilon_max, epsilon_step);
+    const gamma_count = calc(gamma_min, gamma_max, gamma_step) + 2; // +2 for 'scale' and 'auto'
+    
+    const total = kernels * C_count * epsilon_count * gamma_count;
+    
+    document.getElementById('svr_total_combinations').textContent = total.toLocaleString() + ' combinations';
+    
+    // Color code based on total
+    const estimateDiv = document.getElementById('svr_combination_estimate');
+    estimateDiv.className = 'combination-estimate';
+    if (total < 100) {
+        estimateDiv.classList.add('good');
+    } else if (total < 1000) {
+        estimateDiv.classList.add('warning');
+    } else {
+        estimateDiv.classList.add('danger');
+    }
+}
+
+// Add event listeners to all SVR inputs
+document.querySelectorAll('.svr-grid-input, input[name^="svr_kernel_"]').forEach(input => {
+    input.addEventListener('input', calculateSVRCombinations);
+});
+
+// Calculate on page load
+calculateSVRCombinations();
+</script>
+
+

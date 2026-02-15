@@ -1,0 +1,351 @@
+<h3>LSTM Architecture</h3>
+
+<label for="auto_tune_lstm">
+    <input 
+        type="checkbox" 
+        id="auto_tune_lstm" 
+        name="auto_tune_lstm" 
+        value="true" 
+        checked
+    >
+    Auto-Tune Hyperparameters (Recommended)
+</label>
+<br><br>
+
+<!-- Grid Search Configuration -->
+<div id="lstm_grid_search_ranges" class="grid-search-section">
+    <h4>🔍 Grid Search Configuration</h4>
+    <p style="font-size: 0.9em; color: #666;">Define parameter ranges for exhaustive search (min, max, step)</p>
+    
+    <!-- Hidden Size Range -->
+    <div>
+        <label>Hidden Size Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="lstm_hidden_size_min">Min</label>
+                <input 
+                    type="number" 
+                    id="lstm_hidden_size_min"
+                    name="lstm_hidden_size_min" 
+                    value="4" 
+                    min="4" 
+                    max="64" 
+                    step="4"
+                    aria-label="Hidden size minimum value">
+            </div>
+            <div>
+                <label for="lstm_hidden_size_max">Max</label>
+                <input 
+                    type="number" 
+                    id="lstm_hidden_size_max"
+                    name="lstm_hidden_size_max" 
+                    value="16" 
+                    min="4" 
+                    max="64" 
+                    step="4"
+                    aria-label="Hidden size maximum value">
+            </div>
+            <div>
+                <label for="lstm_hidden_size_step">Step</label>
+                <input 
+                    type="number" 
+                    id="lstm_hidden_size_step"
+                    name="lstm_hidden_size_step" 
+                    value="4" 
+                    min="1" 
+                    max="16"
+                    aria-label="Hidden size step value">
+            </div>
+        </div>
+        <small class="help-text-small">Example: 4 to 16 by 4 → tests [4, 8, 12, 16]</small>
+    </div>
+    <br>
+
+    <!-- Number of Layers Range -->
+    <div>
+        <label>Number of Layers Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="lstm_num_layers_min">Min</label>
+                <input type="number" name="lstm_num_layers_min" value="1" min="1" max="5" aria-label="Number of layers minimum value">
+            </div>
+            <div>
+                <label for="lstm_num_layers_max">Max</label>
+                <input type="number" name="lstm_num_layers_max" value="3" min="1" max="5" aria-label="Number of layers maximum value">
+            </div>
+            <div>
+                <label for="lstm_num_layers_step">Step</label>
+                <input type="number" name="lstm_num_layers_step" value="1" min="1" max="2" aria-label="Number of layers step value">
+            </div>
+        </div>
+        <small class="help-text-small">Example: 1 to 3 by 1 → tests [1, 2, 3]</small>
+    </div>
+    <br>
+
+    <!-- Dropout Range -->
+    <div>
+        <label>Dropout Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="lstm_dropout_min">Min</label>
+                <input type="number" name="lstm_dropout_min" value="0.0" min="0.0" max="0.5" step="0.1" aria-label="Dropout minimum value">
+            </div>
+            <div>
+                <label for="lstm_dropout_max">Max</label>
+                <input type="number" name="lstm_dropout_max" value="0.3" min="0.0" max="0.5" step="0.1" aria-label="Dropout maximum value">
+            </div>
+            <div>
+                <label>Step</label>
+                <input type="number" name="lstm_dropout_step" value="0.1" min="0.05" max="0.2" step="0.05" aria-label="Dropout step value">
+            </div>
+        </div>
+        <small class="help-text-small">Example: 0.0 to 0.3 by 0.1 → tests [0.0, 0.1, 0.2, 0.3]</small>
+    </div>
+    <br>
+
+    <!-- Learning Rate Range -->
+    <div>
+        <label>Learning Rate Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="lstm_learning_rate_min">Min</label>
+                <input type="number" name="lstm_learning_rate_min" value="0.0005" min="0.0001" max="0.01" step="0.0001" aria-label="Learning rate minimum value">
+            </div>
+            <div>
+                <label for="lstm_learning_rate_max">Max</label>
+                <input type="number" name="lstm_learning_rate_max" value="0.005" min="0.0001" max="0.01" step="0.0001" aria-label="Learning rate maximum value">
+            </div>
+            <div>
+                <label for="lstm_learning_rate_step">Step</label>
+                <input type="number" name="lstm_learning_rate_step" value="0.001" min="0.0001" max="0.005" step="0.0001" aria-label="Learning rate step value">
+            </div>
+        </div>
+        <small class="help-text-small">Optimizer step size</small>
+    </div>
+    <br>
+
+    <!-- Weight Decay Range -->
+    <div>
+        <label>Weight Decay Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="lstm_weight_decay_min">Min</label>
+                <input type="number" name="lstm_weight_decay_min" value="0.00001" min="0.00001" max="0.001" step="0.00001" aria-label="Weight decay minimum value">
+            </div>
+            <div>
+                <label for="lstm_weight_decay_max">Max</label>
+                <input type="number" name="lstm_weight_decay_max" value="0.0005" min="0.00001" max="0.001" step="0.00001" aria-label="Weight decay maximum value">
+            </div>
+            <div>
+                <label for="lstm_weight_decay_step">Step</label>
+                <input type="number" name="lstm_weight_decay_step" value="0.0001" min="0.00001" max="0.0005" step="0.00001" aria-label="Weight decay step value">
+            </div>
+        </div>
+        <small class="help-text-small">L2 regularization strength</small>
+    </div>
+    <br>
+
+    <!-- Huber Delta Range -->
+    <div>
+        <label>Huber Delta Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="lstm_huber_delta_min">Min</label>
+                <input type="number" name="lstm_huber_delta_min" value="0.7" min="0.5" max="2.0" step="0.1" aria-label="Huber delta minimum value">
+            </div>
+            <div>
+                <label for="lstm_huber_delta_max">Max</label>
+                <input type="number" name="lstm_huber_delta_max" value="1.5" min="0.5" max="2.0" step="0.1" aria-label="Huber delta maximum value">
+            </div>
+            <div>
+                <label for="lstm_huber_delta_step">Step</label>
+                <input type="number" name="lstm_huber_delta_step" value="0.4" min="0.1" max="1.0" step="0.1" aria-label="Huber delta step value">
+            </div>
+        </div>
+        <small class="help-text-small">Loss function robustness parameter</small>
+    </div>
+    <br>
+
+    <!-- Patience Range -->
+    <div>
+        <label>Early Stopping Patience Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="lstm_patience_min">Min</label>
+                <input type="number" name="lstm_patience_min" value="20" min="10" max="100" step="10" aria-label="Patience minimum value">
+            </div>
+            <div>
+                <label for="lstm_patience_max">Max</label>
+                <input type="number" name="lstm_patience_max" value="50" min="10" max="100" step="10" aria-label="Patience maximum value">
+            </div>
+            <div>
+                <label for="lstm_patience_step">Step</label>
+                <input type="number" name="lstm_patience_step" value="10" min="5" max="20" aria-label="Patience step value">
+            </div>
+        </div>
+        <small class="help-text-small">Epochs to wait before early stopping</small>
+    </div>
+    <br>
+
+    <!-- Epochs Range -->
+    <div>
+        <label>Number of Epochs Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="lstm_epochs_min">Min</label>
+                <input 
+                    type="number" 
+                    id="lstm_epochs_min"
+                    name="lstm_epochs_min" 
+                    value="100" 
+                    min="50" 
+                    max="500" 
+                    step="50"
+                    aria-label="Epochs minimum value">
+            </div>
+            <div>
+                <label for="lstm_epochs_max">Max</label>
+                <input 
+                    type="number" 
+                    id="lstm_epochs_max"
+                    name="lstm_epochs_max" 
+                    value="300" 
+                    min="50" 
+                    max="500" 
+                    step="50"
+                    aria-label="Epochs maximum value">
+            </div>
+            <div>
+                <label for="lstm_epochs_step">Step</label>
+                <input 
+                    type="number" 
+                    id="lstm_epochs_step"
+                    name="lstm_epochs_step" 
+                    value="100" 
+                    min="50" 
+                    max="200"
+                    aria-label="Epochs step value">
+            </div>
+        </div>
+        <small class="help-text-small">Maximum training epochs. Example: 100 to 300 by 100 → tests [100, 200, 300]</small>
+    </div>
+    <br>
+
+    <!-- Combination Estimate -->
+    <div id="lstm_combination_estimate" class="combination-estimate">
+        <strong>⚠️ Estimated Combinations:</strong> <span id="lstm_total_combinations">Calculating...</span>
+        <br>
+        <small>Fewer combinations = faster training. Adjust ranges to balance speed vs thoroughness.</small>
+    </div>
+</div>
+
+<!-- Manual Parameters Section -->
+<div id="lstm_manual_section" style="display: none;">
+    <h4>Manual Hyperparameter Configuration</h4>
+    
+    <label for="hidden_size">Hidden Size</label><br>
+    <input type="number" id="hidden_size" name="hidden_size" value="8"><br><br>
+
+    <label for="num_layers">Number of Layers</label><br>
+    <input type="number" id="num_layers" name="num_layers" value="2"><br><br>
+
+    <label for="dropout">Dropout Rate</label><br>
+    <input type="number" step="0.05" id="dropout" name="dropout" value="0.3"><br><br>
+    
+    <label for="learning_rate">Learning Rate</label><br>
+    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003"><br><br>
+
+    <label for="weight_decay">Weight Decay</label><br>
+    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001"><br><br>
+
+    <label for="epochs">Number of Epochs</label><br>
+    <input type="number" id="epochs" name="epochs" value="200"><br><br>
+
+    <label for="patience">Early Stopping Patience</label><br>
+    <input type="number" id="patience" name="patience" value="30"><br><br>
+
+    <label for="huber_delta">Huber Loss Delta</label><br>
+    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0"><br><br>
+</div>
+
+<p class="help-text">
+    <i>Note: If "Auto-Tune" is checked, grid search will test all combinations within the specified ranges.</i>
+</p>
+
+<script>
+// Toggle visibility
+document.getElementById('auto_tune_lstm').addEventListener('change', function() {
+    document.getElementById('lstm_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('lstm_manual_section').style.display = this.checked ? 'none' : 'block';
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const autoTuneCheckbox = document.getElementById('auto_tune_lstm');
+    if (autoTuneCheckbox) {
+        document.getElementById('lstm_grid_search_ranges').style.display = autoTuneCheckbox.checked ? 'block' : 'none';
+        document.getElementById('lstm_manual_section').style.display = autoTuneCheckbox.checked ? 'none' : 'block';
+    }
+});
+
+// Calculate combinations
+function calculateLSTMCombinations() {
+    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+    
+    const h = calc(
+        parseFloat(document.querySelector('[name="lstm_hidden_size_min"]').value),
+        parseFloat(document.querySelector('[name="lstm_hidden_size_max"]').value),
+        parseFloat(document.querySelector('[name="lstm_hidden_size_step"]').value)
+    );
+    const l = calc(
+        parseFloat(document.querySelector('[name="lstm_num_layers_min"]').value),
+        parseFloat(document.querySelector('[name="lstm_num_layers_max"]').value),
+        parseFloat(document.querySelector('[name="lstm_num_layers_step"]').value)
+    );
+    const d = calc(
+        parseFloat(document.querySelector('[name="lstm_dropout_min"]').value),
+        parseFloat(document.querySelector('[name="lstm_dropout_max"]').value),
+        parseFloat(document.querySelector('[name="lstm_dropout_step"]').value)
+    );
+    const lr = calc(
+        parseFloat(document.querySelector('[name="lstm_learning_rate_min"]').value),
+        parseFloat(document.querySelector('[name="lstm_learning_rate_max"]').value),
+        parseFloat(document.querySelector('[name="lstm_learning_rate_step"]').value)
+    );
+    const wd = calc(
+        parseFloat(document.querySelector('[name="lstm_weight_decay_min"]').value),
+        parseFloat(document.querySelector('[name="lstm_weight_decay_max"]').value),
+        parseFloat(document.querySelector('[name="lstm_weight_decay_step"]').value)
+    );
+    const hd = calc(
+        parseFloat(document.querySelector('[name="lstm_huber_delta_min"]').value),
+        parseFloat(document.querySelector('[name="lstm_huber_delta_max"]').value),
+        parseFloat(document.querySelector('[name="lstm_huber_delta_step"]').value)
+    );
+    const p = calc(
+        parseFloat(document.querySelector('[name="lstm_patience_min"]').value),
+        parseFloat(document.querySelector('[name="lstm_patience_max"]').value),
+        parseFloat(document.querySelector('[name="lstm_patience_step"]').value)
+    );
+    const epochs = calc(
+        parseFloat(document.querySelector('[name="lstm_epochs_min"]').value),
+        parseFloat(document.querySelector('[name="lstm_epochs_max"]').value),
+        parseFloat(document.querySelector('[name="lstm_epochs_step"]').value)
+    );
+    
+    const total = h * l * d * lr * wd * hd * p * epochs;
+    document.getElementById('lstm_total_combinations').textContent = total.toLocaleString() + ' combinations';
+    
+    const estimateDiv = document.getElementById('lstm_combination_estimate');
+    estimateDiv.className = 'combination-estimate';
+    if (total < 100) estimateDiv.classList.add('good');
+    else if (total < 1000) estimateDiv.classList.add('warning');
+    else estimateDiv.classList.add('danger');
+}
+
+document.querySelectorAll('[name^="lstm_"]').forEach(input => {
+    input.addEventListener('input', calculateLSTMCombinations);
+});
+
+document.addEventListener('DOMContentLoaded', calculateLSTMCombinations);
+</script>

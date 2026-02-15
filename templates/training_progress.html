@@ -1,0 +1,694 @@
+{% extends "base.html" %}
+
+{% block title %}Training Models - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       PAGE LAYOUT
+       ======================================== */
+    .training-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .training-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* ========================================
+       PAGE HEADER
+       ======================================== */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .page-header .subtitle {
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.9);
+        font-weight: 400;
+    }
+
+    /* ========================================
+       ANIMATED LOADING ICON
+       ======================================== */
+    .loading-icon-container {
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    .loading-icon {
+        font-size: 4rem;
+        animation: bounce 2s ease-in-out infinite;
+        display: inline-block;
+        filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
+    }
+
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0) scale(1);
+        }
+        50% {
+            transform: translateY(-20px) scale(1.1);
+        }
+    }
+
+    /* ========================================
+       PROGRESS CARDS
+       ======================================== */
+    .progress-card {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        animation: fadeInUp 0.8s ease backwards;
+    }
+
+    .progress-card.overall {
+        animation-delay: 0.2s;
+    }
+
+    .progress-card.logs {
+        animation-delay: 0.4s;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .card-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+        }
+    }
+
+    .card-title {
+        flex: 1;
+    }
+
+    .card-title h3 {
+        font-size: 1.8rem;
+        color: #2d3748;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    /* ========================================
+       PROGRESS BAR
+       ======================================== */
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    .progress-status {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2d3748;
+    }
+
+    .progress-percent {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .progress-bar-container {
+        width: 100%;
+        height: 40px;
+        background: #e2e8f0;
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+        background-size: 200% 100%;
+        border-radius: 20px;
+        transition: width 0.5s ease;
+        position: relative;
+        animation: shimmer 2s linear infinite;
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: 200% center;
+        }
+        100% {
+            background-position: -200% center;
+        }
+    }
+
+    .progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, 
+            transparent, 
+            rgba(255,255,255,0.3), 
+            transparent
+        );
+        animation: progressGlow 1.5s ease-in-out infinite;
+    }
+
+    @keyframes progressGlow {
+        0% {
+            transform: translateX(-100%);
+        }
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    /* ========================================
+       MODEL INFO BOX
+       ======================================== */
+    .model-info-box {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-left: 5px solid #667eea;
+        border-radius: 12px;
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .current-model {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .spinner {
+        width: 20px;
+        height: 20px;
+        border: 3px solid #e2e8f0;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .current-step {
+        font-size: 1rem;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    /* ========================================
+       LIVE LOGS SECTION
+       ======================================== */
+    .logs-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .live-indicator {
+        width: 12px;
+        height: 12px;
+        background: #51cf66;
+        border-radius: 50%;
+        animation: blink 1.5s ease-in-out infinite;
+        box-shadow: 0 0 10px #51cf66;
+    }
+
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    .logs-container {
+        background: #1e1e1e;
+        border-radius: 12px;
+        padding: 1.5rem;
+        max-height: 500px;
+        overflow-y: auto;
+        font-family: 'Courier New', Consolas, monospace;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .logs-container::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .logs-container::-webkit-scrollbar-track {
+        background: #2d2d2d;
+        border-radius: 10px;
+    }
+
+    .logs-container::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 10px;
+    }
+
+    .logs-container::-webkit-scrollbar-thumb:hover {
+        background: #764ba2;
+    }
+
+    .log-line {
+        margin: 0.3rem 0;
+        padding: 0.3rem 0.5rem;
+        border-radius: 4px;
+        animation: logAppear 0.3s ease;
+    }
+
+    @keyframes logAppear {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .log-success {
+        color: #51cf66;
+        background: rgba(81, 207, 102, 0.1);
+    }
+
+    .log-error {
+        color: #ff6b6b;
+        background: rgba(255, 107, 107, 0.1);
+    }
+
+    .log-warning {
+        color: #ffd43b;
+        background: rgba(255, 212, 59, 0.1);
+    }
+
+    .log-info {
+        color: #4dabf7;
+        background: rgba(77, 171, 247, 0.1);
+    }
+
+    .log-default {
+        color: #00ff00;
+    }
+
+    /* ========================================
+       ERROR CONTAINER
+       ======================================== */
+    .error-card {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-top: 2rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        border-left: 5px solid #f56565;
+        animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-10px); }
+        75% { transform: translateX(10px); }
+    }
+
+    .error-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .error-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f56565 0%, #c92a2a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .error-title {
+        font-size: 1.8rem;
+        color: #2d3748;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .error-message {
+        font-size: 1.1rem;
+        color: #718096;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+
+    .error-button {
+        padding: 1rem 2.5rem;
+        background: linear-gradient(135deg, #f56565 0%, #c92a2a 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 10px 30px rgba(245, 101, 101, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .error-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(245, 101, 101, 0.5);
+    }
+
+    /* ========================================
+       COMPLETION ANIMATION
+       ======================================== */
+    .completion-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.8);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .completion-overlay.active {
+        display: flex;
+    }
+
+    .completion-content {
+        background: white;
+        padding: 3rem;
+        border-radius: 20px;
+        text-align: center;
+        animation: scaleIn 0.5s ease;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .completion-icon {
+        font-size: 5rem;
+        animation: successBounce 0.6s ease;
+    }
+
+    @keyframes successBounce {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+
+    .completion-text {
+        font-size: 1.5rem;
+        color: #2d3748;
+        font-weight: 700;
+        margin-top: 1rem;
+    }
+
+    /* ========================================
+       RESPONSIVE
+       ======================================== */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .progress-card {
+            padding: 1.5rem;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+
+        .card-title h3 {
+            font-size: 1.3rem;
+        }
+
+        .progress-bar-container {
+            height: 30px;
+        }
+
+        .logs-container {
+            font-size: 0.8rem;
+            max-height: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="training-page">
+    <div class="training-container">
+        
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🔄 Training Models</h1>
+            <p class="subtitle">Please wait while we train and optimize your selected models</p>
+        </div>
+
+        <!-- Animated Loading Icon -->
+        <div class="loading-icon-container">
+            <div class="loading-icon">🤖</div>
+        </div>
+
+        <!-- Overall Progress Card -->
+        <div class="progress-card overall">
+            <div class="card-header">
+                <div class="card-icon">📊</div>
+                <div class="card-title">
+                    <h3>Overall Progress</h3>
+                </div>
+            </div>
+
+            <div class="progress-info">
+                <span id="overallStatus" class="progress-status">Initializing...</span>
+                <span id="overallPercent" class="progress-percent">0%</span>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="overallProgressBar" class="progress-bar" style="width: 0%;"></div>
+            </div>
+
+            <div id="modelInfo" class="model-info-box">
+                <div class="current-model">
+                    <span class="spinner"></span>
+                    <span id="currentModel">Starting training...</span>
+                </div>
+                <div class="current-step" id="currentStep">Preparing data...</div>
+            </div>
+        </div>
+
+        <!-- Live Logs Card -->
+        <div class="progress-card logs">
+            <div class="card-header">
+                <div class="card-icon">📜</div>
+                <div class="card-title">
+                    <div class="logs-header">
+                        <h3>Live Training Logs</h3>
+                        <span class="live-indicator"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="logs-container">
+                <div id="logs">
+                    <div class="log-line log-info">⏳ Initializing training process...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Container (hidden by default) -->
+        <div id="errorContainer" class="error-card" style="display: none;">
+            <div class="error-header">
+                <div class="error-icon">❌</div>
+                <h3 class="error-title">Training Error</h3>
+            </div>
+            <p class="error-message" id="errorMessage"></p>
+            <button class="error-button" onclick="window.location.href='/models'">
+                Back to Model Selection
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- Completion Overlay -->
+<div id="completionOverlay" class="completion-overlay">
+    <div class="completion-content">
+        <div class="completion-icon">✅</div>
+        <div class="completion-text">Training Complete!</div>
+        <p style="color: #718096; margin-top: 0.5rem;">Redirecting to results...</p>
+    </div>
+</div>
+
+<script>
+console.log('DEBUG: is_single_model =', '{{ is_single_model|default("false") }}');
+console.log('DEBUG: isSingleModel =', '{{ is_single_model|default("false") }}' === 'true');
+
+const sessionId = '{{ session_id }}';
+const isSingleModel = '{{ is_single_model|default("false")|lower }}' === 'true';
+
+const eventSource = new EventSource(`/training_progress_stream?session_id=${sessionId}`);
+
+eventSource.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    
+    // Update overall progress
+    const progressPercent = Math.round(data.progress_percent || 0);
+    document.getElementById('overallPercent').textContent = `${progressPercent}%`;
+    document.getElementById('overallProgressBar').style.width = `${progressPercent}%`;
+    
+    // Update status
+    const statusText = `Training ${data.models_completed || 0} of ${data.total_models || 0} models`;
+    document.getElementById('overallStatus').textContent = statusText;
+    
+    // Update current model info
+    if (data.current_model) {
+        document.getElementById('currentModel').textContent = data.current_model;
+    }
+    if (data.current_step) {
+        document.getElementById('currentStep').textContent = data.current_step;
+    }
+    
+    // Update logs with styling
+    if (data.logs && data.logs.length > 0) {
+        const logsDiv = document.getElementById('logs');
+        logsDiv.innerHTML = data.logs.map(log => {
+            let className = 'log-default';
+            if (log.includes('ERROR') || log.includes('❌')) {
+                className = 'log-error';
+            } else if (log.includes('✅') || log.includes('SUCCESS') || log.includes('complete')) {
+                className = 'log-success';
+            } else if (log.includes('⚠️') || log.includes('WARNING')) {
+                className = 'log-warning';
+            } else if (log.includes('→') || log.includes('Initializing') || log.includes('Loading')) {
+                className = 'log-info';
+            }
+            return `<div class="log-line ${className}">${escapeHtml(log)}</div>`;
+        }).join('');
+        
+        // Auto-scroll to bottom
+        logsDiv.scrollTop = logsDiv.scrollHeight;
+    }
+    
+    // Handle completion
+    if (data.status === 'complete') {
+        eventSource.close();
+        document.getElementById('completionOverlay').classList.add('active');
+        
+        setTimeout(() => {
+            if (isSingleModel) {
+                window.location.href = `/show_single_results?session_id=${sessionId}`;
+            } else {
+                window.location.href = '/show_comparison';
+            }
+        }, 2000);
+    }
+    
+    // Handle errors
+    if (data.status === 'error') {
+        eventSource.close();
+        document.getElementById('errorContainer').style.display = 'block';
+        document.getElementById('errorMessage').textContent = data.error || 'An unknown error occurred during training.';
+    }
+};
+
+eventSource.onerror = function(error) {
+    console.error('EventSource error:', error);
+    eventSource.close();
+};
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

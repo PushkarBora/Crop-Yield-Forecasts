@@ -1,0 +1,26 @@
+<h3>ARIMA Parameters</h3>
+
+<label for="auto_arima">
+    <input 
+        type="checkbox" 
+        id="auto_arima" 
+        name="auto_arima" 
+        value="true" 
+        checked
+    >
+    Auto-Select Best ARIMA Order
+</label>
+<br><br>
+
+<label for="arima_p">AR Order (p)</label><br>
+<input type="number" id="arima_p" name="arima_p" value="1"><br><br>
+
+<label for="arima_d">Differencing Order (d)</label><br>
+<input type="number" id="arima_d" name="arima_d" value="1"><br><br>
+
+<label for="arima_q">MA Order (q)</label><br>
+<input type="number" id="arima_q" name="arima_q" value="0"><br><br>
+
+<p class="help-text">
+    <i>Note: If "Auto-Select" is checked, manual p , d and q values will be ignored. The model will automatically find the best parameters.</i>
+</p>
