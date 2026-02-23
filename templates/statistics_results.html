@@ -1,0 +1,761 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics Results - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Page shell ─────────────────────────────────────────────── */
+.results-page {
+    min-height: 100vh;
+    padding: 2rem 0 5rem;
+}
+.results-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* ── Page header ────────────────────────────────────────────── */
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeInUp 0.7s ease;
+}
+.page-header h1 { font-size: 2.8rem; color: white; font-weight: 700; margin-bottom: .4rem; }
+.page-header p  { font-size: 1.15rem; color: rgba(255,255,255,.9); }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(25px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Result card wrapper ────────────────────────────────────── */
+.result-card {
+    background: rgba(255,255,255,.97);
+    border-radius: 20px;
+    padding: 2.4rem 2.8rem;
+    box-shadow: 0 16px 50px rgba(0,0,0,.18);
+    margin-bottom: 2rem;
+    animation: fadeInUp .7s ease both;
+}
+
+.section-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 1.5rem;
+    padding-bottom: .9rem;
+    border-bottom: 3px solid transparent;
+    border-image: linear-gradient(90deg,#667eea,#764ba2) 1;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+/* ── Generic table ──────────────────────────────────────────── */
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .95rem;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.stats-table thead tr {
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    color: white;
+}
+.stats-table thead th {
+    padding: .85rem 1rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: .88rem;
+    letter-spacing: .3px;
+    white-space: nowrap;
+}
+.stats-table thead th:first-child { text-align: left; }
+.stats-table tbody tr { transition: background .2s; }
+.stats-table tbody tr:nth-child(even) { background: #f7f8ff; }
+.stats-table tbody tr:hover           { background: #eef0ff; }
+.stats-table tbody td {
+    padding: .78rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: center;
+    color: #2d3748;
+}
+.stats-table tbody td:first-child {
+    text-align: left;
+    font-weight: 700;
+    color: #667eea;
+}
+.stats-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Generic variable badge — works for ANY column name ── */
+.var-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .3rem .75rem; border-radius: 20px;
+    font-size: .85rem; font-weight: 700;
+    background: #ede9fe; color: #5b21b6;   /* single purple style, always */
+}
+
+/* ── Normality / test tables ────────────────────────────────── */
+.test-sub-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 1.6rem 0 .8rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+/* ── Interpretation chip ────────────────────────────────────── */
+.chip {
+    display: inline-block;
+    padding: .25rem .75rem;
+    border-radius: 20px;
+    font-size: .82rem;
+    font-weight: 700;
+}
+.chip-ok    { background:#d1fae5; color:#065f46; }   /* green */
+.chip-warn  { background:#fee2e2; color:#991b1b; }   /* red   */
+.chip-up    { background:#dbeafe; color:#1e40af; }   /* blue  */
+.chip-down  { background:#fce7f3; color:#9d174d; }   /* pink  */
+.chip-none  { background:#f3f4f6; color:#6b7280; }   /* grey  */
+
+/* ── p-value colouring ─────────────────────────────────────── */
+.p-sig   { color:#dc2626; font-weight:700; }
+.p-ok    { color:#16a34a; font-weight:700; }
+
+/* ── Plot grid ──────────────────────────────────────────────── */
+.plots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(460px,1fr));
+    gap: 1.8rem;
+    margin-top: .5rem;
+}
+.plot-card {
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,.1);
+    transition: transform .25s, box-shadow .25s;
+}
+.plot-card:hover { transform: translateY(-4px); box-shadow: 0 14px 35px rgba(0,0,0,.16); }
+.plot-card img { width: 100%; display: block; }
+.plot-label {
+    padding: .8rem 1.2rem;
+    font-weight: 700;
+    font-size: .95rem;
+    color: #2d3748;
+    border-top: 2px solid #e2e8f0;
+    background: #fafbff;
+    text-align: center;
+}
+
+/* ── MK / Sen trend card ────────────────────────────────────── */
+.trend-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(420px,1fr)); gap: 1.5rem; }
+.trend-inner { background: #fafbff; border-radius: 14px; padding: 1.4rem 1.6rem; border: 1.5px solid #e2e8f0; }
+.trend-inner .t-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem;
+}
+.trend-inner .t-name { font-size: 1.05rem; font-weight: 700; color: #2d3748; }
+.trend-inner .interp-box {
+    margin-top: 1rem;
+    padding: .8rem 1rem;
+    border-radius: 10px;
+    background: #f0f4ff;
+    border-left: 4px solid #667eea;
+    font-size: .88rem;
+    color: #374151;
+    line-height: 1.55;
+}
+
+/* ── Nonlinearity same style as trend ──────────────────────── */
+.nl-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(400px,1fr)); gap: 1.5rem; }
+.nl-inner { background: #fafbff; border-radius: 14px; padding: 1.4rem 1.6rem; border: 1.5px solid #e2e8f0; }
+
+/* ── Action bar ─────────────────────────────────────────────── */
+.action-bar {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 2.5rem;
+}
+.action-btn {
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .3s;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12);
+}
+.btn-primary   { background: linear-gradient(135deg,#667eea,#764ba2); color:white; }
+.btn-secondary { background: linear-gradient(135deg,#28a745,#20c997); color:white; }
+.action-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.2); }
+
+/* ── Stationarity inline critical values ────────────────────── */
+.cv-inline { font-size:.78rem; color:#6b7280; }
+
+@media (max-width:768px) {
+    .page-header h1 { font-size: 2rem; }
+    .result-card { padding: 1.5rem; }
+    .plots-grid  { grid-template-columns: 1fr; }
+    .trend-grid, .nl-grid { grid-template-columns: 1fr; }
+    .stats-table { font-size: .82rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{# ── Reusable macro: generic variable badge for ANY column name ── #}
+{% macro var_badge(name) %}
+    <span class="var-badge">{{ name }}</span>
+{% endmacro %}
+{# ── p-value formatter ── #}
+{% macro fmt_p(p) %}
+  {%- if p is not none and p is number and p < 0.001 -%}
+    <span style="font-style:italic;">&lt;0.001</span>
+  {%- elif p is not none and p is number and p < 0.01 -%}
+    <span style="font-style:italic;">&lt;0.01</span>
+  {%- else -%}
+    {{ p }}
+  {%- endif -%}
+{% endmacro %}
+<div class="results-page">
+<div class="results-container">
+
+    <!-- ── Header ───────────────────────────────────────────── -->
+    <div class="page-header">
+        <h1>📊 Statistics & Diagnostic Results</h1>
+        <p>Analysis results for your time series data</p>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         1. SUMMARY STATISTICS  (tabular — one row per variable)
+    ════════════════════════════════════════════════════════ -->
+    {% if results.summary_stats %}
+    {% set ss = results.summary_stats %}
+    {% set variables = ss.keys() | list %}
+    <!-- collect which stat columns actually exist -->
+    {% set stat_cols = [] %}
+    {% for s in ['mean','median','mode','range','variance','std','cv','se','skewness','kurtosis'] %}
+        {% for v in variables %}{% if s in ss[v] %}{% if stat_cols.append(s) %}{% endif %}{% endif %}{% endfor %}
+    {% endfor %}
+    <!-- deduplicate preserving order via a trick -->
+    {% set seen = namespace(cols=[]) %}
+    {% for s in ['mean','median','mode','range','variance','std','cv','se','skewness','kurtosis'] %}
+        {% if s in stat_cols and s not in seen.cols %}{% if seen.cols.append(s) %}{% endif %}{% endif %}
+    {% endfor %}
+
+    <div class="result-card">
+        <h2 class="section-title">📈 Summary Statistics</h2>
+        <div style="overflow-x:auto;">
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Variable</th>
+                    {% if 'mean'      in seen.cols %}<th>Mean</th>{% endif %}
+                    {% if 'median'    in seen.cols %}<th>Median</th>{% endif %}
+                    {% if 'mode'      in seen.cols %}<th>Mode</th>{% endif %}
+                    {% if 'range'     in seen.cols %}<th>Range</th>{% endif %}
+                    {% if 'variance'  in seen.cols %}<th>Variance</th>{% endif %}
+                    {% if 'std'       in seen.cols %}<th>Std Dev</th>{% endif %}
+                    {% if 'cv'        in seen.cols %}<th>CV (%)</th>{% endif %}
+                    {% if 'se'        in seen.cols %}<th>SE of Mean</th>{% endif %}
+                    {% if 'skewness'  in seen.cols %}<th>Skewness</th>{% endif %}
+                    {% if 'kurtosis'  in seen.cols %}<th>Kurtosis</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for var, vstats in ss.items() %}
+                <tr>
+                    <td>
+                        {% if var == 'Yield' %}
+                            <span class="var-badge yield">🌾 Yield</span>
+                        {% elif var == 'Mean_T' %}
+                            <span class="var-badge mean-t">🌡 Mean_T</span>
+                        {% elif var == 'Mean_Rain' %}
+                            <span class="var-badge mean-rain">🌧 Mean_Rain</span>
+                        {% else %}
+                            <span class="var-badge yield">{{ var }}</span>
+                        {% endif %}
+                    </td>
+                    {% if 'mean'     in seen.cols %}<td>{{ vstats.get('mean',    '—') }}</td>{% endif %}
+                    {% if 'median'   in seen.cols %}<td>{{ vstats.get('median',  '—') }}</td>{% endif %}
+                    {% if 'mode'     in seen.cols %}<td>{{ vstats.get('mode',    '—') }}</td>{% endif %}
+                    {% if 'range'    in seen.cols %}<td>{{ vstats.get('range',   '—') }}</td>{% endif %}
+                    {% if 'variance' in seen.cols %}<td>{{ vstats.get('variance','—') }}</td>{% endif %}
+                    {% if 'std'      in seen.cols %}<td>{{ vstats.get('std',     '—') }}</td>{% endif %}
+                    {% if 'cv'       in seen.cols %}<td>{{ vstats.get('cv',      '—') }}</td>{% endif %}
+                    {% if 'se'       in seen.cols %}<td>{{ vstats.get('se',      '—') }}</td>{% endif %}
+                    {% if 'skewness' in seen.cols %}<td>{{ vstats.get('skewness','—') }}</td>{% endif %}
+                    {% if 'kurtosis' in seen.cols %}<td>{{ vstats.get('kurtosis','—') }}</td>{% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- ════════════════════════════════════════════════════════
+         2. NORMALITY TESTS — one sub-table per test
+    ════════════════════════════════════════════════════════ -->
+    {% if results.normality_tests %}
+    {% set nt = results.normality_tests %}
+    {% set nt_vars = nt.keys() | list %}
+
+    <div class="result-card">
+        <h2 class="section-title">📐 Tests for Normality</h2>
+
+        {# ── Shapiro-Wilk ── #}
+        {% set has_sw = [] %}
+        {% for v in nt_vars %}{% if nt[v].shapiro is defined %}{% if has_sw.append(1) %}{% endif %}{% endif %}{% endfor %}
+        {% if has_sw %}
+        <p class="test-sub-title">🔬 Shapiro-Wilk (SW) Test</p>
+        <div style="overflow-x:auto;">
+        <table class="stats-table">
+            <thead><tr><th>Variable</th><th>W Statistic</th><th>p-value</th><th>Decision</th></tr></thead>
+            <tbody>
+            {% for var, vtests in nt.items() %}{% if vtests.shapiro is defined %}
+            {% set t = vtests.shapiro %}
+            <tr>
+                <td>{{ var_badge(var) }}</td>
+                <td>{{ t.statistic }}</td>
+                <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Normal' else 'chip-warn' }}">{{ t.interpretation }}</span></td>
+            </tr>
+            {% endif %}{% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+
+        {# ── Kolmogorov-Smirnov ── #}
+        {% set has_ks = [] %}
+        {% for v in nt_vars %}{% if nt[v].ks is defined %}{% if has_ks.append(1) %}{% endif %}{% endif %}{% endfor %}
+        {% if has_ks %}
+        <p class="test-sub-title">🔬 Kolmogorov-Smirnov (KS) Test</p>
+        <div style="overflow-x:auto;">
+        <table class="stats-table">
+            <thead><tr><th>Variable</th><th>D Statistic</th><th>p-value</th><th>Decision</th></tr></thead>
+            <tbody>
+            {% for var, vtests in nt.items() %}{% if vtests.ks is defined %}
+            {% set t = vtests.ks %}
+            <tr>
+                <td>{{ var_badge(var) }}</td>
+                <td>{{ t.statistic }}</td>
+                <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Normal' else 'chip-warn' }}">{{ t.interpretation }}</span></td>
+            </tr>
+            {% endif %}{% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+
+        {# ── Anderson-Darling — now shows p-value (statsmodels normal_ad) ── #}
+        {% set has_ad = [] %}
+        {% for v in nt_vars %}{% if nt[v].anderson is defined %}{% if has_ad.append(1) %}{% endif %}{% endif %}{% endfor %}
+        {% if has_ad %}
+        <p class="test-sub-title">🔬 Anderson-Darling (AD) Test</p>
+        <div style="overflow-x:auto;">
+        <table class="stats-table">
+            <thead><tr><th>Variable</th><th>A² Statistic</th><th>p-value</th><th>Decision</th></tr></thead>
+            <tbody>
+            {% for var, vtests in nt.items() %}{% if vtests.anderson is defined %}
+            {% set t = vtests.anderson %}
+            <tr>
+                <td>{{ var_badge(var) }}</td>
+                <td>{{ t.statistic }}</td>
+                <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Normal' else 'chip-warn' }}">{{ t.interpretation }}</span></td>
+            </tr>
+            {% endif %}{% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+
+        {# ── Jarque-Bera ── #}
+        {% set has_jb = [] %}
+        {% for v in nt_vars %}{% if nt[v].jarque_bera is defined %}{% if has_jb.append(1) %}{% endif %}{% endif %}{% endfor %}
+        {% if has_jb %}
+        <p class="test-sub-title">🔬 Jarque-Bera (JB) Test</p>
+        <div style="overflow-x:auto;">
+        <table class="stats-table">
+            <thead><tr><th>Variable</th><th>JB Statistic</th><th>p-value</th><th>Decision</th></tr></thead>
+            <tbody>
+            {% for var, vtests in nt.items() %}{% if vtests.jarque_bera is defined %}
+            {% set t = vtests.jarque_bera %}
+            <tr>
+                <td>{{ var_badge(var) }}</td>
+                <td>{{ t.statistic }}</td>
+                <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Normal' else 'chip-warn' }}">{{ t.interpretation }}</span></td>
+            </tr>
+            {% endif %}{% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+
+    </div>{# end normality card #}
+    {% endif %}
+
+
+    <!-- ════════════════════════════════════════════════════════
+         3. STATIONARITY TESTS
+    ════════════════════════════════════════════════════════ -->
+    {% if results.stationarity_tests %}
+{% set st = results.stationarity_tests %}
+<div class="result-card">
+    <h2 class="section-title">⚖️ Tests for Stationarity</h2>
+
+    {# ✅ FIX: st is now {col_name: {adf:..., pp:..., kpss:...}} #}
+    {% for col_name, col_tests in st.items() %}
+
+        {% if col_tests.adf is defined %}{% set t = col_tests.adf %}
+        <p class="test-sub-title">📏 Augmented Dickey-Fuller (ADF) Test</p>
+        <div style="overflow-x:auto;">
+        <table class="stats-table">
+            <thead><tr><th>Variable</th><th>ADF Statistic</th><th>p-value</th>
+                <th>Decision</th></tr></thead>
+            <tbody>
+            <tr>
+                <td><span class="var-badge yield">{{ col_name }}</span></td>
+                <td>{{ t.statistic }}</td>
+                <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Stationary' else 'chip-warn' }}">
+                    {{ t.interpretation }}</span></td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+
+        {% if col_tests.pp is defined %}{% set t = col_tests.pp %}
+        <p class="test-sub-title">📏 Phillips-Perron (PP) Test</p>
+        <div style="overflow-x:auto;">
+        <table class="stats-table">
+            <thead><tr><th>Variable</th><th>PP Statistic</th><th>p-value</th><th>Lags</th><th>Decision</th></tr></thead>
+            <tbody>
+            <tr>
+                <td><span class="var-badge yield">{{ col_name }}</span></td>
+        <td>{{ t.statistic if t.statistic is not none else '—' }}</td>
+        <td class="{{ 'p-sig' if (t.p_value and t.p_value <= 0.05) else 'p-ok' }}">
+            {{ fmt_p(t.p_value) if t.p_value is not none else '—' }}</td>
+        <td>{{ t.lags if t.lags is defined else '—' }}</td>
+        <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Stationary' else 'chip-warn' }}">
+            {{ t.interpretation }}</span></td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+
+        {% if col_tests.kpss is defined %}{% set t = col_tests.kpss %}
+        <p class="test-sub-title">📏 KPSS Test <span style="font-size:.8rem;font-weight:400;color:#6b7280;">(H₀: Stationary)</span></p>
+        <div style="overflow-x:auto;">
+        <table class="stats-table">
+            <thead><tr><th>Variable</th><th>KPSS Statistic</th><th>p-value</th>
+                <th>Decision</th></tr></thead>
+            <tbody>
+            <tr>
+                <td><span class="var-badge yield">{{ col_name }}</span></td>
+                <td>{{ t.statistic }}</td>
+                <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                <td><span class="chip {{ 'chip-warn' if t.interpretation == 'Non-Stationary' else 'chip-ok' }}">
+                    {{ t.interpretation }}</span></td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+
+    {% endfor %}{# end col_name loop #}
+
+</div>
+{% endif %}
+
+
+    <!-- ════════════════════════════════════════════════════════
+         4. TREND TESTS
+    ════════════════════════════════════════════════════════ -->
+    {% if results.trend_tests %}
+    {% set tt = results.trend_tests %}
+    <div class="result-card">
+        <h2 class="section-title">📉 Tests for Identifying Trends</h2>
+        <div class="trend-grid">
+
+            {% if tt.mann_kendall %}{% set mk = tt.mann_kendall %}
+            <div class="trend-inner">
+                <div class="t-header">
+                    <span class="t-name">Mann-Kendall (MK) Test</span>
+                    <span class="chip {{ 'chip-up' if mk.trend == 'increasing' else ('chip-down' if mk.trend == 'decreasing' else 'chip-none') }}">
+                        {{ mk.trend | title }}
+                    </span>
+                </div>
+                <table class="stats-table">
+                    <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+                    <tbody>
+                    <tr><td>Trend Detected?</td><td><span class="chip {{ 'chip-warn' if mk.h else 'chip-ok' }}">{{ 'Yes' if mk.h else 'No' }}</span></td></tr>
+                    <tr><td>Z Statistic</td>   <td>{{ mk.z }}</td></tr>
+                    <tr><td>p-value</td>        <td class="{{ 'p-sig' if mk.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(mk.p_value) }}</td></tr>
+                    <tr><td>Kendall's τ</td>    <td>{{ mk.tau }}</td></tr>
+                    <tr><td>S</td>              <td>{{ mk.s }}</td></tr>
+                    <tr><td>Var(S)</td>         <td>{{ mk.var_s }}</td></tr>
+                    </tbody>
+                </table>
+                <div class="interp-box">💬 {{ mk.interpretation }}</div>
+            </div>
+            {% endif %}
+
+            {% if tt.sens_slope %}{% set ss2 = tt.sens_slope %}
+            <div class="trend-inner">
+                <div class="t-header">
+                    <span class="t-name">Sen's Slope Estimator</span>
+                    <span class="chip {{ 'chip-up' if ss2.slope > 0 else ('chip-down' if ss2.slope < 0 else 'chip-none') }}">
+                        {% if ss2.slope > 0 %}↑ Upward{% elif ss2.slope < 0 %}↓ Downward{% else %}→ No Trend{% endif %}
+                    </span>
+                </div>
+                <table class="stats-table">
+                    <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+                    <tbody>
+                    <tr><td>Sen's Slope</td> <td>{{ ss2.slope }}</td></tr>
+                    <tr><td>Intercept</td>   <td>{{ ss2.intercept }}</td></tr>
+                    <tr><td>Direction</td>
+                        <td>{% if ss2.slope > 0 %}↑ Positive{% elif ss2.slope < 0 %}↓ Negative{% else %}→ Zero{% endif %}</td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="interp-box">💬 {{ ss2.interpretation }}</div>
+            </div>
+            {% endif %}
+
+            {% if tt.linear_regression %}{% set lr = tt.linear_regression %}
+            <div class="trend-inner" style="grid-column: 1 / -1;">
+                <div class="t-header">
+                    <span class="t-name">📐 Linear Regression Trend (OLS)</span>
+                    <span class="chip {{ 'chip-up' if lr.direction == 'increasing' else ('chip-down' if lr.direction == 'decreasing' else 'chip-none') }}">
+                        {% if lr.direction == 'increasing' %}↑ Increasing{% elif lr.direction == 'decreasing' %}↓ Decreasing{% else %}→ No Trend{% endif %}
+                    </span>
+                </div>
+
+                {# ── Two-column table layout ── #}
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin-bottom:1rem;">
+
+                    {# Left: Equation & Fit #}
+                    <div>
+                        <p style="font-weight:700;color:#667eea;margin-bottom:.5rem;">📊 Trend Equation & Goodness of Fit</p>
+                        <table class="stats-table">
+                            <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+                            <tbody>
+                            <tr><td>Equation</td>
+                                <td style="font-style:italic;">
+                                    y = {{ lr.intercept }} + {{ lr.slope }} × t
+                                </td></tr>
+                            <tr><td>Slope (β₁)</td>       <td>{{ lr.slope }}</td></tr>
+                            <tr><td>Intercept (β₀)</td>   <td>{{ lr.intercept }}</td></tr>
+                            <tr><td>R²</td>               <td>{{ lr.r2 }}</td></tr>
+                            <tr><td>Adjusted R²</td>      <td>{{ lr.adj_r2 }}</td></tr>
+                            <tr><td>Sample Size (n)</td>  <td>{{ lr.n }}</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {# Right: Significance #}
+                    <div>
+                        <p style="font-weight:700;color:#667eea;margin-bottom:.5rem;">🔬 Significance Tests</p>
+                        <table class="stats-table">
+                            <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+                            <tbody>
+                            <tr><td>F-Statistic</td>
+                                <td>{{ lr.f_statistic }}</td></tr>
+                            <tr><td>p-value (F-test)</td>
+                                <td class="{{ 'p-sig' if lr.p_value_f <= 0.05 else 'p-ok' }}">{{ fmt_p(lr.p_value_f) }}</td></tr>
+                            <tr><td>t-Statistic (slope)</td>
+                                <td>{{ lr.t_statistic }}</td></tr>
+                            <tr><td>p-value (slope)</td>
+                                <td class="{{ 'p-sig' if lr.p_value_slope <= 0.05 else 'p-ok' }}">{{ fmt_p(lr.p_value_slope) }}</td></tr>
+                            <tr><td>SE (slope)</td>       <td>{{ lr.se_slope }}</td></tr>
+                            <tr>
+<td>t-Statistic (intercept)</td>
+<td>{{ lr.t_intercept }}</td>
+</tr>
+
+<tr>
+<td>p-value (intercept)</td>
+<td class="{{ 'p-sig' if lr.p_value_intercept <= 0.05 else 'p-ok' }}">
+{{ fmt_p(lr.p_value_intercept) }}
+</td>
+</tr>
+                            <tr><td>SE (intercept)</td>   <td>{{ lr.se_intercept }}</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {# 95% Confidence Intervals #}
+                <p style="font-weight:700;color:#667eea;margin-bottom:.5rem;">📏 95% Confidence Intervals</p>
+                <table class="stats-table" style="max-width:600px;">
+                    <thead><tr><th style="text-align:left">Parameter</th><th>Lower</th><th>Estimate</th><th>Upper</th></tr></thead>
+                    <tbody>
+                    <tr>
+                        <td>Slope (β₁)</td>
+                        <td>{{ lr.ci_slope_lower }}</td>
+                        <td><strong>{{ lr.slope }}</strong></td>
+                        <td>{{ lr.ci_slope_upper }}</td>
+                    </tr>
+                    <tr>
+                        <td>Intercept (β₀)</td>
+                        <td>{{ lr.ci_intercept_lower }}</td>
+                        <td><strong>{{ lr.intercept }}</strong></td>
+                        <td>{{ lr.ci_intercept_upper }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <div class="interp-box" style="margin-top:1rem;">💬 {{ lr.interpretation }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- ════════════════════════════════════════════════════════
+         5. NON-LINEARITY TESTS
+    ════════════════════════════════════════════════════════ -->
+    {% if results.nonlinearity_tests %}
+    {% set nl = results.nonlinearity_tests %}
+    <div class="result-card">
+        <h2 class="section-title">🌀 Tests for Non-Linearity</h2>
+        <div class="nl-grid">
+
+            {% if nl.bds %}{% set t = nl.bds %}
+            <div class="nl-inner">
+                <div class="t-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <span class="t-name" style="font-weight:700;font-size:1.05rem;">Brock–Dechert–Scheinkman(BDS) Test</span>
+                    <span class="chip {{ 'chip-warn' if t.interpretation != 'IID' else 'chip-ok' }}">
+                        {{ t.interpretation }}</span>
+                </div>
+                <table class="stats-table">
+                    <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+                    <tbody>
+                    <tr><td>Z Statistic</td>       <td>{{ t.statistic }}</td></tr>
+                    <tr><td>p-value</td>            <td class="{{ 'p-sig' if (t.p_value is not none and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td></tr>
+                    <tr><td>Embedding Dim (m)</td>  <td>{{ t.embedding_dim }}</td></tr>
+                    <tr><td>ε (Epsilon)</td>        <td>{{ t.epsilon }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if nl.tnn %}{% set t = nl.tnn %}
+            <div class="nl-inner">
+                <div class="t-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <span class="t-name" style="font-weight:700;font-size:1.05rem;">Teraesvirta Neural Network(TNN) Test</span>
+                    <span class="chip {{ 'chip-warn' if t.interpretation != 'Linear' else 'chip-ok' }}">
+                        {{ t.interpretation }}</span>
+                </div>
+                <table class="stats-table">
+                    <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+                    <tbody>
+                    <tr><td>F Statistic</td><td>{{ t.statistic }}</td></tr>
+                    <tr><td>p-value</td>    <td class="{{ 'p-sig' if (t.p_value is not none and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td></tr>
+                    <tr><td>Lag</td>        <td>{{ t.lag }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if nl.nn %}{% set t = nl.nn %}
+            <div class="nl-inner">
+                <div class="t-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <span class="t-name" style="font-weight:700;font-size:1.05rem;">White Neural Network(WNN) Test</span>
+                    <span class="chip {{ 'chip-warn' if t.interpretation != 'Linear' else 'chip-ok' }}">
+                        {{ t.interpretation }}</span>
+                </div>
+                <table class="stats-table">
+                    <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+                    <tbody>
+                    <tr><td>LM Statistic</td><td>{{ t.statistic }}</td></tr>
+                    <tr><td>p-value</td>     <td class="{{ 'p-sig' if (t.p_value is not none and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td></tr>
+                    <tr><td>Lag</td>         <td>{{ t.lag }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- ════════════════════════════════════════════════════════
+         6. PLOTS
+    ════════════════════════════════════════════════════════ -->
+    {% if results.plots %}
+    {% set plots = results.plots %}
+    <div class="result-card">
+        <h2 class="section-title">📊 Data Visualizations</h2>
+
+        {% set plot_labels = {
+            'boxplot':      '📦 Boxplot — Study Variable',
+            'boxplot_exog': '📦 Boxplots — Exogenous Variables',
+            'lineplot':     '📈 Line Plot — Study Variable over Time',
+            'histogram_exog': '📊 Histogram & Density — Exogenous Variables',
+            'histogram':    '📊 Histogram & Density — Study Variable',
+            'scatter':      '🔵 Scatter Plots — Exogenous vs Study Variable',
+            'scatter_time': '🔵 Scatter Plot — Time vs Study Variable',
+            'correlogram':  '🟥 Correlation Matrix',
+            'acf':          '🔗 Autocorrelation Function (ACF)',
+            'pacf':         '🔗 Partial ACF (PACF)',
+            'ccf':          '🔗 Cross-Correlation Function (CCF)'
+        } %}
+
+        {# ── Full-width plots (wide ones) ──────────────────────── #}
+        {% for key in ['lineplot','scatter_time','scatter','histogram_exog','acf','pacf','ccf','boxplot_exog'] %}
+            {% if key in plots %}
+            <div class="plot-card" style="margin-bottom:1.5rem;">
+                <img src="{{ url_for('static', filename=plots[key]) }}" alt="{{ plot_labels[key] }}">
+                <div class="plot-label">{{ plot_labels[key] }}</div>
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        {# ── Grid plots ────────────────────────────────────────── #}
+        <div class="plots-grid">
+            {% for key in ['boxplot','histogram','correlogram'] %}
+                {% if key in plots %}
+                <div class="plot-card">
+                    <img src="{{ url_for('static', filename=plots[key]) }}" alt="{{ plot_labels[key] }}">
+                    <div class="plot-label">{{ plot_labels[key] }}</div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- ── Action bar ─────────────────────────────────────────── -->
+    <div class="action-bar">
+        <a href="{{ url_for('select_models') }}" class="action-btn btn-primary">
+            🤖 Proceed to Model Selection
+        </a>
+        <a href="{{ url_for('summary_statistics') }}" class="action-btn btn-secondary">
+            🔄 Back to Summary Statistics
+        </a>
+    </div>
+
+</div>
+</div>
+{% endblock %}

@@ -1,6 +1,11 @@
 <h3>Random Forest Hyperparameters</h3>
 
+<style>
+    .rf-hidden    { display: none; }
+    .rf-auto-desc { font-size: 0.9em; color: #666; }
+</style>
 <!-- Auto-Tune Checkbox -->
+<div class="auto-tune-section">
 <label for="auto_tune_rf">
     <input 
         type="checkbox" 
@@ -9,19 +14,40 @@
         value="true" 
         checked
     >
-    Auto-Tune Hyperparameters (Recommended)
+    <span>🚀Auto-Tune Hyperparameters (Recommended)</span>
 </label>
-<br><br>
+</div>
+<br>
 
 <!-- ============================================================ -->
 <!-- GRID SEARCH RANGES (visible when auto-tune enabled) -->
 <!-- ============================================================ -->
 <div id="rf_grid_search_section" class="grid-search-section">
     <h4>🔍 Grid Search Configuration</h4>
-    <p style="font-size: 0.9em; color: #666;">Define parameter ranges for exhaustive search (min, max, step)</p>
+    <p class="rf-auto-desc">Define parameter ranges for exhaustive search (min, max, step)</p>
     
+    <div class="parameter-group">
+    <label>Number of Lags Range</label>
+    <div class="range-input-group">
+        <div>
+            <label for="rf_lags_min">Minimum</label>
+            <input type="number" id="rf_lags_min" name="rf_lags_min" value="2" min="1" max="20">
+        </div>
+        <div>
+            <label for="rf_lags_max">Maximum</label>
+            <input type="number" id="rf_lags_max" name="rf_lags_max" value="5" min="1" max="20">
+        </div>
+        <div>
+            <label for="rf_lags_step">Step</label>
+            <input type="number" id="rf_lags_step" name="rf_lags_step" value="1" min="1" max="5">
+        </div>
+    </div>
+    <small class="help-text-small">💡 Number of past time steps as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+</div>
+<br>
+
     <!-- Number of Trees Range -->
-    <div>
+    <div class ="parameter-group">
         <label>Number of Trees (n_estimators) Range</label>
         <div class="range-input-group">
             <div>
@@ -68,7 +94,7 @@
     <br>
     
     <!-- Max Depth Range -->
-    <div>
+    <div class="parameter-group">
         <label>Maximum Tree Depth Range</label>
         <div class="range-input-group">
             <div>
@@ -118,7 +144,7 @@
     <br>
     
     <!-- Min Samples Split Range -->
-    <div>
+    <div class="parameter-group">
         <label>Min Samples to Split Range</label>
         <div class="range-input-group">
             <div>
@@ -163,7 +189,7 @@
     <br>
     
     <!-- Min Samples Leaf Range -->
-    <div>
+    <div class="parameter-group">
         <label>Min Samples in Leaf Range</label>
         <div class="range-input-group">
             <div>
@@ -256,9 +282,12 @@
 <!-- ============================================================ -->
 <!-- MANUAL PARAMETERS (visible when auto-tune disabled) -->
 <!-- ============================================================ -->
-<div id="rf_manual_section" style="display: none;">
+<div id="rf_manual_section" class="manual-section rf-hidden">
     <h4>Manual Hyperparameter Configuration</h4>
     
+    <label for="rf_lags">Number of Lags (input time steps)</label><br>
+    <input type="number" id="rf_lags" name="rf_lags" value="3" min="1" max="20"><br><br>
+
     <label for="n_estimators">Number of Trees</label><br>
     <input type="number" id="n_estimators" name="n_estimators" value="350"><br><br>
 
@@ -301,6 +330,12 @@ document.getElementById('auto_tune_rf').addEventListener('change', function() {
 function calculateRFCombinations() {
     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
     
+    const lags = calc(
+        parseFloat(document.getElementById('rf_lags_min').value),
+        parseFloat(document.getElementById('rf_lags_max').value),
+        parseFloat(document.getElementById('rf_lags_step').value)
+    );
+
     const n_estimators = calc(
         parseFloat(document.getElementById('rf_n_estimators_min').value),
         parseFloat(document.getElementById('rf_n_estimators_max').value),
@@ -329,7 +364,7 @@ function calculateRFCombinations() {
     const max_features = document.querySelectorAll('input[name^="rf_max_features_"]:checked').length;
     const bootstrap = document.querySelectorAll('input[name^="rf_bootstrap_"]:checked').length;
     
-    const total = n_estimators * max_depth_with_none * min_samples_split * min_samples_leaf * max_features * bootstrap;
+    const total = lags * n_estimators * max_depth_with_none * min_samples_split * min_samples_leaf * max_features * bootstrap;
     
     document.getElementById('rf_total_combinations').textContent = total.toLocaleString() + ' combinations';
     

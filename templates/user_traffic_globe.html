@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Global User Traffic - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ===============================
+   DATAI GLOBE – SCOPED STYLES
+================================ */
+
+#datai-globe-section {
+  position: relative;
+  width: 100%;
+  min-height: 700px;
+  background: radial-gradient(circle at center, #0b2a3a 0%, #000 70%);
+  overflow: hidden;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  border-radius: 20px;
+  margin: 2rem auto;
+  padding: 2rem;
+}
+
+/* Centering wrapper */
+#dg-globe-wrapper {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#dg-globe {
+  width: 100%;
+  height: 100%;
+}
+
+/* Title */
+#datai-globe-section .dg-title {
+  text-align: center;
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+}
+
+/* Source */
+#datai-globe-section .dg-source {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  color: #cfd8dc;
+  font-size: 12px;
+  opacity: 0.85;
+  z-index: 5;
+}
+
+/* Legend */
+#datai-globe-section .dg-legend {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(0,0,0,0.65);
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #ffffff;
+  font-size: 13px;
+  z-index: 5;
+}
+
+#datai-globe-section .dg-legend-item {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+}
+
+#datai-globe-section .dg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+#datai-globe-section .dg-dot.red    { background: #ff3333; }
+#datai-globe-section .dg-dot.yellow { background: #ffcc00; }
+#datai-globe-section .dg-dot.cyan   { background: #00f2ff; }
+
+/* Marker + ripple */
+#datai-globe-section .dg-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+}
+
+#datai-globe-section .dg-ripple {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+#datai-globe-section .dg-ripple::before,
+#datai-globe-section .dg-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: dg-ripple 2.2s infinite;
+  opacity: 0.6;
+}
+
+#datai-globe-section .dg-ripple::after {
+  animation-delay: 1.1s;
+}
+
+@keyframes dg-ripple {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* Label – hidden by default */
+#datai-globe-section .dg-label {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #ffffff;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1.2;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+/* Show label on hover */
+#datai-globe-section .dg-marker:hover .dg-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Back button */
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  padding: 10px 20px;
+  background: rgba(102, 126, 234, 0.9);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-button:hover {
+  background: rgba(102, 126, 234, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  #datai-globe-section {
+    min-height: 500px;
+    padding: 1rem;
+  }
+  
+  #dg-globe-wrapper {
+    height: 400px;
+  }
+  
+  #datai-globe-section .dg-title {
+    font-size: 20px;
+  }
+  
+  #datai-globe-section .dg-legend {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home') }}" class="back-button">
+  ← Back to Home
+</a>
+
+<div id="datai-globe-section">
+  <div class="dg-title">User Traffic Across Globe (Last 24 Hours)</div>
+
+  <div id="dg-globe-wrapper">
+    <div id="dg-globe"></div>
+  </div>
+
+  <div class="dg-source">
+    Source: Analytics data (past 24 hours)
+  </div>
+
+  <div class="dg-legend">
+    <strong>Usage Level</strong>
+    <div class="dg-legend-item">
+      <span class="dg-dot red"></span> &gt; 3000 (Very high)
+    </div>
+    <div class="dg-legend-item">
+      <span class="dg-dot yellow"></span> 1000 – 3000 (High)
+    </div>
+    <div class="dg-legend-item">
+      <span class="dg-dot cyan"></span> &lt; 1000 (Active)
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Three.js and Globe.gl -->
+<script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+<script src="https://unpkg.com/globe.gl"></script>
+
+<script>
+(function () {
+  // =====================================================
+  // SAMPLE DATA - Replace with your analytics API
+  // =====================================================
+  
+  // Option 1: Use hardcoded sample data
+  const sampleData = [
+    { name: 'India', count: 1005, lat: 20.5937, lng: 78.9629 },
+    { name: 'United States', count: 865, lat: 37.0902, lng: -95.7129 },
+    { name: 'United Kingdom', count: 100, lat: 55.3781, lng: -3.4360 },
+    { name: 'Germany', count: 50, lat: 51.1657, lng: 10.4515 },
+    { name: 'Canada', count: 8, lat: 56.1304, lng: -106.3468 },
+    { name: 'Australia', count: 65, lat: -25.2744, lng: 133.7751 },
+    { name: 'Brazil', count: 50, lat: -14.2350, lng: -51.9253 },
+    { name: 'Japan', count: 40, lat: 36.2048, lng: 138.2529 },
+    { name: 'France', count: 43, lat: 46.2276, lng: 2.2137 },
+    { name: 'Singapore', count: 35, lat: 1.3521, lng: 103.8198 },
+    { name: 'Netherlands', count: 30, lat: 52.1326, lng: 5.2913 },
+    { name: 'South Korea', count: 25, lat: 35.9078, lng: 127.7669 },
+    { name: 'Spain', count: 20, lat: 40.4637, lng: -3.7492 },
+    { name: 'Italy', count: 18, lat: 41.8719, lng: 12.5674 },
+    { name: 'Mexico', count: 15, lat: 23.6345, lng: -102.5528 }
+  ];
+
+  // =====================================================
+  // Option 2: Fetch from Google Sheets 
+  // =====================================================
+  // Uncomment this section if you want to use Google Sheets
+  /*
+  const SHEET_CSV = "YOUR_GOOGLE_SHEETS_CSV_URL";
+  
+  fetch(SHEET_CSV)
+    .then(res => res.ok ? res.text() : Promise.reject())
+    .then(csv => {
+      const rows = csv.trim().split('\n').slice(1);
+      const usageData = rows.map(r => {
+        const [name, count, lat, lng] = r.split(',');
+        return {
+          name,
+          count: Number(count),
+          lat: Number(lat),
+          lng: Number(lng)
+        };
+      });
+      initGlobe(usageData.length ? usageData : sampleData);
+    })
+    .catch(() => initGlobe(sampleData));
+  */
+
+  // For now, use sample data directly
+  initGlobe(sampleData);
+
+  // =====================================================
+  // GLOBE INITIALIZATION
+  // =====================================================
+  function initGlobe(usageData) {
+    const getColor = c =>
+      c > 3000 ? '#ff3333' :
+      c >= 1000 ? '#ffcc00' :
+      '#00f2ff';
+
+    const container = document.getElementById('dg-globe');
+
+    const world = Globe()(container)
+      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+      .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+
+      .htmlElementsData(usageData)
+      .htmlLat(d => d.lat)
+      .htmlLng(d => d.lng)
+      .htmlAltitude(0.02)
+      .htmlElement(d => {
+        const el = document.createElement('div');
+        el.className = 'dg-marker';
+        el.style.color = getColor(d.count);
+        el.innerHTML = `
+          <div class="dg-ripple"></div>
+          <div class="dg-label">${d.name}<br>${d.count.toLocaleString()}</div>
+        `;
+        return el;
+      });
+
+    const scene = world.scene();
+    scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+    dir.position.set(1, 1, 1);
+    scene.add(dir);
+
+    const controls = world.controls();
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.6;
+    controls.enableZoom = true;
+    controls.enablePan = false;
+
+    world.pointOfView({ lat: 20, lng: 78, altitude: 3.2 }, 0);
+
+    function resize() {
+      const { width, height } = container.getBoundingClientRect();
+      world.width(width);
+      world.height(height);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+  }
+})();
+</script>
+{% endblock %}

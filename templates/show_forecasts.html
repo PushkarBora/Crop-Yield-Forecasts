@@ -550,15 +550,24 @@
                 <table class="forecast-table">
                     <thead>
                         <tr>
-                            <th>Year</th>
-                            <th>Predicted Yield</th>
+                            {% for col in forecast_df.columns %}
+                            <th>{{ col }}</th>
+                            {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for _, row in forecast_df.iterrows() %}
                         <tr>
-                            <td>{{ row['Year']|round(1) }}</td>
-                            <td>{{ row['Forecast']|round(2) }}</td>
+                            {% for col in forecast_df.columns %}
+                            <td>
+                                {% set val = row[col] %}
+                                {% if val is number %}
+                                    {{ val|round(2) }}
+                                {% else %}
+                                    {{ val }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
                         </tr>
                         {% endfor %}
                     </tbody>

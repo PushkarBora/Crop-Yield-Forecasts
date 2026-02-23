@@ -2,540 +2,548 @@ import numpy as np
 import pandas as pd
 import os
 import pickle
+import random
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
-from sklearn.metrics import root_mean_squared_error, r2_score
-from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import root_mean_squared_error, mean_absolute_error
 import warnings
 warnings.filterwarnings('ignore')
 
-def generate_param_range(min_val, max_val, step):
-    """
-    Generate a list of values from min to max with given step.
-    Works for both integers and floats.
-    """
-    import numpy as np
-    if isinstance(step, int) and isinstance(min_val, int):
-        return list(range(min_val, max_val + 1, step))
-    else:
-        return list(np.arange(min_val, max_val + step, step))
+# ============================================================
+# REPRODUCIBILITY
+# ============================================================
+SEED = 42
+random.seed(SEED)
+np.random.seed(SEED)
 
+
+def clean_dataframe(df):
+    num_cols = df.select_dtypes(include=[np.number]).columns
+    obj_cols = df.select_dtypes(exclude=[np.number]).columns
+    df[num_cols] = df[num_cols].interpolate(method='linear').ffill().bfill()
+    df[obj_cols] = df[obj_cols].ffill().bfill()
+    return df.dropna()
 # ============================================================
-# AUTO-TUNING FUNCTION WITH USER-DEFINED GRID SEARCH
+# AUTO-TUNE  (grid search over user-defined ranges)
 # ============================================================
-def auto_tune_svr(X_train, y_train, X_val, y_val, params,log_callback=None):
+def auto_tune_svr(X_train, y_train, X_val, y_val, params, log_callback=None):
     """
     Auto-tune SVR using USER-DEFINED grid search ranges from params.
     """
     from sklearn.model_selection import GridSearchCV
-    import numpy as np
-    # ✅ ADD LOG FUNCTION
+
     def log(msg):
         if log_callback:
             log_callback(msg)
         print(msg)
-    
-    log("\n🔍 Starting SVR Grid Search Auto-Tuning (USER RANGES)")
-    
-    # ============================================================
-    # READ USER-DEFINED RANGES - USE WHILE LOOP TO FIX FLOATING POINT
-    # ============================================================
-    C_values = []
-    val = params["svr_C_min"]
-    while val <= params["svr_C_max"] + 1e-9:
-        C_values.append(round(val, 3))
-        val += params["svr_C_step"]
-    
-    epsilon_values = []
-    val = params["svr_epsilon_min"]
-    while val <= params["svr_epsilon_max"] + 1e-9:
-        epsilon_values.append(round(val, 3))
-        val += params["svr_epsilon_step"]
-    
-    # Gamma: numeric values + 'scale' and 'auto'
-    gamma_numeric_values = []
-    val = params["svr_gamma_min"]
-    while val <= params["svr_gamma_max"] + 1e-9:
-        gamma_numeric_values.append(round(val, 3))
-        val += params["svr_gamma_step"]
-    
-    gamma_values = ['scale', 'auto'] + gamma_numeric_values
-    
-    # ✅ READ KERNEL SELECTIONS FROM USER CHECKBOXES
+
+    log("\n🔍 Starting SVR Grid Search Auto-Tuning")
+
+    # ── Build value ranges ─────────────────────────────────────────────
+    def frange(lo, hi, step):
+        vals, v = [], lo
+        while v <= hi + 1e-9:
+            vals.append(round(v, 4))
+            v += step
+        return vals
+
+    C_values       = frange(params["svr_C_min"],       params["svr_C_max"],       params["svr_C_step"])
+    epsilon_values = frange(params["svr_epsilon_min"], params["svr_epsilon_max"], params["svr_epsilon_step"])
+    gamma_numeric  = frange(params["svr_gamma_min"],   params["svr_gamma_max"],   params["svr_gamma_step"])
+    gamma_values   = ['scale', 'auto'] + gamma_numeric
+
     kernel_options = []
-    if params.get('svr_kernel_rbf', False):
-        kernel_options.append('rbf')
-    if params.get('svr_kernel_poly', False):
-        kernel_options.append('poly')
-    if params.get('svr_kernel_sigmoid', False):
-        kernel_options.append('sigmoid')
-    
-    # ✅ VALIDATE: At least one kernel must be selected
+    if params.get('svr_kernel_rbf',     False): kernel_options.append('rbf')
+    if params.get('svr_kernel_poly',    False): kernel_options.append('poly')
+    if params.get('svr_kernel_sigmoid', False): kernel_options.append('sigmoid')
     if not kernel_options:
-        log("⚠️  WARNING: No kernels selected, defaulting to RBF")
+        log("⚠️  No kernels selected — defaulting to RBF")
         kernel_options = ['rbf']
-    # ============================================================
-    # PARAMETER GRID
-    # ============================================================
+
     param_grid = {
-        'kernel': kernel_options,
-        'C': C_values,
+        'kernel' : kernel_options,
+        'C'      : C_values,
         'epsilon': epsilon_values,
-        'gamma': gamma_values
+        'gamma'  : gamma_values,
     }
-    
-    # Calculate total combinations
-    total_combinations = (
-        len(kernel_options) * 
-        len(C_values) * 
-        len(epsilon_values) * 
-        len(gamma_values)
-    )
-    
-    # ✅ PRINT ALL PARAMETERS
-    log("📦 Grid summary:")
-    log(f"   kernel: {kernel_options}")
-    log(f"   C: {C_values}")
+
+    total = len(kernel_options) * len(C_values) * len(epsilon_values) * len(gamma_values)
+    log(f"🔢 Total combinations: {total}")
+    log(f"   kernel : {kernel_options}")
+    log(f"   C      : {C_values}")
     log(f"   epsilon: {epsilon_values}")
-    log(f"   gamma: {gamma_values}")
-    log(f"🔢 Total combinations: {total_combinations}")
-    log("⏳ This may take a while...\n")
-    
-    # Create base model
-    base_model = SVR()
-    
-    # GridSearchCV - tests ALL combinations
-    grid_search = GridSearchCV(
-        estimator=base_model,
-        param_grid=param_grid,
-        cv=3,  # 3-fold cross-validation
-        scoring='neg_mean_squared_error',
-        n_jobs=-1,  # Use all CPU cores
-        verbose=1
+    log(f"   gamma  : {gamma_values}")
+    log("⏳ Running 3-fold cross-validation...")
+
+    gs = GridSearchCV(
+        SVR(), param_grid,
+        cv=3, scoring='neg_mean_squared_error',
+        n_jobs=-1, verbose=0
     )
-    
-    # Fit on training data
-    log("   Running grid search with 3-fold cross-validation...")
-    grid_search.fit(X_train, y_train)
-    
-    # Get best parameters
-    best_params = grid_search.best_params_
-    best_score = -grid_search.best_score_  # Convert back to positive MSE
-    
-    log(f"\n✅ Grid Search Complete!")
-    log(f"   Best Parameters: {best_params}")
-    log(f"   Best CV MSE: {best_score:.4f}")
-    
-    # Validate on validation set
-    best_model = grid_search.best_estimator_
-    val_pred = best_model.predict(X_val)
-    val_rmse = root_mean_squared_error(y_val, val_pred)
-    
-    log(f"   Validation RMSE: {val_rmse:.4f}\n")
-    
-    return best_params
+    gs.fit(X_train, y_train)
+
+    best = gs.best_params_
+    log(f"✅ Best params: {best}  |  CV MSE: {-gs.best_score_:.4f}")
+    val_rmse = root_mean_squared_error(y_val, gs.best_estimator_.predict(X_val))
+    log(f"   Validation RMSE: {val_rmse:.4f}")
+    return best
 
 
 # ============================================================
-# FORECAST-ONLY (NO TRAINING, NO PLOTS)
+# BOOTSTRAP PREDICTION INTERVALS
 # ============================================================
-def _forecast_only_svr(
-    params,
-    horizon,
-    future_rain,
-    future_mean_t,
-):
-    # Load saved bundle
-    if not os.path.exists("static/svr_bundle.pkl"):
-        raise FileNotFoundError(
-            "SVR model not trained yet. Please train the model first before forecasting."
-        )
-    
+def _bootstrap_forecast(model, X_last, horizon, n_vars, target_idx,
+                         future_exog_scaled,
+                         x_scaler_mean, x_scaler_scale,
+                         y_scaler_mean, y_scaler_scale,
+                         lags, residuals, n_boot=200):
+    """
+    Bootstrap forecast for SVR prediction intervals.
+    Adds bootstrapped residual noise to produce interval estimates.
+    """
+    random.seed(SEED)
+    np.random.seed(SEED)
+
+    all_runs = []
+    for _ in range(n_boot):
+        preds = []
+        win = X_last.copy()   # (LAGS * n_vars,) flat, X-scaled
+
+        for step in range(horizon):
+            x_in = win.reshape(1, -1)
+            pred_scaled = model.predict(x_in)[0]
+            # Add bootstrapped residual noise
+            noise = np.random.choice(residuals)
+            pred_actual = (pred_scaled + noise) * y_scaler_scale + y_scaler_mean
+            preds.append(pred_actual)
+
+            # Roll window: reshape → update target → flatten back
+            win_2d = win.reshape(lags, n_vars)
+            new_row = win_2d[-1].copy()
+            new_row[target_idx] = (
+                (pred_actual - x_scaler_mean[target_idx]) / x_scaler_scale[target_idx]
+            )
+            if future_exog_scaled is not None:
+                exog_ptr = 0
+                for i in range(n_vars):
+                    if i != target_idx:
+                        new_row[i] = future_exog_scaled[step, exog_ptr]
+                        exog_ptr += 1
+            win_2d = np.vstack([win_2d[1:], new_row])
+            win = win_2d.flatten()
+
+        all_runs.append(preds)
+
+    all_runs  = np.array(all_runs)
+    mean_pred = all_runs.mean(axis=0)
+    std_pred  = all_runs.std(axis=0)
+
+    lower_95 = mean_pred - 1.96 * std_pred
+    upper_95 = mean_pred + 1.96 * std_pred
+    lower_80 = mean_pred - 1.28 * std_pred
+    upper_80 = mean_pred + 1.28 * std_pred
+
+    return mean_pred, lower_95, upper_95, lower_80, upper_80
+
+
+# ============================================================
+# FORECAST-ONLY  (loads saved bundle, no retraining)
+# ============================================================
+def _forecast_only_svr(params, horizon, future_rain, future_mean_t):
+    for path in ("static/svr_bundle.pkl", "static/svr_model.pkl"):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"{path} not found. Please train SVR first.")
+
     with open("static/svr_bundle.pkl", "rb") as f:
         bundle = pickle.load(f)
-    
-    # Load model
     with open("static/svr_model.pkl", "rb") as f:
         model = pickle.load(f)
-    
-    FEATURES = bundle["features"]
-    feat_idx = {f: i for i, f in enumerate(FEATURES)}
-    WINDOW = bundle["window"]
-    
-    # Load last window and scaler
-    last_window = bundle["last_window"]
-    scaler_mean = bundle["scaler_mean"]
-    scaler_scale = bundle["scaler_scale"]
-    
-    # Scale future inputs
-    future_rain_scaled = (
-        np.array(future_rain) - scaler_mean[feat_idx["rain_lag_1"]]
-    ) / scaler_scale[feat_idx["rain_lag_1"]]
-    
-    future_mean_t_scaled = (
-        np.array(future_mean_t) - scaler_mean[feat_idx["mean_t_lag_1"]]
-    ) / scaler_scale[feat_idx["mean_t_lag_1"]]
-    
-    # Forecast loop
-    future_log_diffs = []
-    
-    for h in range(horizon):
-        # Flatten window for SVR
-        x_flat = last_window.reshape(1, -1)
-        
-        # Predict
-        pred = model.predict(x_flat)[0]
-        future_log_diffs.append(pred)
-        
-        # Shift window
-        last_window = np.roll(last_window, -1, axis=0)
-        
-        # Update with new values
-        last_window[-1, feat_idx["log_diff_lag_1"]] = pred
-        last_window[-1, feat_idx["rain_lag_1"]] = future_rain_scaled[h]
-        last_window[-1, feat_idx["mean_t_lag_1"]] = future_mean_t_scaled[h]
-        
-        if "time_lag_1" in feat_idx:
-            last_window[-1, feat_idx["time_lag_1"]] += 1
-    
-    # Reconstruct yield
-    last_log = bundle["last_log"]
-    future_log = np.cumsum(future_log_diffs) + last_log
-    future_yield = np.exp(future_log)
-    
-    future_years = np.arange(
-        bundle["last_year"] + 1,
-        bundle["last_year"] + 1 + horizon
+
+    saved_exog_cols  = bundle["exog_cols"]
+    all_cols         = bundle["all_cols"]
+    target_idx       = bundle["target_idx"]
+    x_scaler_mean    = bundle["x_scaler_mean"]
+    x_scaler_scale   = bundle["x_scaler_scale"]
+    y_scaler_mean    = bundle["y_scaler_mean"]
+    y_scaler_scale   = bundle["y_scaler_scale"]
+    last_window      = bundle["last_window"]   # (LAGS*n_vars,) flat, X-scaled
+    time_labels      = bundle["time_labels"]
+    lags             = bundle["lags"]
+    n_vars           = len(all_cols)
+    residuals        = bundle["residuals"]     # scaled residuals for bootstrap
+
+    # ── Scale future exog if needed ────────────────────────────────────
+    future_exog_scaled = None
+    if saved_exog_cols:
+        future_exog_dict = params.get("future_exog")
+        future_exog_scaled = np.zeros((horizon, len(saved_exog_cols)))
+
+        if future_exog_dict:
+            for j, col in enumerate(saved_exog_cols):
+                if col not in future_exog_dict:
+                    raise ValueError(f"Missing future values for column '{col}'.")
+                col_idx = all_cols.index(col)
+                vals = np.array(future_exog_dict[col][:horizon], dtype=float)
+                future_exog_scaled[:, j] = (
+                    (vals - x_scaler_mean[col_idx]) / x_scaler_scale[col_idx]
+                )
+
+        elif future_rain is not None and future_mean_t is not None:
+            for j, col in enumerate(saved_exog_cols):
+                col_lower = col.lower()
+                col_idx   = all_cols.index(col)
+                if "rain" in col_lower:
+                    vals = np.array(future_rain[:horizon], dtype=float)
+                elif "temp" in col_lower or "mean_t" in col_lower:
+                    vals = np.array(future_mean_t[:horizon], dtype=float)
+                else:
+                    raise ValueError(
+                        f"Cannot auto-map column '{col}'. "
+                        "Pass values via future_exog dict instead."
+                    )
+                future_exog_scaled[:, j] = (
+                    (vals - x_scaler_mean[col_idx]) / x_scaler_scale[col_idx]
+                )
+        else:
+            raise ValueError(
+                "Model was trained with exogenous variables. "
+                "Provide future_exog dict or future_rain/future_mean_t."
+            )
+
+    # ── Bootstrap forecast ──────────────────────────────────────────────
+    mean_pred, lower_95, upper_95, lower_80, upper_80 = _bootstrap_forecast(
+        model, last_window, horizon, n_vars, target_idx,
+        future_exog_scaled,
+        x_scaler_mean, x_scaler_scale,
+        y_scaler_mean, y_scaler_scale,
+        lags, residuals, n_boot=200,
     )
-    
-    return {
-        "forecast_table": pd.DataFrame({
-            "Year": future_years,
-            "Forecast": future_yield
-        })
-    }
+
+    future_labels = time_labels[:horizon] if time_labels else list(range(1, horizon + 1))
+
+    df = pd.DataFrame({
+        "Period"        : future_labels,
+        "Forecast"      : np.round(mean_pred, 3),
+        "Lower 80%"     : np.round(lower_80,  3),
+        "Upper 80%"     : np.round(upper_80,  3),
+        "Lower 95%"     : np.round(lower_95,  3),
+        "Upper 95%"     : np.round(upper_95,  3),
+        "Interval (95%)": [f"[{l:.1f}, {u:.1f}]"
+                           for l, u in zip(lower_95, upper_95)],
+    })
+
+    return {"forecast_table": df}
 
 
 # ============================================================
-# MAIN ENTRY FUNCTION
+# MAIN ENTRY POINT
 # ============================================================
 def run_svr(
-    data: pd.DataFrame,
-    params: dict,
-    horizon: int,
-    frequency: str,
-    future_rain=None,
-    future_mean_t=None,
-    mode: str = "train",
-    log_callback=None,
+    data,
+    params,
+    horizon,
+    frequency,
+    future_rain   = None,
+    future_mean_t = None,
+    mode          : str = "train",
+    log_callback  = None,
 ):
     """
-    Website-ready SVR model (flattened sliding window)
-    Input  : DataFrame with columns [year, mean_t, rain, yield]
-    Output : dict (metrics + train/test tables)
+    SVR model — raw lag features, no log differencing, no sliding window.
+    Mirrors the LSTM/GRU/RNN/ANN implementation exactly.
+
+    Parameters
+    ----------
+    data         : Raw DataFrame
+    target_col   : read from params["target_col"]
+    time_col     : read from params["time_col"]
+    exog_cols    : read from params["exog_cols"]
+    mode         : "train" | "forecast"
     """
-    # ✅ ADD LOG FUNCTION
     def log(msg):
         if log_callback:
             log_callback(msg)
         print(msg)
 
-    # Forecast mode
+    # ── FORECAST MODE ──────────────────────────────────────────────────
     if mode == "forecast":
-        return _forecast_only_svr(
-            params=params,
-            horizon=horizon,
-            future_rain=future_rain,
-            future_mean_t=future_mean_t,
-        )
-    
-    # Validate training mode
-    if mode == "train" and data is None:
-        raise ValueError(
-            "Training SVR requires historical data, but data=None was received."
-        )
-    
-    # ===============================
-    # HYPERPARAMETERS
-    # ===============================
-    WINDOW = params.get("window", 4)
-    LAGS = params.get("lags", 3)
-    split = params.get("split", 0.85)
-    
-    # Check if auto-tuning is enabled
-    use_auto_tune = params.get("auto_tune_svr", True)
-    
-    # Default SVR parameters (used if auto-tune disabled)
-    kernel = params.get("kernel", "rbf")
-    C = params.get("C", 1.0)
+        if future_rain is None:
+            future_rain = params.get("future_rain")
+        if future_mean_t is None:
+            future_mean_t = params.get("future_mean_t")
+        return _forecast_only_svr(params, horizon, future_rain, future_mean_t)
+
+    # ── Validate ────────────────────────────────────────────────────────
+    if data is None:
+        raise ValueError("data must be provided in train mode.")
+
+    # ── Column mappings ─────────────────────────────────────────────────
+    target_col = params.get("target_col", "Yield")
+    time_col   = params.get("time_col",   "Year")
+    exog_cols  = params.get("exog_cols",  [])
+    if exog_cols is None:
+        exog_cols = []
+
+    has_exogenous = len(exog_cols) > 0
+
+    log(f"📊 Mode: {'Multivariate' if has_exogenous else 'Univariate'}")
+    log(f"   Study variable : {target_col}")
+    log(f"   Time column    : {time_col}")
+    log(f"   Exog variables : {exog_cols if exog_cols else 'None'}")
+
+    # ── Hyperparameters ─────────────────────────────────────────────────
+    LAGS      = params.get("svr_lags") or params.get("lags", 3)
+    split     = params.get("split", 0.85)
+    use_tune  = params.get("auto_tune_svr", True)
+
+    kernel  = params.get("kernel",  "rbf")
+    C       = params.get("C",       1.0)
     epsilon = params.get("epsilon", 0.1)
-    gamma = params.get("gamma", "scale")
-    
-    # ===============================
-    # DATA CLEANING
-    # ===============================
-    data = data.rename(columns={
-        "Year": "year",
-        "Mean_T": "mean_t",
-        "Mean_Rain": "rain",
-        "Yield": "yield"
-    })
-    
-    data = data[["year", "mean_t", "rain", "yield"]]
-    data = data.sort_values("year").reset_index(drop=True)
-    data = data.interpolate(method="linear").dropna()
-    
-    # Log-Difference Target
-    data["log_yield"] = np.log(data["yield"])
-    data["log_diff"] = data["log_yield"].diff()
-    data["time_idx"] = np.arange(len(data))
-    data = data.dropna().reset_index(drop=True)
-    
-    # Explicit Lags
+    gamma   = params.get("gamma",   "scale")
+
+    log(f"   Lags           : {LAGS}")
+
+    # ── Data preparation ────────────────────────────────────────────────
+    cols_needed = [time_col, target_col] + exog_cols
+    df = data[cols_needed].copy()
+    if pd.api.types.is_numeric_dtype(df[time_col]):
+        df = df.sort_values(time_col).reset_index(drop=True)
+    else:
+        df = df.reset_index(drop=True)
+    df = clean_dataframe(df)
+
+    # Variable order: target first, then exog
+    all_var_cols = [target_col] + exog_cols
+    n_vars       = len(all_var_cols)
+    target_idx   = 0
+
+    # ── Build raw lag features  (NO log differencing) ───────────────────
     for lag in range(1, LAGS + 1):
-        data[f"log_diff_lag_{lag}"] = data["log_diff"].shift(lag)
-        data[f"rain_lag_{lag}"] = data["rain"].shift(lag)
-        data[f"mean_t_lag_{lag}"] = data["mean_t"].shift(lag)
-        data[f"time_lag_{lag}"] = data["time_idx"].shift(lag)
-    
-    data = data.dropna().reset_index(drop=True)
-    
-    # Feature Set
-    FEATURES = [c for c in data.columns if "lag_" in c]
-    
-    # ===============================
-    # SLIDING WINDOW
-    # ===============================
-    def make_sequences(df):
-        X, y = [], []
-        for i in range(len(df) - WINDOW):
-            X.append(df[FEATURES].iloc[i:i+WINDOW].values)
-            y.append(df["log_diff"].iloc[i+WINDOW])
-        return np.array(X), np.array(y)
-    
-    X, y = make_sequences(data)
-    
-    # Train–Test Split
-    split_idx = int(split * len(X))
-    X_train, X_test = X[:split_idx], X[split_idx:]
-    y_train, y_test = y[:split_idx], y[split_idx:]
-    
-    # ✅ AUTO-TUNE (if enabled)
-    if use_auto_tune:
-        log("\n🔧 Auto-tuning enabled - searching for optimal hyperparameters...")
-        
-        # Create validation set from training data (80-20 split)
-        val_split = int(0.8 * len(X_train))
-        X_train_tune = X_train[:val_split]
-        y_train_tune = y_train[:val_split]
-        X_val_tune = X_train[val_split:]
-        y_val_tune = y_train[val_split:]
-        
-        # Scale for tuning
-        scaler_tune = StandardScaler()
-        X_train_tune_scaled = scaler_tune.fit_transform(
-            X_train_tune.reshape(-1, X_train_tune.shape[-1])
-        ).reshape(X_train_tune.shape)
-        X_val_tune_scaled = scaler_tune.transform(
-            X_val_tune.reshape(-1, X_val_tune.shape[-1])
-        ).reshape(X_val_tune.shape)
-        
-        # Flatten for SVR
-        X_train_tune_flat = X_train_tune_scaled.reshape(X_train_tune_scaled.shape[0], -1)
-        X_val_tune_flat = X_val_tune_scaled.reshape(X_val_tune_scaled.shape[0], -1)
-        
-        best_params_svr = auto_tune_svr(
-            X_train_tune_flat, y_train_tune,
-            X_val_tune_flat, y_val_tune,
-            params , # ✅ Pass params dict
-            log_callback=log_callback
+        df[f"__lag_{lag}_{target_col}"] = df[target_col].shift(lag)
+        for ec in exog_cols:
+            df[f"__lag_{lag}_{ec}"] = df[ec].shift(lag)
+
+    df = df.dropna().reset_index(drop=True)
+    log(f"   Dataset size   : {len(df)} samples after lagging")
+
+    # ── Build X flat: (N, LAGS*n_vars) ──────────────────────────────────
+    def build_X(df_):
+        samples = []
+        for i in range(len(df_)):
+            seq = []
+            for lag in range(1, LAGS + 1):
+                row = [df_[f"__lag_{lag}_{target_col}"].iloc[i]]
+                for ec in exog_cols:
+                    row.append(df_[f"__lag_{lag}_{ec}"].iloc[i])
+                seq.append(row)
+            samples.append(seq)
+        arr = np.array(samples, dtype=np.float32)   # (N, LAGS, n_vars)
+        return arr.reshape(arr.shape[0], -1)         # (N, LAGS*n_vars)
+
+    X = build_X(df)
+    y = df[target_col].values.astype(np.float32)
+
+    log(f"   Input shape    : {X.shape}  (samples, lags×variables)")
+
+    # ── Train / test split ───────────────────────────────────────────────
+    split_idx       = int(split * len(X))
+    X_train, X_test = X[:split_idx],  X[split_idx:]
+    y_train, y_test = y[:split_idx],  y[split_idx:]
+
+    # ── Scale X ──────────────────────────────────────────────────────────
+    x_scaler  = StandardScaler()
+    X_train_s = x_scaler.fit_transform(X_train)
+    X_test_s  = x_scaler.transform(X_test)
+    X_all_s   = x_scaler.transform(X)
+
+    # ── Scale y ──────────────────────────────────────────────────────────
+    y_scaler  = StandardScaler()
+    y_train_s = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
+    y_test_s  = y_scaler.transform(y_test.reshape(-1, 1)).flatten()
+
+    # ── AUTO-TUNE ────────────────────────────────────────────────────────
+    if use_tune:
+        log("\n🔧 Auto-tuning SVR hyperparameters...")
+        val_sp = int(0.8 * len(X_train_s))
+        best_p = auto_tune_svr(
+            X_train_s[:val_sp], y_train_s[:val_sp],
+            X_train_s[val_sp:], y_train_s[val_sp:],
+            params, log_callback=log_callback,
         )
-        
-        # Override with best parameters
-        kernel = best_params_svr['kernel']
-        C = best_params_svr['C']
-        epsilon = best_params_svr['epsilon']
-        gamma = best_params_svr['gamma']
-        
-        log(f"✅ Using optimized SVR parameters")
-    
-    # ===============================
-    # SCALING (FULL TRAINING SET)
-    # ===============================
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(
-        X_train.reshape(-1, X_train.shape[-1])
-    ).reshape(X_train.shape)
-    
-    X_test = scaler.transform(
-        X_test.reshape(-1, X_test.shape[-1])
-    ).reshape(X_test.shape)
-    
-    # Flatten for SVR
-    X_train_svr = X_train.reshape(X_train.shape[0], -1)
-    X_test_svr  = X_test.reshape(X_test.shape[0], -1)
-    
-    # ===============================
-    # FIT SVR
-    # ===============================
-    svr = SVR(
-        kernel=kernel,
-        C=C,
-        epsilon=epsilon,
-        gamma=gamma
-    )
-    
-    svr.fit(X_train_svr, y_train)
-    
-    # ===============================
-    # PREDICTION & RECONSTRUCTION
-    # ===============================
-    train_preds = svr.predict(X_train_svr)
-    test_preds  = svr.predict(X_test_svr)
-    
-    # Training Reconstruction
-    last_log_train = data["log_yield"].iloc[WINDOW - 1]
-    pred_log_train = np.cumsum(train_preds) + last_log_train
-    pred_train = np.exp(pred_log_train)
-    
-    actual_train = data["yield"].iloc[
-        WINDOW:WINDOW + len(pred_train)
-    ].values
-    
-    years_train = data["year"].iloc[
-        WINDOW:WINDOW + len(pred_train)
-    ].values
-    
-    # Test Reconstruction
-    start_idx = split_idx + WINDOW
-    last_log_test = data["log_yield"].iloc[start_idx - 1]
-    
-    pred_log_test = np.cumsum(test_preds) + last_log_test
-    pred_test = np.exp(pred_log_test)
-    
-    actual_test = np.exp(
-        np.cumsum(y_test[:len(test_preds)]) + last_log_test
-    )
-    
-    years_test = data["year"].iloc[
-        start_idx:start_idx + len(actual_test)
-    ].values
-    
-    # ===============================
-    # METRICS
-    # ===============================
-    rmse_train = root_mean_squared_error(actual_train, pred_train)
-    r2_train = r2_score(actual_train, pred_train)
-    mape_train = np.mean(
-        np.abs((actual_train - pred_train) / actual_train)
-    ) * 100
-    
-    rmse_test = root_mean_squared_error(actual_test, pred_test)
-    r2_test = r2_score(actual_test, pred_test)
-    mape_test = np.mean(
-        np.abs((actual_test - pred_test) / actual_test)
-    ) * 100
-    
-    # ===============================
-    # SAVE MODEL AND BUNDLE (ONLY IN TRAIN MODE)
-    # ===============================
-    if mode == "train":
-        import matplotlib.pyplot as plt
-        
-        os.makedirs("static", exist_ok=True)
-        
-        # Save model
-        with open("static/svr_model.pkl", "wb") as f:
-            pickle.dump(svr, f)
-        
-        # Save bundle
-        with open("static/svr_bundle.pkl", "wb") as f:
-            pickle.dump({
-                "last_window": X_test[-1],
-                "features": FEATURES,
-                "scaler_mean": scaler.mean_,
-                "scaler_scale": scaler.scale_,
-                "last_log": np.log(pred_test[-1]),
-                "last_year": int(data["year"].iloc[-1]),
-                "window": WINDOW,
-                "params": params,
-            }, f)
-        
-        # Training plot
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(years_train, actual_train, label="Actual (Train)")
-        ax.plot(
-            years_train,
-            pred_train,
-            label="Predicted (Train)",
-            linestyle="--",
-            marker="o",
-            markersize=4
-        )
-        ax.set_title("SVR Model - Training Set")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Yield")
-        ax.legend()
-        fig.tight_layout()
-        fig.savefig("static/svr_train.png", dpi=150)
-        plt.close(fig)
-        
-        # Testing plot
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(years_test, actual_test, label="Actual (Test)")
-        ax.plot(
-            years_test,
-            pred_test,
-            label="Predicted (Test)",
-            linestyle="--",
-            marker="o",
-            markersize=4
-        )
-        ax.set_title("SVR Model - Testing Set")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Yield")
-        ax.legend()
-        fig.tight_layout()
-        fig.savefig("static/svr_test.png", dpi=150)
-        plt.close(fig)
-    
-    # ===============================
-    # RETURN
-    # ===============================
+        kernel  = best_p['kernel']
+        C       = best_p['C']
+        epsilon = best_p['epsilon']
+        gamma   = best_p['gamma']
+        log(f"✅ Using auto-tuned SVR parameters")
+
+    # ── Fit SVR ──────────────────────────────────────────────────────────
+    random.seed(SEED)
+    np.random.seed(SEED)
+
+    svr = SVR(kernel=kernel, C=C, epsilon=epsilon, gamma=gamma)
+    svr.fit(X_train_s, y_train_s)
+
+    # ── Predict & inverse-scale ──────────────────────────────────────────
+    tr_preds_s = svr.predict(X_train_s)
+    te_preds_s = svr.predict(X_test_s)
+
+    pred_tr   = y_scaler.inverse_transform(tr_preds_s.reshape(-1, 1)).flatten()
+    pred_te   = y_scaler.inverse_transform(te_preds_s.reshape(-1, 1)).flatten()
+    actual_tr = y_train.copy()
+    actual_te = y_test.copy()
+
+    min_tr = min(len(actual_tr), len(pred_tr))
+    min_te = min(len(actual_te), len(pred_te))
+    actual_tr, pred_tr = actual_tr[:min_tr], pred_tr[:min_tr]
+    actual_te, pred_te = actual_te[:min_te], pred_te[:min_te]
+
+    time_labels_seq = df[time_col].tolist()
+    train_times = time_labels_seq[:split_idx][:min_tr]
+    test_times  = time_labels_seq[split_idx:][:min_te]
+
+    # ── Scaled residuals for bootstrap intervals ─────────────────────────
+    residuals_scaled = y_train_s[:min_tr] - tr_preds_s[:min_tr]
+
+    # ── Metrics ──────────────────────────────────────────────────────────
+    def mape(a, p):
+        return float(np.mean(np.abs((a - p) / np.where(a == 0, 1e-8, a))) * 100)
+
+    rmse_tr = float(root_mean_squared_error(actual_tr, pred_tr))
+    mae_tr   = float(mean_absolute_error(actual_tr, pred_tr))
+    mape_tr = mape(actual_tr, pred_tr)
+
+    rmse_te = float(root_mean_squared_error(actual_te, pred_te))
+    mae_te   = float(mean_absolute_error(actual_te, pred_te))
+    mape_te = mape(actual_te, pred_te)
+
+    log(f"\n📊 Results:")
+    log(f"   Train — RMSE: {rmse_tr:.3f}, MAE: {mae_tr:.3f}, MAPE: {mape_tr:.2f}%")
+    log(f"   Test  — RMSE: {rmse_te:.3f}, MAE: {mae_te:.3f}, MAPE: {mape_te:.2f}%")
+
+    # ── Save bundle ───────────────────────────────────────────────────────
+    os.makedirs("static", exist_ok=True)
+
+    last_window_np = X_all_s[-1]   # (LAGS*n_vars,) flat, X-scaled
+
+    last_t = df[time_col].iloc[-1]
+    try:
+        future_time_labels = [int(last_t) + i for i in range(1, horizon + 1)]
+    except (TypeError, ValueError):
+        orig_sequence = data[time_col].tolist()
+        first_val = orig_sequence[0]
+        try:
+            cycle_len = orig_sequence[1:].index(first_val) + 1
+        except ValueError:
+            cycle_len = len(orig_sequence)
+        cycle = orig_sequence[:cycle_len]
+        last_cycle_pos = cycle.index(last_t)
+        future_time_labels = [
+            cycle[(last_cycle_pos + i) % cycle_len]
+            for i in range(1, horizon + 1)
+        ]
+
+    with open("static/svr_model.pkl", "wb") as f:
+        pickle.dump(svr, f)
+
+    with open("static/svr_bundle.pkl", "wb") as f:
+        pickle.dump({
+            # Scaler info
+            "x_scaler_mean"  : x_scaler.mean_,
+            "x_scaler_scale" : x_scaler.scale_,
+            "y_scaler_mean"  : float(y_scaler.mean_[0]),
+            "y_scaler_scale" : float(y_scaler.scale_[0]),
+            # Column metadata
+            "target_col"     : target_col,
+            "time_col"       : time_col,
+            "exog_cols"      : exog_cols,
+            "all_cols"       : all_var_cols,
+            "target_idx"     : target_idx,
+            # Forecast state
+            "last_window"    : last_window_np,
+            "last_time"      : df[time_col].iloc[-1],
+            "time_labels"    : future_time_labels,
+            # For bootstrap intervals
+            "residuals"      : residuals_scaled,
+            # Metadata
+            "params"         : params,
+            "has_exogenous"  : has_exogenous,
+            "lags"           : LAGS,
+            "n_vars"         : n_vars,
+        }, f)
+
+    # ── Plots ─────────────────────────────────────────────────────────────
+    # ── Plots ─────────────────────────────────────────────────────────────
+    fig, ax = plt.subplots(figsize=(14, 5))
+
+    train_x = list(range(len(actual_tr)))
+    test_x  = list(range(len(actual_tr), len(actual_tr) + len(actual_te)))
+
+    ax.plot(train_x, actual_tr, color="steelblue",  label="Actual (Train)")
+    ax.plot(train_x, pred_tr,   color="steelblue",  label="Predicted (Train)",
+            linestyle="--", marker="o", ms=4, alpha=0.8)
+    ax.plot(test_x,  actual_te, color="darkorange", label="Actual (Test)")
+    ax.plot(test_x,  pred_te,   color="darkorange", label="Predicted (Test)",
+            linestyle="--", marker="o", ms=4, alpha=0.8)
+
+    ax.axvline(x=len(actual_tr) - 1, color="black", linestyle=":", linewidth=2,
+                label="Train/Test Split")
+
+    all_times = train_times + test_times
+    all_x     = train_x + test_x
+    step = max(1, len(all_x) // 12) if len(all_x) > 24 else 1
+    ax.set_xticks(all_x[::step])
+    ax.set_xticklabels(all_times[::step], rotation=45, ha="right")
+
+    ax.set_title("SVR — Training & Testing Set")
+    ax.set_xlabel(time_col)
+    ax.set_ylabel(target_col)
+    ax.legend()
+    plt.tight_layout()
+
+    # Save as both so compare.html works for both sections
+    plt.savefig("static/svr_train.png", dpi=120)
+    plt.savefig("static/svr_test.png",  dpi=120)
+    plt.close()
+    # ── Results dict ──────────────────────────────────────────────────────
     return {
-        "model_key": "svr",
-        "model_name": "SVR",
-        "horizon": horizon,
-        "frequency": frequency,
-        
-        # ✅ MODEL CONFIGURATION
+        "model_key"   : "svr",
+        "model_name"  : "SVR",
+        "frequency"   : frequency,
+        "horizon"     : horizon,
+        "data_type"   : "Multivariate" if has_exogenous else "Univariate",
+
         "model_config": {
-            "kernel": kernel,
-            "C": C,
+            "kernel" : kernel,
+            "C"      : C,
             "epsilon": epsilon,
-            "gamma": gamma if isinstance(gamma, str) else round(gamma, 3),
+            "gamma"  : gamma if isinstance(gamma, str) else round(float(gamma), 3),
+            "lags"   : LAGS,
         },
-        "auto_tuned": use_auto_tune,
-        
-        "rmse_train": round(rmse_train, 3),
-        "r2_train": round(r2_train, 3),
-        "mape_train": round(mape_train, 2),
-        
-        "rmse_test": round(rmse_test, 3),
-        "r2_test": round(r2_test, 3),
-        "mape_test": round(mape_test, 2),
-        
+        "auto_tuned": use_tune,
+
+        "rmse_train" : round(rmse_tr, 3),
+        "mae_train"   : round(mae_tr,   3),
+        "mape_train" : round(mape_tr,  2),
+
+        "rmse_test"  : round(rmse_te, 3),
+        "mae_test"    : round(mae_te,   3),
+        "mape_test"  : round(mape_te,  2),
+
         "train_table": pd.DataFrame({
-            "Year": years_train,
-            "Actual": actual_train,
-            "Predicted": pred_train
+            time_col   : train_times,
+            "Actual"   : actual_tr,
+            "Predicted": pred_tr,
         }),
-        
+
         "test_table": pd.DataFrame({
-            "Year": years_test,
-            "Actual": actual_test,
-            "Predicted": pred_test
+            time_col   : test_times,
+            "Actual"   : actual_te,
+            "Predicted": pred_te,
         }),
-        
-        "forecast_table": None
+
+        "forecast_table": None,
     }

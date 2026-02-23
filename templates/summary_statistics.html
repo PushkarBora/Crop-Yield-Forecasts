@@ -1,0 +1,697 @@
+{% extends "base.html" %}
+
+{% block title %}Summary Statistics - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .stats-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .page-header p {
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.95);
+    }
+
+    .data-type-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 1.2rem;
+        border-radius: 30px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-top: 0.75rem;
+        letter-spacing: 0.3px;
+    }
+    .data-type-pill.multivariate {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102,126,234,0.35);
+    }
+    .data-type-pill.univariate {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        box-shadow: 0 4px 15px rgba(40,167,69,0.35);
+    }
+
+    .form-card {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        animation: fadeInUp 0.8s ease 0.2s backwards;
+        margin-bottom: 2rem;
+    }
+
+    .section-header {
+        font-size: 1.8rem;
+        color: #2d3748;
+        margin-bottom: 0.6rem;
+        padding-bottom: 1rem;
+        border-bottom: 3px solid transparent;
+        border-image: linear-gradient(90deg, #667eea, #764ba2) 1;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* ── Single-select notice badge ─────────────────────────── */
+    .single-select-notice {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+        border: 1.5px solid #f6c23e;
+        border-radius: 20px;
+        padding: 0.3rem 0.9rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #856404;
+        margin-bottom: 1.2rem;
+    }
+
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    /* ── Shared card style for both checkbox and radio ──────── */
+    .checkbox-card,
+    .radio-card {
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .checkbox-card input[type="checkbox"],
+    .radio-card   input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .checkbox-content {
+        padding: 1.2rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        background: white;
+        transition: all 0.3s;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .checkbox-content:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102,126,234,0.15);
+    }
+
+    .checkbox-card input[type="checkbox"]:checked ~ .checkbox-content,
+    .radio-card   input[type="radio"]:checked   ~ .checkbox-content {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: white;
+        box-shadow: 0 6px 20px rgba(102,126,234,0.3);
+    }
+
+    /* Radio indicator — circle instead of square */
+    .radio-icon {
+        width: 22px;
+        height: 22px;
+        border: 2px solid #cbd5e0;
+        border-radius: 50%;          /* circle */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.3s;
+        background: white;
+        margin-top: 2px;
+    }
+
+    .radio-card input[type="radio"]:checked ~ .checkbox-content .radio-icon {
+        background: white;
+        border-color: white;
+    }
+
+    .radio-icon::after {
+        content: '●';
+        color: #667eea;
+        font-size: 0.7rem;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.2s;
+    }
+
+    .radio-card input[type="radio"]:checked ~ .checkbox-content .radio-icon::after {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* Checkbox indicator — square */
+    .checkbox-icon {
+        width: 22px;
+        height: 22px;
+        border: 2px solid #cbd5e0;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.3s;
+        background: white;
+        margin-top: 2px;
+    }
+
+    .checkbox-card input[type="checkbox"]:checked ~ .checkbox-content .checkbox-icon {
+        background: white;
+        border-color: white;
+    }
+
+    .checkbox-icon::after {
+        content: '✓';
+        color: #667eea;
+        font-weight: bold;
+        font-size: 1rem;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.2s;
+    }
+
+    .checkbox-card input[type="checkbox"]:checked ~ .checkbox-content .checkbox-icon::after {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .checkbox-card.hidden-card { display: none; }
+
+    .checkbox-text { flex: 1; }
+    .checkbox-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.3rem; }
+    .checkbox-description { font-size: 0.85rem; opacity: 0.85; }
+
+    .selection-controls {
+        display: flex;
+        gap: 1rem;
+        margin: 1rem 0 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .select-btn {
+        padding: 0.6rem 1.2rem;
+        border: 2px solid #667eea;
+        background: white;
+        color: #667eea;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.9rem;
+    }
+
+    .select-btn:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+    }
+
+    .deselect-btn {
+        background: #f56565;
+        border-color: #f56565;
+        color: white;
+    }
+
+    .deselect-btn:hover {
+        background: #e53e3e;
+        border-color: #e53e3e;
+    }
+
+    .uv-notice {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: #fffbeb;
+        border: 2px solid #f6ad55;
+        border-radius: 12px;
+        padding: 1rem 1.4rem;
+        margin-bottom: 1.2rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #744210;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin: 3rem 0;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 1.2rem 3rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border: none;
+    }
+
+    .action-btn.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .action-btn.secondary {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+    }
+
+    .info-banner {
+        background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+
+    .info-banner p { color: #2d3748; margin: 0; font-size: 0.95rem; line-height: 1.6; }
+    .info-banner strong { color: #667eea; }
+
+    @media (max-width: 768px) {
+        .page-header h1 { font-size: 2rem; }
+        .form-card { padding: 2rem 1.5rem; }
+        .checkbox-grid { grid-template-columns: 1fr; }
+        .action-buttons { flex-direction: column; }
+        .action-btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-page">
+    <div class="stats-container">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>📊 Summary Statistics & Diagnostic Tests</h1>
+            <p>Select the statistical measures and tests you want to perform on your time series data</p>
+            {% if is_multivariate %}
+                <div class="data-type-pill multivariate">🌈 Multivariate Data Detected</div>
+            {% else %}
+                <div class="data-type-pill univariate">📈 Univariate Data Detected</div>
+            {% endif %}
+        </div>
+
+        <form action="{{ url_for('generate_statistics') }}" method="POST" id="statsForm">
+
+            <!-- ══════════════════════════════════════════════════
+                 1. SUMMARY STATISTICS  — multi-select (checkboxes)
+            ══════════════════════════════════════════════════ -->
+            <div class="form-card">
+                <h2 class="section-header">📈 Common Measures of Summary Statistics</h2>
+                <div class="info-banner">
+                    <p><strong>💡 Tip:</strong> Select one or more measures to calculate.</p>
+                </div>
+                <div class="selection-controls">
+                    <button type="button" class="select-btn" onclick="selectCategory('summary')">✓ Select All</button>
+                    <button type="button" class="select-btn deselect-btn" onclick="deselectCategory('summary')">✗ Deselect All</button>
+                </div>
+                <div class="checkbox-grid">
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="mean" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Mean</div>
+                            <div class="checkbox-description">Average of all data points</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="median" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Median</div>
+                            <div class="checkbox-description">Middle value when ordered</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="mode" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Mode</div>
+                            <div class="checkbox-description">Most frequently occurring value</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="range" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Range</div>
+                            <div class="checkbox-description">Difference between max and min</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="variance" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Variance</div>
+                            <div class="checkbox-description">Average squared deviation from mean</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="std" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Standard Deviation</div>
+                            <div class="checkbox-description">Square root of variance</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="cv" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Coefficient of Variation</div>
+                            <div class="checkbox-description">Ratio of std to mean (%)</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="se" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Standard Error of Mean</div>
+                            <div class="checkbox-description">Std dev of sampling distribution</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="skewness" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Skewness</div>
+                            <div class="checkbox-description">Measure of distribution asymmetry</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="summary_stats" value="kurtosis" class="summary">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Kurtosis</div>
+                            <div class="checkbox-description">Measure of distribution peakedness</div></div></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════
+                 2. NORMALITY TESTS  — single-select (radio)
+            ══════════════════════════════════════════════════ -->
+            <div class="form-card">
+                <h2 class="section-header">📐 Tests for Normality</h2>
+                <div class="single-select-notice">
+                    🔘 Select ONE test — different tests may give conflicting results
+                </div>
+                <div class="selection-controls">
+                    <button type="button" class="select-btn deselect-btn" onclick="clearRadio('normality_tests')">✗ Clear Selection</button>
+                </div>
+                <div class="checkbox-grid">
+                    <label class="radio-card">
+                        <input type="radio" name="normality_tests" value="shapiro">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Shapiro-Wilk (SW) Test</div>
+                            <div class="checkbox-description">Best for small samples (n &lt; 50). Tests if data comes from a normal distribution.</div></div></div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="normality_tests" value="ks">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Kolmogorov-Smirnov (KS) Test</div>
+                            <div class="checkbox-description">Non-parametric test. Compares empirical distribution to theoretical normal.</div></div></div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="normality_tests" value="anderson">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Anderson-Darling (AD) Test</div>
+                            <div class="checkbox-description">More sensitive to tails. Robust to small sample sizes.</div></div></div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="normality_tests" value="jarque_bera">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Jarque-Bera (JB) Test</div>
+                            <div class="checkbox-description">Widely used for time series. Based on skewness and kurtosis.</div></div></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════
+                 3. STATIONARITY TESTS — single-select (radio)
+            ══════════════════════════════════════════════════ -->
+            <div class="form-card">
+                <h2 class="section-header">⚖️ Tests for Stationarity</h2>
+                <div class="single-select-notice">
+                    🔘 Select ONE test — ADF and KPSS have opposite null hypotheses and may contradict each other
+                </div>
+                <div class="selection-controls">
+                    <button type="button" class="select-btn deselect-btn" onclick="clearRadio('stationarity_tests')">✗ Clear Selection</button>
+                </div>
+                <div class="checkbox-grid">
+                    <label class="radio-card">
+                        <input type="radio" name="stationarity_tests" value="adf">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Augmented Dickey-Fuller (ADF)</div>
+                            <div class="checkbox-description">H₀: Unit root exists (Non-Stationary). Parametric test with lag correction.</div></div></div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="stationarity_tests" value="pp">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Phillips-Perron (PP) Test</div>
+                            <div class="checkbox-description">H₀: Unit root exists (Non-Stationary). Non-parametric HAC correction via arch library.</div></div></div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="stationarity_tests" value="kpss">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">KPSS Test</div>
+                            <div class="checkbox-description">H₀: Series IS Stationary (opposite of ADF/PP). Rejecting means Non-Stationary.</div></div></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════
+                 4. TREND TESTS — multi-select (checkboxes)
+                    MK + Sen's slope are designed to be used together
+            ══════════════════════════════════════════════════ -->
+            <div class="form-card">
+                <h2 class="section-header">📉 Tests for Identifying Trends</h2>
+                <div class="info-banner">
+                    <p><strong>💡 Note:</strong> Mann-Kendall detects trend presence; Sen's Slope measures its magnitude.
+                    These two are designed to be used together.</p>
+                </div>
+                <div class="selection-controls">
+                    <button type="button" class="select-btn" onclick="selectCategory('trend')">✓ Select All</button>
+                    <button type="button" class="select-btn deselect-btn" onclick="deselectCategory('trend')">✗ Deselect All</button>
+                </div>
+                <div class="checkbox-grid">
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="trend_tests" value="mann_kendall" class="trend">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Mann-Kendall (MK) Test</div>
+                            <div class="checkbox-description">Non-parametric test for monotonic trend detection. H₀: no trend present.</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="trend_tests" value="sens_slope" class="trend">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Sen's Slope Estimator</div>
+                            <div class="checkbox-description">Robust median-based estimator of trend magnitude (units per time period).</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="trend_tests" value="linear_regression" class="trend">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Linear Regression Trend</div>
+                            <div class="checkbox-description">OLS trend line with slope, intercept, R², F-statistic, p-values, and 95% confidence intervals.</div></div></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════
+                 5. NON-LINEARITY TESTS — single-select (radio)
+            ══════════════════════════════════════════════════ -->
+            <div class="form-card">
+                <h2 class="section-header">🌀 Tests for Detecting Non-Linearity</h2>
+                <div class="single-select-notice">
+                    🔘 Select ONE test — BDS, TNN and WNN test different aspects of non-linearity
+                </div>
+                <div class="selection-controls">
+                    <button type="button" class="select-btn deselect-btn" onclick="clearRadio('nonlinearity_tests')">✗ Clear Selection</button>
+                </div>
+                <div class="checkbox-grid">
+                    <label class="radio-card">
+                        <input type="radio" name="nonlinearity_tests" value="bds">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Brock-Dechert-Scheinkman (BDS) Test</div>
+                            <div class="checkbox-description">General test for non-random structure. Detects chaotic dynamics and hidden patterns.</div></div></div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="nonlinearity_tests" value="tnn">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Terasvirta's Neural Network (TNN) Test</div>
+                            <div class="checkbox-description">Tests for smooth transition nonlinearity. Based on third-order Taylor expansion.</div></div></div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="nonlinearity_tests" value="nn">
+                        <div class="checkbox-content"><div class="radio-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">White Neural Network (WNN) Test</div>
+                            <div class="checkbox-description">Tests for neglected nonlinearity using a single hidden layer neural network.</div></div></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════
+                 6. DATA VISUALIZATION — multi-select (checkboxes)
+            ══════════════════════════════════════════════════ -->
+            <div class="form-card">
+                <h2 class="section-header">📊 Data Visualization</h2>
+                <div class="selection-controls">
+                    <button type="button" class="select-btn" onclick="selectAllPlots()">✓ Select All</button>
+                    <button type="button" class="select-btn deselect-btn" onclick="deselectAllPlots()">✗ Deselect All</button>
+                </div>
+                <div class="checkbox-grid">
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="plots" value="boxplot" class="plots">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Boxplot</div>
+                            <div class="checkbox-description">Distribution and outliers</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="plots" value="lineplot" class="plots">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Line Plot</div>
+                            <div class="checkbox-description">Time series trend over time</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="plots" value="histogram" class="plots">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Histogram / Density</div>
+                            <div class="checkbox-description">Data distribution shape</div></div></div>
+                    </label>
+                    <label class="checkbox-card" id="card-scatter">
+                        <input type="checkbox" name="plots" value="scatter" class="plots">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Scatter Plots</div>
+                            <div class="checkbox-description">
+                                Time vs Study Variable (all data){% if is_multivariate %} + Exogenous vs Study Variable{% endif %}
+                            </div></div></div>
+                    </label>
+                    <label class="checkbox-card {% if not is_multivariate %}hidden-card{% endif %}" id="card-correlogram">
+                        <input type="checkbox" name="plots" value="correlogram" class="plots"
+                               {% if not is_multivariate %}disabled{% endif %}>
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Correlation Plot</div>
+                            <div class="checkbox-description">Pearson r matrix between all variables</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="plots" value="acf" class="plots">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Autocorrelation Function (ACF)</div>
+                            <div class="checkbox-description">Temporal autocorrelation at each lag</div></div></div>
+                    </label>
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="plots" value="pacf" class="plots">
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Partial ACF (PACF)</div>
+                            <div class="checkbox-description">Direct autocorrelation controlling for shorter lags</div></div></div>
+                    </label>
+                    <label class="checkbox-card {% if not is_multivariate %}hidden-card{% endif %}" id="card-ccf">
+                        <input type="checkbox" name="plots" value="ccf" class="plots"
+                               {% if not is_multivariate %}disabled{% endif %}>
+                        <div class="checkbox-content"><div class="checkbox-icon"></div>
+                            <div class="checkbox-text"><div class="checkbox-title">Cross-Correlation Function (CCF)</div>
+                            <div class="checkbox-description">Lead/lag relationships between exogenous variables and study variable</div></div></div>
+                    </label>
+                </div>
+                {% if not is_multivariate %}
+                <div class="uv-notice">
+                    ⚠️ <span>Correlation Plot and CCF require multivariate data and are hidden.
+                    Scatter Plot will show Time vs Study Variable for your univariate dataset.</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button type="submit" class="action-btn primary">📊 Generate Statistics</button>
+                <button type="button" class="action-btn secondary" id="skipToModels">
+                    ➡️ Skip to Model Selection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ── Multi-select helpers (checkboxes) ────────────────────────────────────
+    function selectCategory(category) {
+        document.querySelectorAll(`input.${category}:not([disabled])`)
+                .forEach(cb => cb.checked = true);
+    }
+    function deselectCategory(category) {
+        document.querySelectorAll(`input.${category}:not([disabled])`)
+                .forEach(cb => cb.checked = false);
+    }
+
+    // ── Single-select clear (radio buttons) ──────────────────────────────────
+    function clearRadio(name) {
+        document.querySelectorAll(`input[name="${name}"]`)
+                .forEach(r => r.checked = false);
+    }
+
+    // ── Plots ─────────────────────────────────────────────────────────────────
+    function selectAllPlots() {
+        document.querySelectorAll('input.plots:not([disabled])')
+                .forEach(cb => cb.checked = true);
+    }
+    function deselectAllPlots() {
+        document.querySelectorAll('input.plots:not([disabled])')
+                .forEach(cb => cb.checked = false);
+    }
+
+    // ── Skip ──────────────────────────────────────────────────────────────────
+    document.getElementById('skipToModels').addEventListener('click', function () {
+        window.location.href = '{{ url_for("select_models") }}';
+    });
+
+    // ── Form validation ───────────────────────────────────────────────────────
+    document.getElementById('statsForm').addEventListener('submit', function (e) {
+        const anyChecked = Array.from(
+            document.querySelectorAll('input[type="checkbox"]:not([disabled]), input[type="radio"]')
+        ).some(cb => cb.checked);
+
+        if (!anyChecked) {
+            e.preventDefault();
+            alert('⚠️ Please select at least one statistical test or plot!');
+            return false;
+        }
+
+        const submitBtn = this.querySelector('.action-btn.primary');
+        submitBtn.textContent = '⏳ Generating...';
+        submitBtn.disabled = true;
+    });
+</script>
+{% endblock %}

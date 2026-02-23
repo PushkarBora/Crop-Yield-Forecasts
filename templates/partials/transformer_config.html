@@ -1,5 +1,15 @@
 <h3>Transformer Architecture</h3>
+<style>
+    .transformer-hidden {
+        display: none;
+    }
+    .transformer-auto-desc {
+        font-size: 0.9em;
+        color: #666;
+    }
+</style>
 
+<div class="auto-tune-section">
 <label for="auto_tune_transformer">
     <input 
         type="checkbox" 
@@ -8,19 +18,39 @@
         value="true" 
         checked
     >
-    Auto-Tune Hyperparameters (Recommended)
+    <span>🚀Auto-Tune Hyperparameters (Recommended)</span>
 </label>
-<br><br>
+</div>
+<br>
 
 <!-- ============================================================ -->
 <!-- GRID SEARCH CONFIGURATION (visible when auto-tune enabled) -->
 <!-- ============================================================ -->
 <div id="transformer_grid_search_ranges" class="grid-search-section">
     <h4>🔍 Grid Search Configuration</h4>
-    <p style="font-size: 0.9em; color: #666;">Define parameter ranges for exhaustive search (min, max, step)</p>
+    <p class="transformer-auto-desc">Define parameter ranges for exhaustive search (min, max, step)</p>
     
+    <div class="parameter-group">
+    <label>Number of Lags Range</label>
+    <div class="range-input-group">
+        <div>
+            <label for="transformer_lags_min">Minimum</label>
+            <input type="number" id="transformer_lags_min" name="transformer_lags_min" value="2" min="1" max="20">
+        </div>
+        <div>
+            <label for="transformer_lags_max">Maximum</label>
+            <input type="number" id="transformer_lags_max" name="transformer_lags_max" value="5" min="1" max="20">
+        </div>
+        <div>
+            <label for="transformer_lags_step">Step</label>
+            <input type="number" id="transformer_lags_step" name="transformer_lags_step" value="1" min="1" max="5">
+        </div>
+    </div>
+    <small class="help-text-small">💡 Number of past time steps as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+</div>
+<br>
     <!-- d_model Range -->
-    <div>
+    <div class="parameter-group">
         <label>Embedding Dimension (d_model) Range</label>
         <div class="range-input-group">
             <div>
@@ -41,7 +71,7 @@
     <br>
     
     <!-- nhead Range -->
-    <div>
+    <div class="parameter-group">
         <label>Number of Attention Heads Range</label>
         <div class="range-input-group">
             <div>
@@ -62,7 +92,7 @@
     <br>
     
     <!-- num_layers Range -->
-    <div>
+    <div class="parameter-group">
         <label>Number of Encoder Layers Range</label>
         <div class="range-input-group">
             <div>
@@ -83,7 +113,7 @@
     <br>
     
     <!-- dim_feedforward Range -->
-    <div>
+    <div class="parameter-group">
         <label>Feedforward Dimension Range</label>
         <div class="range-input-group">
             <div>
@@ -104,7 +134,7 @@
     <br>
     
     <!-- Dropout Range -->
-    <div>
+    <div class="parameter-group">
         <label>Dropout Range</label>
         <div class="range-input-group">
             <div>
@@ -125,7 +155,7 @@
     <br>
     
     <!-- Learning Rate Range -->
-    <div>
+    <div class="parameter-group">
         <label>Learning Rate Range</label>
         <div class="range-input-group">
             <div>
@@ -146,7 +176,7 @@
     <br>
     
     <!-- Weight Decay Range -->
-    <div>
+    <div class="parameter-group">
         <label>Weight Decay Range</label>
         <div class="range-input-group">
             <div>
@@ -167,7 +197,7 @@
     <br>
     
     <!-- Huber Delta Range -->
-    <div>
+    <div class="parameter-group">
         <label>Huber Delta Range</label>
         <div class="range-input-group">
             <div>
@@ -188,7 +218,7 @@
     <br>
     
     <!-- Epochs Range -->
-    <div>
+    <div class="parameter-group">
         <label>Number of Epochs Range</label>
         <div class="range-input-group">
             <div>
@@ -209,7 +239,7 @@
     <br>
     
     <!-- Early Stopping Patience Range -->
-    <div>
+    <div class="parameter-group">
         <label>Early Stopping Patience Range</label>
         <div class="range-input-group">
             <div>
@@ -240,9 +270,12 @@
 <!-- ============================================================ -->
 <!-- MANUAL PARAMETERS (visible when auto-tune disabled) -->
 <!-- ============================================================ -->
-<div id="transformer_manual_section" style="display: none;">
+<div id="transformer_manual_section" class="manual-section transformer-hidden">
     <h4>Manual Hyperparameter Configuration</h4>
     
+    <label for="transformer_lags">Number of Lags (input time steps)</label><br>
+    <input type="number" id="transformer_lags" name="transformer_lags" value="3" min="1" max="20"><br><br>
+
     <label for="d_model">Embedding Dimension (d_model)</label><br>
     <input type="number" id="d_model" name="d_model" value="8" min="4"><br><br>
 
@@ -304,6 +337,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function calculateTransformerCombinations() {
     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
     
+    const lags = calc(
+        parseFloat(document.getElementById('transformer_lags_min').value),
+        parseFloat(document.getElementById('transformer_lags_max').value),
+        parseFloat(document.getElementById('transformer_lags_step').value)
+    );
+
     const dModel = calc(
         parseFloat(document.getElementById('transformer_d_model_min').value),
         parseFloat(document.getElementById('transformer_d_model_max').value),
@@ -365,7 +404,7 @@ function calculateTransformerCombinations() {
     );
     
     // 2x for activation functions (relu, gelu)
-    const total = dModel * nhead * numLayers * dimFeedforward * dropout * lr * wd * hd * epochs * patience * 2;
+    const total = lags * dModel * nhead * numLayers * dimFeedforward * dropout * lr * wd * hd * epochs * patience * 2;
     
     document.getElementById('transformer_total_combinations').textContent = total.toLocaleString() + ' combinations';
     

@@ -217,6 +217,34 @@
 
     <!-- Main Content -->
     <main class="main-content">
+        <!-- ✅ Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+            <div style="
+                position: fixed; top: 80px; right: 20px; z-index: 9999;
+                padding: 1rem 2rem; border-radius: 12px; font-weight: 600;
+                font-size: 0.95rem; max-width: 500px;
+                background: {% if category == 'error' %}#fed7d7{% else %}#c6f6d5{% endif %};
+                color: {% if category == 'error' %}#822727{% else %}#276749{% endif %};
+                border: 2px solid {% if category == 'error' %}#fc8181{% else %}#68d391{% endif %};
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                animation: slideIn 0.4s ease;">
+                {{ message }}
+                <span onclick="this.parentElement.remove()" 
+                      style="cursor:pointer; float:right; margin-left:1rem; font-size:1.1rem;">✕</span>
+            </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <style>
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        </style>
+        
         {% block content %}{% endblock %}
     </main>
 

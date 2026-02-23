@@ -1,6 +1,10 @@
 <h3>SVR Hyperparameters</h3>
-
+<style>
+    .svr-hidden    { display: none; }
+    .svr-auto-desc { font-size: 0.9em; color: #666; }
+</style>
 <!-- Auto-Tune Checkbox -->
+<div class="auto-tune-section">
 <label for="auto_tune_svr">
     <input 
         type="checkbox" 
@@ -9,19 +13,40 @@
         value="true" 
         checked
     >
-    Auto-Tune Hyperparameters (Recommended)
+    <span>🚀Auto-Tune Hyperparameters (Recommended)</span>
 </label>
-<br><br>
+</div>
+<br>
 
 <!-- ============================================================ -->
 <!-- GRID SEARCH RANGES (visible when auto-tune enabled) -->
 <!-- ============================================================ -->
 <div id="svr_grid_search_section" class="grid-search-section">
     <h4>🔍 Grid Search Configuration</h4>
-    <p style="font-size: 0.9em; color: #666;">Define parameter ranges for exhaustive search (min, max, step)</p>
+    <p class="svr-auto-desc">Define parameter ranges for exhaustive search (min, max, step)</p>
     
+    <div class="parameter-group">
+    <label>Number of Lags Range</label>
+    <div class="range-input-group">
+        <div>
+            <label for="svr_lags_min">Minimum</label>
+            <input type="number" id="svr_lags_min" name="svr_lags_min" value="2" min="1" max="20">
+        </div>
+        <div>
+            <label for="svr_lags_max">Maximum</label>
+            <input type="number" id="svr_lags_max" name="svr_lags_max" value="5" min="1" max="20">
+        </div>
+        <div>
+            <label for="svr_lags_step">Step</label>
+            <input type="number" id="svr_lags_step" name="svr_lags_step" value="1" min="1" max="5">
+        </div>
+    </div>
+    <small class="help-text-small">💡 Number of past time steps as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+</div>
+<br>
+
     <!-- Kernel Options -->
-    <div>
+    <div class ="parameter-group">
         <label style="font-weight: bold; display: block; margin-bottom: 10px;">
             Kernel Functions to Test
         </label>
@@ -42,7 +67,7 @@
     </div>
     
     <!-- C Parameter Range -->
-    <div>
+    <div class="parameter-group">
         <label>C (Regularization Parameter) Range</label>
         <div class="range-input-group">
             <div>
@@ -87,7 +112,7 @@
     <br>
     
     <!-- Epsilon Parameter Range -->
-    <div>
+    <div class="parameter-group">
         <label>Epsilon (ε-tube width) Range</label>
         <div class="range-input-group">
             <div>
@@ -132,7 +157,7 @@
     <br>
     
     <!-- Gamma Parameter Range -->
-    <div>
+    <div class="parameter-group">
         <label>Gamma (Kernel Coefficient) Range</label>
         <div class="range-input-group">
             <div>
@@ -187,9 +212,12 @@
 <!-- ============================================================ -->
 <!-- MANUAL PARAMETERS (visible when auto-tune disabled) -->
 <!-- ============================================================ -->
-<div id="svr_manual_section" style="display: none;">
+<div id="svr_manual_section" class="manual-section svr-hidden">
     <h4>Manual Hyperparameter Configuration</h4>
     
+    <label for="svr_lags">Number of Lags (input time steps)</label><br>
+    <input type="number" id="svr_lags" name="svr_lags" value="3" min="1" max="20"><br><br>
+
     <!-- Kernel Function -->
     <label for="kernel">Kernel Function</label><br>
     <select id="kernel" name="kernel">
@@ -255,6 +283,10 @@ document.getElementById('auto_tune_svr').addEventListener('change', function() {
 function calculateSVRCombinations() {
     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
     
+    const lags_min = parseFloat(document.getElementById('svr_lags_min').value);
+    const lags_max = parseFloat(document.getElementById('svr_lags_max').value);
+    const lags_step = parseFloat(document.getElementById('svr_lags_step').value);
+
     const C_min = parseFloat(document.getElementById('svr_C_min').value);
     const C_max = parseFloat(document.getElementById('svr_C_max').value);
     const C_step = parseFloat(document.getElementById('svr_C_step').value);
@@ -271,11 +303,12 @@ function calculateSVRCombinations() {
     const kernels = document.querySelectorAll('input[name^="svr_kernel_"]:checked').length;
     
     // Calculate value counts
+    const lags = calc(lags_min, lags_max, lags_step);
     const C_count = calc(C_min, C_max, C_step);
     const epsilon_count = calc(epsilon_min, epsilon_max, epsilon_step);
     const gamma_count = calc(gamma_min, gamma_max, gamma_step) + 2; // +2 for 'scale' and 'auto'
     
-    const total = kernels * C_count * epsilon_count * gamma_count;
+    const total = lags* C_count * epsilon_count * gamma_count;
     
     document.getElementById('svr_total_combinations').textContent = total.toLocaleString() + ' combinations';
     

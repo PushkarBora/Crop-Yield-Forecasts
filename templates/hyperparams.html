@@ -444,8 +444,6 @@
             <input type="hidden" name="model" value="{{ model_name }}">
             <input type="hidden" name="frequency" value="{{ frequency }}">
             <input type="hidden" name="horizon" value="{{ horizon }}">
-            <input type="hidden" name="window" value="{{ window }}">
-            <input type="hidden" name="lags" value="{{ lags }}">
             <input type="hidden" name="split" value="{{ split }}">
 
             <div class="form-card">
@@ -470,10 +468,32 @@
                 </div>
 
                 <!-- Grid Search Configuration -->
+                <!-- Lags (inside lstm_grid_search_ranges, before combination estimate) -->
+
+
                 <div id="lstm_grid_search_ranges" class="grid-search-section">
                     <h4>Grid Search Configuration</h4>
                     <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
                     
+                    <!-- Lags Range -->
+                    <div class="parameter-group">
+    <label>Number of Lags</label>
+    <div class="range-input-group">
+        <div>
+            <label for="lstm_lags_min">Minimum</label>
+            <input type="number" id="lstm_lags_min" name="lstm_lags_min" value="2" min="1" max="20">
+        </div>
+        <div>
+            <label for="lstm_lags_max">Maximum</label>
+            <input type="number" id="lstm_lags_max" name="lstm_lags_max" value="5" min="1" max="20">
+        </div>
+        <div>
+            <label for="lstm_lags_step">Step</label>
+            <input type="number" id="lstm_lags_step" name="lstm_lags_step" value="1" min="1" max="5">
+        </div>
+    </div>
+    <small class="help-text-small">💡 Number of past time steps used as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+</div>
                     <!-- Hidden Size Range -->
                     <div class="parameter-group">
                         <label>Hidden Size Range</label>
@@ -648,6 +668,10 @@
                 <div id="lstm_manual_section" class="manual-section" style="display: none;">
                     <h4>🎛️ Manual Hyperparameter Configuration</h4>
                     
+                    <!-- Lags (inside lstm_manual_section) -->
+                    <label for="lstm_lags">Number of Lags</label>
+                    <input type="number" id="lstm_lags" name="lstm_lags" value="3" min="1" max="20">
+
                     <label for="hidden_size">Hidden Size</label>
                     <input type="number" id="hidden_size" name="hidden_size" value="8">
 
@@ -690,6 +714,7 @@
 
                 function calculateLSTMCombinations() {
                     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const lags = calc(parseFloat(document.querySelector('[name="lstm_lags_min"]').value), parseFloat(document.querySelector('[name="lstm_lags_max"]').value), parseFloat(document.querySelector('[name="lstm_lags_step"]').value));
                     const h = calc(parseFloat(document.querySelector('[name="lstm_hidden_size_min"]').value), parseFloat(document.querySelector('[name="lstm_hidden_size_max"]').value), parseFloat(document.querySelector('[name="lstm_hidden_size_step"]').value));
                     const l = calc(parseFloat(document.querySelector('[name="lstm_num_layers_min"]').value), parseFloat(document.querySelector('[name="lstm_num_layers_max"]').value), parseFloat(document.querySelector('[name="lstm_num_layers_step"]').value));
                     const d = calc(parseFloat(document.querySelector('[name="lstm_dropout_min"]').value), parseFloat(document.querySelector('[name="lstm_dropout_max"]').value), parseFloat(document.querySelector('[name="lstm_dropout_step"]').value));
@@ -699,7 +724,7 @@
                     const p = calc(parseFloat(document.querySelector('[name="lstm_patience_min"]').value), parseFloat(document.querySelector('[name="lstm_patience_max"]').value), parseFloat(document.querySelector('[name="lstm_patience_step"]').value));
                     const epochs = calc(parseFloat(document.querySelector('[name="lstm_epochs_min"]').value), parseFloat(document.querySelector('[name="lstm_epochs_max"]').value), parseFloat(document.querySelector('[name="lstm_epochs_step"]').value));
                     
-                    const total = h * l * d * lr * wd * hd * p * epochs;
+                    const total = lags*h * l * d * lr * wd * hd * p * epochs;
                     document.getElementById('lstm_total_combinations').textContent = total.toLocaleString() + ' combinations';
                     
                     const estimateDiv = document.getElementById('lstm_combination_estimate');
@@ -733,6 +758,26 @@
                     <h4>Grid Search Configuration</h4>
                     <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
                     
+                    <!-- Lags Range — ADD THIS BEFORE THE COMBINATION ESTIMATE DIV -->
+<div class="parameter-group">
+    <label>Number of Lags Range</label>
+    <div class="range-input-group">
+        <div>
+            <label for="transformer_lags_min">Minimum</label>
+            <input type="number" id="transformer_lags_min" name="transformer_lags_min" value="2" min="1" max="20">
+        </div>
+        <div>
+            <label for="transformer_lags_max">Maximum</label>
+            <input type="number" id="transformer_lags_max" name="transformer_lags_max" value="5" min="1" max="20">
+        </div>
+        <div>
+            <label for="transformer_lags_step">Step</label>
+            <input type="number" id="transformer_lags_step" name="transformer_lags_step" value="1" min="1" max="5">
+        </div>
+    </div>
+    <small class="help-text-small">💡 Number of past time steps used as input. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+</div>
+
                     <div class="parameter-group">
                         <label>Embedding Dimension (d_model) Range</label>
                         <div class="range-input-group">
@@ -844,6 +889,9 @@
 
                 <div id="transformer_manual_section" class="manual-section" style="display: none;">
                     <h4>🎛️ Manual Hyperparameter Configuration</h4>
+
+                    <label for="transformer_lags">Number of Lags</label>
+                    <input type="number" id="transformer_lags" name="lags" value="3" min="1" max="20">
                     
                     <label for="d_model">Embedding Dimension (d_model)</label>
                     <input type="number" id="d_model" name="d_model" value="8" min="4">
@@ -900,6 +948,7 @@
 
                 function calculateTransformerCombinations() {
                     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const lags = calc(parseFloat(document.getElementById('transformer_lags_min').value), parseFloat(document.getElementById('transformer_lags_max').value), parseFloat(document.getElementById('transformer_lags_step').value));
                     const dModel = calc(parseFloat(document.getElementById('transformer_d_model_min').value), parseFloat(document.getElementById('transformer_d_model_max').value), parseFloat(document.getElementById('transformer_d_model_step').value));
                     const nhead = calc(parseFloat(document.getElementById('transformer_nhead_min').value), parseFloat(document.getElementById('transformer_nhead_max').value), parseFloat(document.getElementById('transformer_nhead_step').value));
                     const numLayers = calc(parseFloat(document.getElementById('transformer_num_layers_min').value), parseFloat(document.getElementById('transformer_num_layers_max').value), parseFloat(document.getElementById('transformer_num_layers_step').value));
@@ -911,7 +960,7 @@
                     const epochs = calc(parseFloat(document.getElementById('transformer_epochs_min').value), parseFloat(document.getElementById('transformer_epochs_max').value), parseFloat(document.getElementById('transformer_epochs_step').value));
                     const patience = calc(parseFloat(document.getElementById('transformer_patience_min').value), parseFloat(document.getElementById('transformer_patience_max').value), parseFloat(document.getElementById('transformer_patience_step').value));
                     
-                    const total = dModel * nhead * numLayers * dimFeedforward * dropout * lr * wd * hd * epochs * patience * 2;
+                    const total = lags*dModel * nhead * numLayers * dimFeedforward * dropout * lr * wd * hd * epochs * patience * 2;
                     document.getElementById('transformer_total_combinations').textContent = total.toLocaleString() + ' combinations';
                     
                     const estimateDiv = document.getElementById('transformer_combination_estimate');
@@ -946,6 +995,15 @@
                     <h4>Grid Search Configuration</h4>
                     <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
                     
+                    <div class="parameter-group">
+                        <label>Number of Lags Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rnn_lags_min">Minimum</label><input type="number" id="rnn_lags_min" name="rnn_lags_min" value="2" min="1"></div>
+                            <div><label for="rnn_lags_max">Maximum</label><input type="number" id="rnn_lags_max" name="rnn_lags_max" value="5" min="1"></div>
+                            <div><label for="rnn_lags_step">Step</label><input type="number" id="rnn_lags_step" name="rnn_lags_step" value="1" min="1"></div>
+                        </div>
+                        <small class="help-text-small">💡 Number of past time steps used as input. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+                        </div>
                     <div class="parameter-group">
                         <label>Hidden Size Range</label>
                         <div class="range-input-group">
@@ -1047,6 +1105,9 @@
 
                 <div id="rnn_manual_section" class="manual-section" style="display: none;">
                     <h4>🎛️ Manual Hyperparameter Configuration</h4>
+
+                    <label for="rnn_lags">Number of Lags</label>
+                    <input type="number" id="rnn_lags" name="rnn_lags" value="3" min="1" max="20">
                     
                     <label for="hidden_size">Hidden Size</label>
                     <input type="number" id="hidden_size" name="hidden_size" value="8" min="1">
@@ -1100,6 +1161,7 @@
 
                 function calculateRNNCombinations() {
                     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const lags = calc(parseFloat(document.getElementById('rnn_lags_min').value), parseFloat(document.getElementById('rnn_lags_max').value), parseFloat(document.getElementById('rnn_lags_step').value));
                     const hiddenSize = calc(parseFloat(document.getElementById('rnn_hidden_size_min').value), parseFloat(document.getElementById('rnn_hidden_size_max').value), parseFloat(document.getElementById('rnn_hidden_size_step').value));
                     const numLayers = calc(parseFloat(document.getElementById('rnn_num_layers_min').value), parseFloat(document.getElementById('rnn_num_layers_max').value), parseFloat(document.getElementById('rnn_num_layers_step').value));
                     const dropoutRnn = calc(parseFloat(document.getElementById('rnn_dropout_rnn_min').value), parseFloat(document.getElementById('rnn_dropout_rnn_max').value), parseFloat(document.getElementById('rnn_dropout_rnn_step').value));
@@ -1110,7 +1172,7 @@
                     const epochs = calc(parseFloat(document.getElementById('rnn_epochs_min').value), parseFloat(document.getElementById('rnn_epochs_max').value), parseFloat(document.getElementById('rnn_epochs_step').value));
                     const patience = calc(parseFloat(document.getElementById('rnn_patience_min').value), parseFloat(document.getElementById('rnn_patience_max').value), parseFloat(document.getElementById('rnn_patience_step').value));
                     
-                    const total = hiddenSize * numLayers * dropoutRnn * dropoutFc * lr * wd * hd * epochs * patience * 2;
+                    const total = lags * numLayers * dropoutRnn * dropoutFc * lr * wd * hd * epochs * patience * 2;
                     document.getElementById('rnn_total_combinations').textContent = total.toLocaleString() + ' combinations';
                     
                     const estimateDiv = document.getElementById('rnn_combination_estimate');
@@ -1145,6 +1207,26 @@
                     <h4>Grid Search Configuration</h4>
                     <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
                     
+                    <!-- ✅ NEW: Lags Range -->
+    <div class="parameter-group">
+        <label>Number of Lags Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="gru_lags_min">Minimum</label>
+                <input type="number" id="gru_lags_min" name="gru_lags_min" value="2" min="1" max="20">
+            </div>
+            <div>
+                <label for="gru_lags_max">Maximum</label>
+                <input type="number" id="gru_lags_max" name="gru_lags_max" value="5" min="1" max="20">
+            </div>
+            <div>
+                <label for="gru_lags_step">Step</label>
+                <input type="number" id="gru_lags_step" name="gru_lags_step" value="1" min="1" max="5">
+            </div>
+        </div>
+        <small class="help-text-small">💡 Number of past time steps used as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+    </div>
+
                     <div class="parameter-group">
                         <label>Hidden Size Range</label>
                         <div class="range-input-group">
@@ -1247,6 +1329,10 @@
                 <div id="gru_manual_section" class="manual-section" style="display: none;">
                     <h4>🎛️ Manual Hyperparameter Configuration</h4>
                     
+                    <!-- ✅ NEW -->
+                    <label for="gru_lags">Number of Lags</label>
+                    <input type="number" id="gru_lags" name="gru_lags" value="3" min="1" max="20">
+
                     <label for="hidden_size">Hidden Size</label>
                     <input type="number" id="hidden_size" name="hidden_size" value="8" min="1">
 
@@ -1293,6 +1379,7 @@
 
                 function calculateGRUCombinations() {
                     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const lags = calc(parseFloat(document.getElementById('gru_lags_min').value), parseFloat(document.getElementById('gru_lags_max').value), parseFloat(document.getElementById('gru_lags_step').value));
                     const hiddenSize = calc(parseFloat(document.getElementById('gru_hidden_size_min').value), parseFloat(document.getElementById('gru_hidden_size_max').value), parseFloat(document.getElementById('gru_hidden_size_step').value));
                     const numLayers = calc(parseFloat(document.getElementById('gru_num_layers_min').value), parseFloat(document.getElementById('gru_num_layers_max').value), parseFloat(document.getElementById('gru_num_layers_step').value));
                     const gruDropout = calc(parseFloat(document.getElementById('gru_gru_dropout_min').value), parseFloat(document.getElementById('gru_gru_dropout_max').value), parseFloat(document.getElementById('gru_gru_dropout_step').value));
@@ -1303,7 +1390,7 @@
                     const epochs = calc(parseFloat(document.getElementById('gru_epochs_min').value), parseFloat(document.getElementById('gru_epochs_max').value), parseFloat(document.getElementById('gru_epochs_step').value));
                     const patience = calc(parseFloat(document.getElementById('gru_patience_min').value), parseFloat(document.getElementById('gru_patience_max').value), parseFloat(document.getElementById('gru_patience_step').value));
                     
-                    const total = hiddenSize * numLayers * gruDropout * fcDropout * lr * wd * hd * epochs * patience;
+                    const total = lags*hiddenSize * numLayers * gruDropout * fcDropout * lr * wd * hd * epochs * patience;
                     document.getElementById('gru_total_combinations').textContent = total.toLocaleString() + ' combinations';
                     
                     const estimateDiv = document.getElementById('gru_combination_estimate');
@@ -1338,6 +1425,15 @@
                     <h4>Grid Search Configuration</h4>
                     <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
                     
+                    <div class="parameter-group">
+                        <label>Number of Lags Range</label>
+                        <div class="range-input-group">
+                            <div><label for="ann_lags_min">Minimum</label><input type="number" id="ann_lags_min" name="ann_lags_min" value="2" min="1" max="20"></div>
+                            <div><label for="ann_lags_max">Maximum</label><input type="number" id="ann_lags_max" name="ann_lags_max" value="5" min="1" max="20"></div>
+                            <div><label for="ann_lags_step">Step</label><input type="number" id="ann_lags_step" name="ann_lags_step" value="1" min="1" max="5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Number of past time steps used as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+                        </div>  
                     <div class="parameter-group">
                         <label>Hidden Layer 1 Size Range</label>
                         <div class="range-input-group">
@@ -1440,6 +1536,9 @@
                 <div id="ann_manual_section" class="manual-section" style="display: none;">
                     <h4>🎛️ Manual Hyperparameter Configuration</h4>
                     
+                    <label for="ann_lags">Number of Lags</label>
+                    <input type="number" id="ann_lags" name="ann_lags" value="3" min="1" max="20">
+
                     <label for="hidden_layer_1">Hidden Layer 1 Size</label>
                     <input type="number" id="hidden_layer_1" name="hidden_layer_1" value="16" min="1">
 
@@ -1486,6 +1585,7 @@
 
                 function calculateANNCombinations() {
                     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+                    const lags = calc(parseFloat(document.getElementById('ann_lags_min').value), parseFloat(document.getElementById('ann_lags_max').value), parseFloat(document.getElementById('ann_lags_step').value));
                     const hiddenLayer1 = calc(parseFloat(document.getElementById('ann_hidden_layer_1_min').value), parseFloat(document.getElementById('ann_hidden_layer_1_max').value), parseFloat(document.getElementById('ann_hidden_layer_1_step').value));
                     const hiddenLayer2 = calc(parseFloat(document.getElementById('ann_hidden_layer_2_min').value), parseFloat(document.getElementById('ann_hidden_layer_2_max').value), parseFloat(document.getElementById('ann_hidden_layer_2_step').value));
                     const dropout1 = calc(parseFloat(document.getElementById('ann_dropout_1_min').value), parseFloat(document.getElementById('ann_dropout_1_max').value), parseFloat(document.getElementById('ann_dropout_1_step').value));
@@ -1496,7 +1596,7 @@
                     const epochs = calc(parseFloat(document.getElementById('ann_epochs_min').value), parseFloat(document.getElementById('ann_epochs_max').value), parseFloat(document.getElementById('ann_epochs_step').value));
                     const patience = calc(parseFloat(document.getElementById('ann_patience_min').value), parseFloat(document.getElementById('ann_patience_max').value), parseFloat(document.getElementById('ann_patience_step').value));
                     
-                    const total = hiddenLayer1 * hiddenLayer2 * dropout1 * dropout2 * lr * wd * hd * epochs * patience;
+                    const total = lags*hiddenLayer1 * hiddenLayer2 * dropout1 * dropout2 * lr * wd * hd * epochs * patience;
                     document.getElementById('ann_total_combinations').textContent = total.toLocaleString() + ' combinations';
                     
                     const estimateDiv = document.getElementById('ann_combination_estimate');
@@ -1531,6 +1631,16 @@
                     <h4>Grid Search Configuration</h4>
                     <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
                     
+                    <div class="parameter-group">
+                        <label>Number of Lags Range</label>
+                        <div class="range-input-group">
+                            <div><label for="svr_lags_min">Minimum</label><input type="number" id="svr_lags_min" name="svr_lags_min" value="2" min="1" max="20"></div>
+                            <div><label for="svr_lags_max">Maximum</label><input type="number" id="svr_lags_max" name="svr_lags_max" value="5" min="1" max="20"></div>
+                            <div><label for="svr_lags_step">Step</label><input type="number" id="svr_lags_step" name="svr_lags_step" value="1" min="1" max="5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Number of past time steps used as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+                    </div>
+
                     <div class="checkbox-group">
                         <label>Kernel Functions to Test</label>
                         <div class="checkbox-options">
@@ -1548,6 +1658,7 @@
                             </label>
                         </div>
                     </div>
+                    
                     
                     <div class="parameter-group">
                         <label>C (Regularization Parameter) Range</label>
@@ -1590,7 +1701,8 @@
 
                 <div id="svr_manual_section" class="manual-section" style="display: none;">
                     <h4>🎛️ Manual Hyperparameter Configuration</h4>
-                    
+                    <label for="svr_lags">Number of Lags</label>
+                    <input type="number" id="svr_lags" name="svr_lags" value="3" min="1" max="20">
                     <label for="kernel">Kernel Function</label>
                     <select id="kernel" name="kernel">
                         <option value="rbf" selected>RBF (Radial Basis Function)</option>
@@ -1629,6 +1741,7 @@
                 function calculateSVRCombinations() {
                     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
                     
+                    const lags = calc(parseFloat(document.getElementById('svr_lags_min').value), parseFloat(document.getElementById('svr_lags_max').value), parseFloat(document.getElementById('svr_lags_step').value));
                     const C_min = parseFloat(document.getElementById('svr_C_min').value);
                     const C_max = parseFloat(document.getElementById('svr_C_max').value);
                     const C_step = parseFloat(document.getElementById('svr_C_step').value);
@@ -1647,7 +1760,7 @@
                     const epsilon_count = calc(epsilon_min, epsilon_max, epsilon_step);
                     const gamma_count = calc(gamma_min, gamma_max, gamma_step) + 2;
                     
-                    const total = kernels * C_count * epsilon_count * gamma_count;
+                    const total = lags * C_count * epsilon_count * gamma_count;
                     
                     document.getElementById('svr_total_combinations').textContent = total.toLocaleString() + ' combinations';
                     
@@ -1683,6 +1796,16 @@
                     <h4>Grid Search Configuration</h4>
                     <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
                     
+                    <div class="parameter-group">
+                        <label>Number of Lags Range</label>
+                        <div class="range-input-group">
+                            <div><label for="rf_lags_min">Minimum</label><input type="number" id="rf_lags_min" name="rf_lags_min" value="2" min="1" max="20"></div>
+                            <div><label for="rf_lags_max">Maximum</label><input type="number" id="rf_lags_max" name="rf_lags_max" value="5" min="1" max="20"></div>
+                            <div><label for="rf_lags_step">Step</label><input type="number" id="rf_lags_step" name="rf_lags_step" value="1" min="1" max="5"></div>
+                        </div>
+                        <small class="help-text-small">💡 Number of past time steps used as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+                    </div>
+
                     <div class="parameter-group">
                         <label>Number of Trees (n_estimators) Range</label>
                         <div class="range-input-group">
@@ -1771,6 +1894,9 @@
                 <div id="rf_manual_section" class="manual-section" style="display: none;">
                     <h4>🎛️ Manual Hyperparameter Configuration</h4>
                     
+                    <label for="rf_lags">Number of Lags</label>
+                    <input type="number" id="rf_lags" name="rf_lags" value="3" min="1" max="20">
+
                     <label for="n_estimators">Number of Trees</label>
                     <input type="number" id="n_estimators" name="n_estimators" value="350">
 
@@ -1809,6 +1935,8 @@
                 function calculateRFCombinations() {
                     const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
                     
+                    const lags = calc(parseFloat(document.getElementById('rf_lags_min').value), parseFloat(document.getElementById('rf_lags_max').value), parseFloat(document.getElementById('rf_lags_step').value));
+
                     const n_estimators = calc(
                         parseFloat(document.getElementById('rf_n_estimators_min').value),
                         parseFloat(document.getElementById('rf_n_estimators_max').value),
@@ -1837,7 +1965,7 @@
                     const max_features = document.querySelectorAll('input[name^="rf_max_features_"]:checked').length;
                     const bootstrap = document.querySelectorAll('input[name^="rf_bootstrap_"]:checked').length;
                     
-                    const total = n_estimators * max_depth_with_none * min_samples_split * min_samples_leaf * max_features * bootstrap;
+                    const total = lags * n_estimators * max_depth_with_none * min_samples_split * min_samples_leaf * max_features * bootstrap;
                     
                     document.getElementById('rf_total_combinations').textContent = total.toLocaleString() + ' combinations';
                     

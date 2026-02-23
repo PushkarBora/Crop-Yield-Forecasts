@@ -1,659 +1,742 @@
 import numpy as np
 import pandas as pd
+import os
+import sys
+import random
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+# ============================================================
+# REPRODUCIBILITY
+# ============================================================
+SEED = 42
+random.seed(SEED)
+np.random.seed(SEED)
+
+try:
+    torch_dll_path = os.path.join(
+        sys.exec_prefix, "Lib", "site-packages", "torch", "lib"
+    )
+    if os.path.exists(torch_dll_path):
+        os.add_dll_directory(torch_dll_path)
+except Exception:
+    pass
+
 import torch
 import torch.nn as nn
 
+torch.manual_seed(SEED)
+torch.cuda.manual_seed_all(SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import root_mean_squared_error, r2_score
+from sklearn.metrics import root_mean_squared_error,mean_absolute_error
+
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
+def clean_dataframe(df):
+    num_cols = df.select_dtypes(include=[np.number]).columns
+    obj_cols = df.select_dtypes(exclude=[np.number]).columns
+    df[num_cols] = df[num_cols].interpolate(method='linear').ffill().bfill()
+    df[obj_cols] = df[obj_cols].ffill().bfill()
+    return df.dropna()
 # ============================================================
-# AUTO-TUNING FUNCTION WITH GRID SEARCH
+# MODEL ARCHITECTURE
 # ============================================================
-def auto_tune_ann(
-    X_train,
-    y_train,
-    X_val,
-    y_val,
-    device,
-    input_dim,
-    params,  # ✅ ADD THIS
-    max_epochs=100,
-    log_callback=None
-):
-    """
-    Auto-tune ANN using USER-DEFINED grid search ranges from params.
-    """
-    import itertools
-    import numpy as np
-    import torch
-    import torch.nn as nn
-
-    # ✅ ADD LOG FUNCTION
-    def log(msg):
-        if log_callback:
-            log_callback(msg)
-        print(msg)
-    
-    log("\n🔍 Starting ANN Grid Search Auto-Tuning (USER RANGES)")
-    
-    # ============================================================
-    # READ USER-DEFINED RANGES - USE WHILE LOOP TO FIX FLOATING POINT
-    # ============================================================
-    hidden_layer_1_values = list(range(
-        params["ann_hidden_layer_1_min"],
-        params["ann_hidden_layer_1_max"] + 1,
-        params["ann_hidden_layer_1_step"]
-    ))
-    
-    hidden_layer_2_values = list(range(
-        params["ann_hidden_layer_2_min"],
-        params["ann_hidden_layer_2_max"] + 1,
-        params["ann_hidden_layer_2_step"]
-    ))
-    
-    # ✅ FIX: Use while loop to avoid floating point errors
-    dropout_1_values = []
-    val = params["ann_dropout_1_min"]
-    while val <= params["ann_dropout_1_max"] + 1e-9:
-        dropout_1_values.append(round(val, 3))
-        val += params["ann_dropout_1_step"]
-    
-    dropout_2_values = []
-    val = params["ann_dropout_2_min"]
-    while val <= params["ann_dropout_2_max"] + 1e-9:
-        dropout_2_values.append(round(val, 3))
-        val += params["ann_dropout_2_step"]
-    
-    learning_rate_values = []
-    val = params["ann_learning_rate_min"]
-    while val <= params["ann_learning_rate_max"] + 1e-9:
-        learning_rate_values.append(round(val, 6))
-        val += params["ann_learning_rate_step"]
-    
-    weight_decay_values = []
-    val = params["ann_weight_decay_min"]
-    while val <= params["ann_weight_decay_max"] + 1e-9:
-        weight_decay_values.append(round(val, 7))
-        val += params["ann_weight_decay_step"]
-    
-    huber_delta_values = []
-    val = params["ann_huber_delta_min"]
-    while val <= params["ann_huber_delta_max"] + 1e-9:
-        huber_delta_values.append(round(val, 2))
-        val += params["ann_huber_delta_step"]
-    
-    patience_values = list(range(
-        params["ann_patience_min"],
-        params["ann_patience_max"] + 1,
-        params["ann_patience_step"]
-    ))
-    
-    # ============================================================
-    # PARAMETER GRID
-    # ============================================================
-    param_grid = {
-        'hidden_layer_1': hidden_layer_1_values,
-        'hidden_layer_2': hidden_layer_2_values,
-        'dropout_1': dropout_1_values,
-        'dropout_2': dropout_2_values,
-        'learning_rate': learning_rate_values,
-        'weight_decay': weight_decay_values,
-        'huber_delta': huber_delta_values,
-        'patience': patience_values
-    }
-    
-    # Generate all combinations
-    keys = param_grid.keys()
-    combinations = [dict(zip(keys, v)) for v in itertools.product(*param_grid.values())]
-    
-    total_combinations = len(combinations)
-    
-    # ✅ PRINT ALL PARAMETERS
-    log("📦 Grid summary:")
-    log(f"   hidden_layer_1: {hidden_layer_1_values}")
-    log(f"   hidden_layer_2: {hidden_layer_2_values}")
-    log(f"   dropout_1: {dropout_1_values}")
-    log(f"   dropout_2: {dropout_2_values}")
-    log(f"   learning_rate: {learning_rate_values}")
-    log(f"   weight_decay: {weight_decay_values}")
-    log(f"   huber_delta: {huber_delta_values}")
-    log(f"   patience: {patience_values}")
-    log(f"🔢 Total combinations: {total_combinations}")
-    log("⏳ This may take a while...\n")
-    
-    best_val_loss = float('inf')
-    best_params = None
-    
-    # Convert to torch tensors
-    X_train_t = torch.tensor(X_train, dtype=torch.float32, device=device)
-    y_train_t = torch.tensor(y_train, dtype=torch.float32, device=device)
-    X_val_t = torch.tensor(X_val, dtype=torch.float32, device=device)
-    y_val_t = torch.tensor(y_val, dtype=torch.float32, device=device)
-    
-    # Test each combination
-    for idx, p in enumerate(combinations, 1):
-        if idx % 100 == 0:
-            log(f"   Progress: {idx}/{total_combinations} ({idx/total_combinations*100:.1f}%)")
-        
-        try:
-            # Create model
-            model = ANNModel(
-                input_dim=input_dim,
-                hidden_layer_1=p['hidden_layer_1'],
-                hidden_layer_2=p['hidden_layer_2'],
-                dropout_1=p['dropout_1'],
-                dropout_2=p['dropout_2']
-            ).to(device)
-            
-            # Setup training
-            optimizer = torch.optim.Adam(
-                model.parameters(),
-                lr=p['learning_rate'],
-                weight_decay=p['weight_decay']
-            )
-            
-            loss_fn = nn.HuberLoss(delta=p['huber_delta'])
-            
-            # Training loop with early stopping
-            best_epoch_loss = float('inf')
-            patience_counter = 0
-            
-            for epoch in range(max_epochs):
-                # Train
-                model.train()
-                optimizer.zero_grad()
-                preds = model(X_train_t)
-                loss = loss_fn(preds, y_train_t)
-                loss.backward()
-                optimizer.step()
-                
-                # Validate
-                model.eval()
-                with torch.no_grad():
-                    val_preds = model(X_val_t)
-                    val_loss = loss_fn(val_preds, y_val_t).item()
-                
-                # Early stopping
-                if val_loss < best_epoch_loss:
-                    best_epoch_loss = val_loss
-                    patience_counter = 0
-                else:
-                    patience_counter += 1
-                    if patience_counter >= p['patience']:
-                        break
-            
-            # Update best if better
-            if best_epoch_loss < best_val_loss:
-                best_val_loss = best_epoch_loss
-                best_params = p.copy()
-                log(f"   ✨ New best! Val Loss: {best_val_loss:.6f} at combination {idx}/{total_combinations}")
-        
-        except Exception as e:
-            continue
-    
-    log(f"✅ Grid Search Complete!")
-    log(f"   Best Parameters: {best_params}")
-    log(f"   Best Validation Loss: {best_val_loss:.6f}")
-    
-    return best_params
-
-
-#ANN Architecture
 class ANNModel(nn.Module):
-    def __init__(
-        self,
-        input_dim,
-        hidden_layer_1,
-        hidden_layer_2,
-        dropout_1,
-        dropout_2
-    ):
+    """
+    ANN for time-series regression.
+    Input shape : (batch, n_features)  — flattened lags
+    Output shape: (batch,)  — single-step prediction (scaled)
+    """
+    def __init__(self, input_dim, hidden_layer_1, hidden_layer_2,
+                 dropout_1, dropout_2):
         super().__init__()
 
         self.net = nn.Sequential(
             nn.Linear(input_dim, hidden_layer_1),
-            nn.ReLU(),                      # activation = ReLU
-            nn.Dropout(dropout_1),
+            nn.ReLU(),
+            nn.Dropout(dropout_1),          # dropout for MC sampling
 
             nn.Linear(hidden_layer_1, hidden_layer_2),
             nn.ReLU(),
-            nn.Dropout(dropout_2),
+            nn.Dropout(dropout_2),          # dropout for MC sampling
 
-            nn.Linear(hidden_layer_2, 1)    # output_dim = 1
+            nn.Linear(hidden_layer_2, 1),
         )
 
     def forward(self, x):
         return self.net(x).squeeze(-1)
 
-def _forecast_only_ann(
-    params,
-    horizon,
-    future_rain,
-    future_mean_t,
+
+# ============================================================
+# AUTO-TUNE  (grid search over user-defined ranges)
+# ============================================================
+def auto_tune_ann(
+    X_train, y_train, X_val, y_val,
+    device, input_dim, params,
+    log_callback=None
 ):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    import itertools
 
-    bundle = torch.load("static/ann_bundle.pt", weights_only=False)
-    FEATURES = bundle["features"]
-    feat_idx = {f: i for i, f in enumerate(FEATURES)}
-
-    model = ANNModel(
-    input_dim=bundle["input_dim"],
-    hidden_layer_1=bundle["hidden_layer_1"],  # ✅ CORRECT
-    hidden_layer_2=bundle["hidden_layer_2"],  # ✅ CORRECT
-    dropout_1=bundle["dropout_1"],            # ✅ CORRECT
-    dropout_2=bundle["dropout_2"],            # ✅ CORRECT
-).to(device)
-    
-
-    model.load_state_dict(
-        torch.load("static/ann_weights.pt", map_location=device, weights_only=False)
-    )
-    model.eval()
-
-    last_window = bundle["last_window"]
-    scaler_mean = bundle["scaler_mean"]
-    scaler_scale = bundle["scaler_scale"]
-
-    future_rain_scaled = (
-        np.array(future_rain) - scaler_mean[feat_idx["rain_lag_1"]]
-    ) / scaler_scale[feat_idx["rain_lag_1"]]
-
-    future_mean_t_scaled = (
-        np.array(future_mean_t) - scaler_mean[feat_idx["mean_t_lag_1"]]
-    ) / scaler_scale[feat_idx["mean_t_lag_1"]]
-
-    future_log_diffs = []
-
-    with torch.no_grad():
-        for h in range(horizon):
-
-            x_flat = torch.tensor(
-                last_window.reshape(1, -1),
-                dtype=torch.float32,
-                device=device
-            )
-
-            pred = model(x_flat).item()
-            future_log_diffs.append(pred)
-
-            last_window = np.roll(last_window, -1, axis=0)
-            last_window[-1, feat_idx["log_diff_lag_1"]] = pred
-            last_window[-1, feat_idx["rain_lag_1"]] = future_rain_scaled[h]
-            last_window[-1, feat_idx["mean_t_lag_1"]] = future_mean_t_scaled[h]
-
-            if "time_lag_1" in feat_idx:
-                last_window[-1, feat_idx["time_lag_1"]] += 1
-
-    future_log = np.cumsum(future_log_diffs) + bundle["last_log"]
-    future_yield = np.exp(future_log)
-
-    future_years = np.arange(
-        bundle["last_year"] + 1,
-        bundle["last_year"] + 1 + horizon
-    )
-
-    return {
-        "forecast_table": pd.DataFrame({
-            "Year": future_years,
-            "Forecast": future_yield
-        })
-    }
-
-#MAIN FUNCTION
-def run_ann(
-    data: pd.DataFrame,
-    params: dict,
-    horizon: int,
-    frequency: str,
-    log_callback=None,
-):
-
-    """
-    Website-ready ANN model (flattened sliding window)
-    Input  : DataFrame with columns [year, mean_t, rain, tobaco]
-    Output : dict (metrics + train/test tables)
-    """
-    # ✅ ADD LOG FUNCTION
     def log(msg):
         if log_callback:
             log_callback(msg)
         print(msg)
 
-    if data is None:
-        return _forecast_only_ann(
-            params=params,
-            horizon=horizon,
-            future_rain=params["future_rain"],
-            future_mean_t=params["future_mean_t"],
+    log("\n🔍 Starting ANN Grid Search Auto-Tuning")
+
+    def irange(lo, hi, step):
+        return list(range(lo, hi + 1, step))
+
+    def frange(lo, hi, step, decimals=6):
+        vals, v = [], lo
+        while v <= hi + 1e-9:
+            vals.append(round(v, decimals))
+            v += step
+        return vals
+
+    grid = {
+        "hidden_layer_1": irange(params["ann_hidden_layer_1_min"],
+                                 params["ann_hidden_layer_1_max"],
+                                 params["ann_hidden_layer_1_step"]),
+        "hidden_layer_2": irange(params["ann_hidden_layer_2_min"],
+                                 params["ann_hidden_layer_2_max"],
+                                 params["ann_hidden_layer_2_step"]),
+        "dropout_1":      frange(params["ann_dropout_1_min"],
+                                 params["ann_dropout_1_max"],
+                                 params["ann_dropout_1_step"], 3),
+        "dropout_2":      frange(params["ann_dropout_2_min"],
+                                 params["ann_dropout_2_max"],
+                                 params["ann_dropout_2_step"], 3),
+        "learning_rate":  frange(params["ann_learning_rate_min"],
+                                 params["ann_learning_rate_max"],
+                                 params["ann_learning_rate_step"], 6),
+        "weight_decay":   frange(params["ann_weight_decay_min"],
+                                 params["ann_weight_decay_max"],
+                                 params["ann_weight_decay_step"], 7),
+        "huber_delta":    frange(params["ann_huber_delta_min"],
+                                 params["ann_huber_delta_max"],
+                                 params["ann_huber_delta_step"], 2),
+        "patience":       irange(params["ann_patience_min"],
+                                 params["ann_patience_max"],
+                                 params["ann_patience_step"]),
+    }
+
+    combos = [dict(zip(grid, v)) for v in itertools.product(*grid.values())]
+    log(f"🔢 Total combinations: {len(combos)}")
+
+    Xtr = torch.tensor(X_train, dtype=torch.float32, device=device)
+    ytr = torch.tensor(y_train, dtype=torch.float32, device=device)
+    Xva = torch.tensor(X_val,   dtype=torch.float32, device=device)
+    yva = torch.tensor(y_val,   dtype=torch.float32, device=device)
+
+    best_val, best_p = float("inf"), None
+
+    for idx, p in enumerate(combos, 1):
+        if idx % 50 == 0:
+            log(f"   Progress: {idx}/{len(combos)} ({idx/len(combos)*100:.1f}%)")
+        try:
+            model = ANNModel(
+                input_dim=input_dim,
+                hidden_layer_1=p["hidden_layer_1"],
+                hidden_layer_2=p["hidden_layer_2"],
+                dropout_1=p["dropout_1"],
+                dropout_2=p["dropout_2"],
+            ).to(device)
+
+            crit = nn.HuberLoss(delta=p["huber_delta"])
+            opt  = torch.optim.Adam(model.parameters(),
+                                    lr=p["learning_rate"],
+                                    weight_decay=p["weight_decay"])
+            best_ep, pat = float("inf"), 0
+
+            for _ in range(200):
+                model.train(); opt.zero_grad()
+                crit(model(Xtr), ytr).backward(); opt.step()
+
+                model.eval()
+                with torch.no_grad():
+                    vl = crit(model(Xva), yva).item()
+                if vl < best_ep:
+                    best_ep, pat = vl, 0
+                else:
+                    pat += 1
+                    if pat >= p["patience"]:
+                        break
+
+            if best_ep < best_val:
+                best_val, best_p = best_ep, p.copy()
+                log(f"   ✨ New best Val Loss: {best_val:.6f} at #{idx}")
+
+        except Exception as e:
+            log(f"   ⚠️ Skipped #{idx}: {e}")
+            continue
+
+    log(f"✅ Best params: {best_p}  |  Val Loss: {best_val:.6f}")
+    return best_p
+
+
+# ============================================================
+# MC DROPOUT AUTOREGRESSIVE FORECAST
+# ============================================================
+def _forecast_autoregressive_mc(model, last_window_flat, horizon,
+                                  n_vars, target_idx,
+                                  future_exog_scaled,
+                                  x_scaler_mean, x_scaler_scale,
+                                  y_scaler_mean, y_scaler_scale,
+                                  lags, device, n_samples=200):
+    """
+    Monte Carlo Dropout forecast for ANN.
+    last_window_flat : (LAGS * n_vars,)  — X-scaled, flattened
+    Returns: mean_pred, lower_95, upper_95, lower_80, upper_80
+    """
+    all_runs = []
+    model.train()   # activate dropout for MC sampling
+
+    with torch.no_grad():
+        for _ in range(n_samples):
+            preds = []
+            # Reshape to (LAGS, n_vars) for easier rolling
+            win = last_window_flat.clone().reshape(lags, n_vars)
+
+            for step in range(horizon):
+                x_flat = win.reshape(1, -1)
+                pred_scaled = model(x_flat).item()
+                pred_actual = pred_scaled * y_scaler_scale + y_scaler_mean
+                preds.append(pred_actual)
+
+                # Roll window: drop oldest lag, append new row
+                new_row = win[-1].clone()
+                new_row[target_idx] = (
+                    (pred_actual - x_scaler_mean[target_idx])
+                    / x_scaler_scale[target_idx]
+                )
+                if future_exog_scaled is not None:
+                    exog_ptr = 0
+                    for i in range(n_vars):
+                        if i != target_idx:
+                            new_row[i] = future_exog_scaled[step, exog_ptr]
+                            exog_ptr += 1
+
+                win = torch.cat([win[1:], new_row.unsqueeze(0)], dim=0)
+
+            all_runs.append(preds)
+
+    model.eval()
+
+    all_runs  = np.array(all_runs)          # (n_samples, horizon)
+    mean_pred = all_runs.mean(axis=0)
+    std_pred  = all_runs.std(axis=0)
+
+    lower_95 = mean_pred - 1.96 * std_pred
+    upper_95 = mean_pred + 1.96 * std_pred
+    lower_80 = mean_pred - 1.28 * std_pred
+    upper_80 = mean_pred + 1.28 * std_pred
+
+    return mean_pred, lower_95, upper_95, lower_80, upper_80
+
+
+# ============================================================
+# FORECAST-ONLY  (loads saved bundle, no retraining)
+# ============================================================
+def _forecast_only_ann(params, horizon, future_rain, future_mean_t):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    for path in ("static/ann_bundle.pt", "static/ann_weights.pt"):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"{path} not found. Please train the model first.")
+
+    bundle = torch.load("static/ann_bundle.pt", weights_only=False)
+
+    model = ANNModel(
+        input_dim     = bundle["input_dim"],
+        hidden_layer_1= bundle["hidden_layer_1"],
+        hidden_layer_2= bundle["hidden_layer_2"],
+        dropout_1     = bundle["dropout_1"],
+        dropout_2     = bundle["dropout_2"],
+    ).to(device)
+    model.load_state_dict(
+        torch.load("static/ann_weights.pt", map_location=device, weights_only=False)
     )
 
-#MANUAL HYPERPARAMETER BLOCK
-    # ===============================
-    # ANN (MLP) HYPERPARAMETERS
-    # ===============================
+    saved_exog_cols = bundle["exog_cols"]
+    all_cols        = bundle["all_cols"]
+    target_idx      = bundle["target_idx"]
+    x_scaler_mean   = bundle["x_scaler_mean"]
+    x_scaler_scale  = bundle["x_scaler_scale"]
+    y_scaler_mean   = bundle["y_scaler_mean"]
+    y_scaler_scale  = bundle["y_scaler_scale"]
+    last_window     = bundle["last_window"].to(device)   # (LAGS*n_vars,) flat
+    time_labels     = bundle["time_labels"]
+    n_vars          = len(all_cols)
+    lags            = bundle["lags"]
 
-    # Time-series / data
-    WINDOW = params.get("window", 4)
-    LAGS = params.get("lags", 3)
-    forecast_horizon = horizon
-    split = params.get("split", 0.85)
+    # ── Scale future exog if needed ──────────────────────────────────
+    future_exog_scaled = None
+    if saved_exog_cols:
+        future_exog_dict = params.get("future_exog")
+        future_exog_scaled = np.zeros((horizon, len(saved_exog_cols)))
 
+        if future_exog_dict:
+            # Dynamic mode — any column names supported
+            for j, col in enumerate(saved_exog_cols):
+                if col not in future_exog_dict:
+                    raise ValueError(f"Missing future values for column '{col}'.")
+                col_idx = all_cols.index(col)
+                vals = np.array(future_exog_dict[col][:horizon], dtype=float)
+                future_exog_scaled[:, j] = (
+                    (vals - x_scaler_mean[col_idx]) / x_scaler_scale[col_idx]
+                )
 
-    # Check if auto-tuning is enabled
-    use_auto_tune = params.get("auto_tune_ann", True)
-    # Model architecture
-    hidden_layer_1 = params.get("hidden_layer_1", 16)
-    hidden_layer_2 = params.get("hidden_layer_2", 8)
-    dropout_1 = params.get("dropout_1", 0.2)
-    dropout_2 = params.get("dropout_2", 0.3)
+        elif future_rain is not None and future_mean_t is not None:
+            # Legacy mode — name-based mapping
+            for j, col in enumerate(saved_exog_cols):
+                col_lower = col.lower()
+                col_idx   = all_cols.index(col)
+                if "rain" in col_lower:
+                    vals = np.array(future_rain[:horizon], dtype=float)
+                elif "temp" in col_lower or "mean_t" in col_lower:
+                    vals = np.array(future_mean_t[:horizon], dtype=float)
+                else:
+                    raise ValueError(
+                        f"Cannot auto-map column '{col}'. "
+                        f"Pass values via future_exog dict instead."
+                    )
+                future_exog_scaled[:, j] = (
+                    (vals - x_scaler_mean[col_idx]) / x_scaler_scale[col_idx]
+                )
+        else:
+            raise ValueError(
+                "Model was trained with exogenous variables. "
+                "Provide future_exog dict or future_rain/future_mean_t."
+            )
 
-    # Training
-    lr = params.get("learning_rate", 0.002)
-    weight_decay = params.get("weight_decay", 1e-4)
-    num_epochs = params.get("epochs", 150)
-    patience = params.get("patience", 30)
+    # ── Reset seed for reproducible MC Dropout ───────────────────────
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
 
-    # Optimization
-    huber_delta = params.get("huber_delta", 1.0)
+    # ── MC Dropout forecast ──────────────────────────────────────────
+    mean_pred, lower_95, upper_95, lower_80, upper_80 = _forecast_autoregressive_mc(
+        model, last_window, horizon,
+        n_vars, target_idx,
+        future_exog_scaled,
+        x_scaler_mean, x_scaler_scale,
+        y_scaler_mean, y_scaler_scale,
+        lags, device, n_samples=200,
+    )
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-#Data Cleaning
-    data = data.rename(columns={
-        "Year": "year",
-        "Mean_T": "mean_t",
-        "Mean_Rain": "rain",
-        "Yield": "yield"
+    future_labels = time_labels[:horizon] if time_labels else list(range(1, horizon + 1))
+
+    df = pd.DataFrame({
+        "Period"        : future_labels,
+        "Forecast"      : np.round(mean_pred, 3),
+        "Lower 80%"     : np.round(lower_80,  3),
+        "Upper 80%"     : np.round(upper_80,  3),
+        "Lower 95%"     : np.round(lower_95,  3),
+        "Upper 95%"     : np.round(upper_95,  3),
+        "Interval (95%)": [f"[{l:.1f}, {u:.1f}]"
+                           for l, u in zip(lower_95, upper_95)],
     })
 
-    data = data[["year", "mean_t", "rain", "yield"]]
-    data = data.sort_values("year").reset_index(drop=True)
-    data = data.interpolate(method="linear").dropna()
+    return {"forecast_table": df}
 
-# Log-Difference Target (MISSING FIX)
-    data["log_yield"] = np.log(data["yield"])
-    data["log_diff"] = data["log_yield"].diff()
-    data["time_idx"] = np.arange(len(data))
-    data = data.dropna().reset_index(drop=True)
 
-#Explicit Lags
-    
+# ============================================================
+# MAIN ENTRY POINT
+# ============================================================
+def run_ann(
+    data,
+    params,
+    horizon,
+    frequency,
+    future_rain   = None,
+    future_mean_t = None,
+    mode          : str = "train",
+    log_callback  = None,
+):
+    """
+    ANN model — lag-based, raw values, no log differencing.
+    Mirrors the LSTM/GRU/RNN implementation exactly.
+
+    Parameters
+    ----------
+    data         : Raw DataFrame
+    target_col   : read from params["target_col"]
+    time_col     : read from params["time_col"]
+    exog_cols    : read from params["exog_cols"]
+    mode         : "train" | "forecast"
+    """
+
+    def log(msg):
+        if log_callback:
+            log_callback(msg)
+        print(msg)
+
+    # ------------------------------------------------------------------
+    # FORECAST-ONLY MODE
+    # ------------------------------------------------------------------
+    if mode == "forecast":
+        if future_rain is None:
+            future_rain = params.get("future_rain")
+        if future_mean_t is None:
+            future_mean_t = params.get("future_mean_t")
+        return _forecast_only_ann(params, horizon, future_rain, future_mean_t)
+
+    # ------------------------------------------------------------------
+    # Validate
+    # ------------------------------------------------------------------
+    if data is None:
+        raise ValueError("data must be provided in train mode.")
+
+    target_col = params.get("target_col", "Yield")
+    time_col   = params.get("time_col",   "Year")
+    exog_cols  = params.get("exog_cols",  [])
+    if exog_cols is None:
+        exog_cols = []
+
+    has_exogenous = len(exog_cols) > 0
+
+    log(f"📊 Mode: {'Multivariate' if has_exogenous else 'Univariate'}")
+    log(f"   Study variable : {target_col}")
+    log(f"   Time column    : {time_col}")
+    log(f"   Exog variables : {exog_cols if exog_cols else 'None'}")
+
+    # ------------------------------------------------------------------
+    # Hyperparameters
+    # ------------------------------------------------------------------
+    LAGS         = params.get("ann_lags") or params.get("lags", 3)
+    split        = params.get("split", 0.85)
+    use_tune     = params.get("auto_tune_ann", True)
+
+    hidden_layer_1 = params.get("hidden_layer_1", 16)
+    hidden_layer_2 = params.get("hidden_layer_2", 8)
+    dropout_1      = params.get("dropout_1", 0.2)
+    dropout_2      = params.get("dropout_2", 0.3)
+    lr             = params.get("learning_rate", 0.002)
+    weight_decay   = params.get("weight_decay",  1e-4)
+    epochs         = params.get("epochs",        200)
+    patience       = params.get("patience",      30)
+    huber_delta    = params.get("huber_delta",   1.0)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # ------------------------------------------------------------------
+    # Data preparation
+    # ------------------------------------------------------------------
+    cols_needed = [time_col, target_col] + exog_cols
+    df = data[cols_needed].copy()
+    if pd.api.types.is_numeric_dtype(df[time_col]):
+        df = df.sort_values(time_col).reset_index(drop=True)
+    else:
+        df = df.reset_index(drop=True)
+    df = clean_dataframe(df)
+
+    # Variable order: target first, then exog (mirrors LSTM/GRU/RNN)
+    all_var_cols = [target_col] + exog_cols
+    n_vars       = len(all_var_cols)
+    target_idx   = 0
+
+    # ------------------------------------------------------------------
+    # Build lag features on raw values  (NO log differencing)
+    # ------------------------------------------------------------------
     for lag in range(1, LAGS + 1):
-        data[f"log_diff_lag_{lag}"] = data["log_diff"].shift(lag)
-        data[f"rain_lag_{lag}"] = data["rain"].shift(lag)
-        data[f"mean_t_lag_{lag}"] = data["mean_t"].shift(lag)
-        data[f"time_lag_{lag}"] = data["time_idx"].shift(lag)
+        df[f"__lag_{lag}_{target_col}"] = df[target_col].shift(lag)
+        for ec in exog_cols:
+            df[f"__lag_{lag}_{ec}"] = df[ec].shift(lag)
 
-    data = data.dropna().reset_index(drop=True)
+    df = df.dropna().reset_index(drop=True)
 
+    log(f"   Dataset size   : {len(df)} samples")
 
-    # Define features programmatically
-    FEATURES = [c for c in data.columns if "lag_" in c]
+    # Build X: (N, LAGS, n_vars) then flatten to (N, LAGS*n_vars)
+    def build_X(df_):
+        samples = []
+        for i in range(len(df_)):
+            seq = []
+            for lag in range(1, LAGS + 1):
+                row = [df_[f"__lag_{lag}_{target_col}"].iloc[i]]
+                for ec in exog_cols:
+                    row.append(df_[f"__lag_{lag}_{ec}"].iloc[i])
+                seq.append(row)
+            samples.append(seq)
+        arr = np.array(samples, dtype=np.float32)   # (N, LAGS, n_vars)
+        return arr.reshape(arr.shape[0], -1)         # (N, LAGS*n_vars)
 
-#Sliding Window
-    
+    X = build_X(df)
+    y = df[target_col].values.astype(np.float32)
+    input_dim = X.shape[1]
 
-    def make_sequences(df):
-        X, y = [], []
-        for i in range(len(df) - WINDOW):
-            X.append(df[FEATURES].iloc[i:i+WINDOW].values)
-            y.append(df["log_diff"].iloc[i+WINDOW])
-        return np.array(X), np.array(y)
+    log(f"   Input shape    : {X.shape}  (samples, lags×variables)")
 
-    X, y = make_sequences(data)
-    input_dim = X.shape[1] * X.shape[2]
+    # ------------------------------------------------------------------
+    # Train / test split
+    # ------------------------------------------------------------------
+    split_idx       = int(split * len(X))
+    X_train, X_test = X[:split_idx],  X[split_idx:]
+    y_train, y_test = y[:split_idx],  y[split_idx:]
 
-#Train–Test Split
-    split_idx = int(split * len(X))
-    X_train, X_test = X[:split_idx], X[split_idx:]
-    y_train, y_test = y[:split_idx], y[split_idx:]
+    # ------------------------------------------------------------------
+    # Scale X  (fit on train only)
+    # ------------------------------------------------------------------
+    x_scaler  = StandardScaler()
+    X_train_s = x_scaler.fit_transform(X_train)
+    X_test_s  = x_scaler.transform(X_test)
+    X_all_s   = x_scaler.transform(X)
 
-    # ✅ AUTO-TUNE (if enabled)
-    if use_auto_tune:
-        log("\n🔧 Auto-tuning enabled - searching for optimal hyperparameters...")
-        
-        # Create validation set from training data (80-20 split of training)
-        val_split = int(0.8 * len(X_train))
-        X_train_tune = X_train[:val_split]
-        y_train_tune = y_train[:val_split]
-        X_val_tune = X_train[val_split:]
-        y_val_tune = y_train[val_split:]
-    
-        # Scale for tuning
-        scaler_tune = StandardScaler()
-        X_train_tune_scaled = scaler_tune.fit_transform(
-            X_train_tune.reshape(-1, X_train_tune.shape[-1])
-        ).reshape(X_train_tune.shape)
-        X_val_tune_scaled = scaler_tune.transform(
-            X_val_tune.reshape(-1, X_val_tune.shape[-1])
-        ).reshape(X_val_tune.shape)
-    
-        # Flatten
-        X_train_tune_flat = X_train_tune_scaled.reshape(X_train_tune_scaled.shape[0], -1)
-        X_val_tune_flat = X_val_tune_scaled.reshape(X_val_tune_scaled.shape[0], -1)
-    
-        best_params_ann = auto_tune_ann(
-            X_train_tune_flat, y_train_tune,
-            X_val_tune_flat, y_val_tune,
-            device, X_train_tune_flat.shape[1],
-            params, #✅ ADD THIS
-            max_epochs=100,
-            log_callback=log_callback
+    # ------------------------------------------------------------------
+    # Scale y  (fit on train only)
+    # ------------------------------------------------------------------
+    y_scaler  = StandardScaler()
+    y_train_s = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
+    y_test_s  = y_scaler.transform(y_test.reshape(-1, 1)).flatten()
+
+    # ------------------------------------------------------------------
+    # AUTO-TUNE
+    # ------------------------------------------------------------------
+    if use_tune:
+        log("\n🔧 Auto-tuning ANN hyperparameters...")
+        val_sp = int(0.8 * len(X_train_s))
+        best_p = auto_tune_ann(
+            X_train_s[:val_sp], y_train_s[:val_sp],
+            X_train_s[val_sp:], y_train_s[val_sp:],
+            device, input_dim, params,
+            log_callback=log_callback,
         )
-    
-        # Override with best parameters
-        hidden_layer_1 = best_params_ann['hidden_layer_1']
-        hidden_layer_2 = best_params_ann['hidden_layer_2']
-        dropout_1 = best_params_ann['dropout_1']
-        dropout_2 = best_params_ann['dropout_2']
-        lr = best_params_ann['learning_rate']  # ✅ CORRECT KEY
-        weight_decay = best_params_ann['weight_decay']
-        huber_delta = best_params_ann['huber_delta']
-        patience = best_params_ann['patience']
-        
-        log(f"✅ Using optimized ANN parameters")
+        hidden_layer_1 = best_p["hidden_layer_1"]
+        hidden_layer_2 = best_p["hidden_layer_2"]
+        dropout_1      = best_p["dropout_1"]
+        dropout_2      = best_p["dropout_2"]
+        lr             = best_p["learning_rate"]
+        weight_decay   = best_p["weight_decay"]
+        huber_delta    = best_p["huber_delta"]
+        patience       = best_p["patience"]
+        log("✅ Using auto-tuned parameters")
 
-#Scaling
-    scaler = StandardScaler()
+    # Reset seed before model creation for reproducibility
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
 
-    X_train = scaler.fit_transform(
-        X_train.reshape(-1, X_train.shape[-1])
-    ).reshape(X_train.shape)
+    # ------------------------------------------------------------------
+    # Build tensors & model
+    # ------------------------------------------------------------------
+    X_tr_t = torch.tensor(X_train_s, dtype=torch.float32, device=device)
+    X_te_t = torch.tensor(X_test_s,  dtype=torch.float32, device=device)
+    y_tr_t = torch.tensor(y_train_s, dtype=torch.float32, device=device)
+    y_te_t = torch.tensor(y_test_s,  dtype=torch.float32, device=device)
 
-    X_test = scaler.transform(
-        X_test.reshape(-1, X_test.shape[-1])
-    ).reshape(X_test.shape)
-
-#Flatten for ANN
-    X_train_ann = X_train.reshape(X_train.shape[0], -1)
-    X_test_ann  = X_test.reshape(X_test.shape[0], -1)
-
-#Torch Setup
-    
-
-    X_train_ann = torch.tensor(X_train_ann, dtype=torch.float32).to(device)
-    X_test_ann  = torch.tensor(X_test_ann,  dtype=torch.float32).to(device)
-    y_train     = torch.tensor(y_train, dtype=torch.float32).to(device)
-    y_test      = torch.tensor(y_test,  dtype=torch.float32).to(device)
-
-#Training
     model = ANNModel(
         input_dim=input_dim,
         hidden_layer_1=hidden_layer_1,
         hidden_layer_2=hidden_layer_2,
         dropout_1=dropout_1,
-        dropout_2=dropout_2
+        dropout_2=dropout_2,
     ).to(device)
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=lr,
-        weight_decay=weight_decay
-    )
-    loss_fn = nn.HuberLoss(delta=huber_delta)
 
-    best_loss = float("inf")
-    counter = 0
+    # ------------------------------------------------------------------
+    # Training
+    # ------------------------------------------------------------------
+    optimizer  = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    loss_fn    = nn.HuberLoss(delta=huber_delta)
+    best_loss  = float("inf")
+    best_state = None
+    counter    = 0
 
-    for epoch in range(num_epochs):
-        model.train()
-        optimizer.zero_grad()
+    log(f"\n🏋️ Training for up to {epochs} epochs (patience={patience})...")
+    for ep in range(epochs):
+        model.train(); optimizer.zero_grad()
+        loss = loss_fn(model(X_tr_t), y_tr_t)
+        loss.backward(); optimizer.step()
 
-        preds = model(X_train_ann)
-        loss = loss_fn(preds, y_train)
-
-        loss.backward()
-        optimizer.step()
+        if (ep + 1) % 50 == 0 or ep == 0:
+            log(f"   Epoch {ep+1}/{epochs} | Loss: {loss.item():.6f}")
 
         if loss.item() < best_loss:
-            best_loss = loss.item()
-            best_state = model.state_dict()
-            counter = 0
+            best_loss  = loss.item()
+            best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            counter    = 0
         else:
             counter += 1
+            if counter >= patience:
+                log(f"   Early stopping at epoch {ep+1}")
+                break
 
-        if counter >= patience:
-            break
+    model.load_state_dict({k: v.to(device) for k, v in best_state.items()})
 
-    model.load_state_dict(best_state)
-
-#Prediction & Reconstruction
+    # ------------------------------------------------------------------
+    # Evaluation — inverse-scale to actual values
+    # ------------------------------------------------------------------
     model.eval()
     with torch.no_grad():
-        train_preds = model(X_train_ann).cpu().numpy()
-        test_preds = model(X_test_ann).cpu().numpy()
+        tr_preds_s = model(X_tr_t).cpu().numpy()
+        te_preds_s = model(X_te_t).cpu().numpy()
 
-    # Training reconstruction
-    last_log_train = data["log_yield"].iloc[WINDOW - 1]
-    pred_log_train = np.cumsum(train_preds) + last_log_train
-    pred_train = np.exp(pred_log_train)
+    pred_tr   = y_scaler.inverse_transform(tr_preds_s.reshape(-1, 1)).flatten()
+    pred_te   = y_scaler.inverse_transform(te_preds_s.reshape(-1, 1)).flatten()
+    actual_tr = y_train.copy()
+    actual_te = y_test.copy()
 
-    actual_train = data["yield"].iloc[
-        WINDOW:WINDOW + len(pred_train)
-    ].values
+    min_tr = min(len(actual_tr), len(pred_tr))
+    min_te = min(len(actual_te), len(pred_te))
+    actual_tr, pred_tr = actual_tr[:min_tr], pred_tr[:min_tr]
+    actual_te, pred_te = actual_te[:min_te], pred_te[:min_te]
 
-    years_train = data["year"].iloc[
-        WINDOW:WINDOW + len(pred_train)
-    ].values
+    time_labels_seq = df[time_col].tolist()
+    train_times = time_labels_seq[:split_idx][:min_tr]
+    test_times  = time_labels_seq[split_idx:][:min_te]
 
-    # Testing reconstruction
-    start_idx = split_idx + WINDOW
-    last_log_test = data["log_yield"].iloc[start_idx - 1]
+    def mape(a, p):
+        return float(np.mean(np.abs((a - p) / np.where(a == 0, 1e-8, a))) * 100)
 
-    
-    pred_log_test = np.cumsum(test_preds) + last_log_test
-    pred_test = np.exp(pred_log_test)
-
-    actual_test = np.exp(
-        np.cumsum(y_test.cpu().numpy()) + last_log_test
-    )
-
-    years_test = data["year"].iloc[
-        start_idx:start_idx + len(actual_test)
-    ].values
-
-#Metrics
-    rmse_train = root_mean_squared_error(actual_train, pred_train)
-    r2_train = r2_score(actual_train, pred_train)
-    mape_train = np.mean(
-        np.abs((actual_train - pred_train) / actual_train)
-    ) * 100
-
-    rmse_test = root_mean_squared_error(actual_test, pred_test)
-    r2_test = r2_score(actual_test, pred_test)
-    mape_test = np.mean(
-        np.abs((actual_test - pred_test) / actual_test)
-    ) * 100
-
-    import os
+    # ------------------------------------------------------------------
+    # Save bundle
+    # ------------------------------------------------------------------
     os.makedirs("static", exist_ok=True)
 
+    # Save last window as flat (LAGS*n_vars,) — already flat from X_all_s
+    last_window_np = X_all_s[-1]                    # (LAGS*n_vars,)
+    last_window_t  = torch.tensor(last_window_np, dtype=torch.float32)
+
+    # Auto future time labels
+    last_t = df[time_col].iloc[-1]
+    try:
+        future_time_labels = [int(last_t) + i for i in range(1, horizon + 1)]
+    except (TypeError, ValueError):
+        orig_sequence = data[time_col].tolist()
+        first_val = orig_sequence[0]
+        try:
+            cycle_len = orig_sequence[1:].index(first_val) + 1
+        except ValueError:
+            cycle_len = len(orig_sequence)
+        cycle = orig_sequence[:cycle_len]
+        last_cycle_pos = cycle.index(last_t)
+        future_time_labels = [
+            cycle[(last_cycle_pos + i) % cycle_len]
+            for i in range(1, horizon + 1)
+        ]
+
     torch.save(model.state_dict(), "static/ann_weights.pt")
-
     torch.save({
-    "last_window": X_test[-1],  # ✅ Already numpy, save directly
-    "features": FEATURES,
-    "scaler_mean": scaler.mean_,
-    "scaler_scale": scaler.scale_,
-    "last_log": np.log(pred_test[-1]),
-    "last_year": int(data["year"].iloc[-1]),
-    
-    # ✅ SAVE MODEL ARCHITECTURE (critical for loading)
-    "input_dim": input_dim,
-    "hidden_layer_1": hidden_layer_1,
-    "hidden_layer_2": hidden_layer_2,
-    "dropout_1": dropout_1,
-    "dropout_2": dropout_2,
-    
-    "params": params,
-}, "static/ann_bundle.pt")
+        # Architecture
+        "input_dim"     : input_dim,
+        "hidden_layer_1": hidden_layer_1,
+        "hidden_layer_2": hidden_layer_2,
+        "dropout_1"     : dropout_1,
+        "dropout_2"     : dropout_2,
+        # X scaler
+        "x_scaler_mean" : x_scaler.mean_,
+        "x_scaler_scale": x_scaler.scale_,
+        # y scaler
+        "y_scaler_mean" : float(y_scaler.mean_[0]),
+        "y_scaler_scale": float(y_scaler.scale_[0]),
+        # Column metadata
+        "target_col"    : target_col,
+        "time_col"      : time_col,
+        "exog_cols"     : exog_cols,
+        "all_cols"      : all_var_cols,
+        "target_idx"    : target_idx,
+        # Forecast state
+        "last_window"   : last_window_t,
+        "last_time"     : df[time_col].iloc[-1],
+        "time_labels"   : future_time_labels,
+        # Metadata
+        "params"        : params,
+        "has_exogenous" : has_exogenous,
+        "lags"          : LAGS,
+        "n_vars"        : n_vars,
+    }, "static/ann_bundle.pt")
 
-    import matplotlib.pyplot as plt
+    # ------------------------------------------------------------------
+    # Plots
+    # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Plots
+    # ------------------------------------------------------------------
+    fig, ax = plt.subplots(figsize=(14, 5))
 
-# TRAIN
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(years_train, actual_train, label="Actual (Train)")
-    ax.plot(years_train, pred_train, "--o", label="Predicted (Train)", markersize=4)
-    ax.set_title("ANN Model - Training Set")
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Yield")
+    train_x = list(range(len(actual_tr)))
+    test_x  = list(range(len(actual_tr), len(actual_tr) + len(actual_te)))
+
+    ax.plot(train_x, actual_tr, color="steelblue",  label="Actual (Train)")
+    ax.plot(train_x, pred_tr,   color="steelblue",  label="Predicted (Train)",
+            linestyle="--", marker="o", ms=4, alpha=0.8)
+    ax.plot(test_x,  actual_te, color="darkorange", label="Actual (Test)")
+    ax.plot(test_x,  pred_te,   color="darkorange", label="Predicted (Test)",
+            linestyle="--", marker="o", ms=4, alpha=0.8)
+
+    ax.axvline(x=len(actual_tr) - 1, color="black", linestyle=":", linewidth=2,
+                label="Train/Test Split")
+
+    all_times = train_times + test_times
+    all_x     = train_x + test_x
+    step = max(1, len(all_x) // 12) if len(all_x) > 24 else 1
+    ax.set_xticks(all_x[::step])
+    ax.set_xticklabels(all_times[::step], rotation=45, ha="right")
+
+    ax.set_title("ANN — Training & Testing Set")
+    ax.set_xlabel(time_col); ax.set_ylabel(target_col)
     ax.legend()
-    fig.tight_layout()
-    fig.savefig("static/ann_train.png", dpi=150)
-    plt.close(fig)
+    plt.tight_layout()
+    plt.savefig("static/ann_train.png", dpi=120)
+    plt.savefig("static/ann_test.png",  dpi=120)
+    plt.close()
 
-# TEST
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(years_test, actual_test, label="Actual (Test)")
-    ax.plot(years_test, pred_test, "--o", label="Predicted (Test)", markersize=4)
-    ax.set_title("ANN Model - Testing Set")
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Yield")
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig("static/ann_test.png", dpi=150)
-    plt.close(fig)
-
-#RETURN
-    return {
-        "model_name": "ANN",
-        "model_key": "ann",
-        "horizon": horizon,
-        
-        "frequency": frequency,
-        # ✅ ADD MODEL CONFIGURATION
-        "model_config": {
-            "hidden_layer_1": hidden_layer_1,
-            "hidden_layer_2": hidden_layer_2,
-            "dropout_1": round(dropout_1, 3),
-            "dropout_2": round(dropout_2, 3),
-            "learning_rate": lr,
-            "weight_decay": weight_decay,
-            "huber_delta": round(huber_delta,2),
-            "epochs_used": num_epochs,
-            "patience": patience,
-    },
-        "auto_tuned": use_auto_tune,
-
-        "rmse_train": round(rmse_train, 3),
-        "r2_train": round(r2_train, 3),
-        "mape_train": round(mape_train, 2),
-
-        "rmse_test": round(rmse_test, 3),
-        "r2_test": round(r2_test, 3),
-        "mape_test": round(mape_test, 2),
-
-        "train_table": pd.DataFrame({
-            "Year": years_train,
-            "Actual": actual_train,
-            "Predicted": pred_train
-        }),
-
-        "test_table": pd.DataFrame({
-            "Year": years_test,
-            "Actual": actual_test,
-            "Predicted": pred_test
-        }),
-        "forecast_table": None #Always None during training - only populated in forecast mode
+    # ------------------------------------------------------------------
+    # Results dict
+    # ------------------------------------------------------------------
+    model_config = {
+        "hidden_layer_1": hidden_layer_1,
+        "hidden_layer_2": hidden_layer_2,
+        "dropout_1"     : round(dropout_1, 3),
+        "dropout_2"     : round(dropout_2, 3),
+        "learning_rate" : lr,
+        "weight_decay"  : weight_decay,
+        "huber_delta"   : round(huber_delta, 2),
+        "patience"      : patience,
+        "lags"          : LAGS,
     }
+
+    results = {
+        "model_key"   : "ann",
+        "model_name"  : "ANN",
+        "frequency"   : frequency,
+        "horizon"     : horizon,
+        "data_type"   : "Multivariate" if has_exogenous else "Univariate",
+        "model_config": model_config,
+        "auto_tuned"  : use_tune,
+
+        "rmse_train"  : round(float(root_mean_squared_error(actual_tr, pred_tr)), 3),
+        "mae_train"    : round(float(mean_absolute_error(actual_tr, pred_tr)), 3),
+        "mape_train"  : round(mape(actual_tr, pred_tr), 2),
+
+        "rmse_test"   : round(float(root_mean_squared_error(actual_te, pred_te)), 3),
+        "mae_test"     : round(float(mean_absolute_error(actual_te, pred_te)), 3),
+        "mape_test"   : round(mape(actual_te, pred_te), 2),
+
+        "train_table" : pd.DataFrame({
+            time_col    : train_times,
+            "Actual"    : actual_tr,
+            "Predicted" : pred_tr,
+        }),
+
+        "test_table"  : pd.DataFrame({
+            time_col    : test_times,
+            "Actual"    : actual_te,
+            "Predicted" : pred_te,
+        }),
+
+        "forecast_table": None,
+    }
+
+    log(f"\n📊 Results:")
+    log(f"   Train — RMSE: {results['rmse_train']}, MAE: {results['mae_train']}, MAPE: {results['mape_train']}%")
+    log(f"   Test  — RMSE: {results['rmse_test']},  MAE: {results['mae_test']},  MAPE: {results['mape_test']}%")
+
+    return results

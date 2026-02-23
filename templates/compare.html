@@ -691,198 +691,11 @@
             <h3>{{ best_model.name }}</h3>
             <div class="best-model-stats">
                 <span>Test RMSE: <strong>{{ best_model.rmse_test }}</strong></span>
-                <span>R²: <strong>{{ best_model.r2_test }}</strong></span>
+                <span>MAE: <strong>{{ best_model.mae_test }}</strong></span>
                 <span>MAPE: <strong>{{ best_model.mape_test }}%</strong></span>
             </div>
         </div>
         {% endif %}
-
-        <!-- Performance Metrics -->
-        <div class="content-card">
-            {% if models|length == 1 %}
-            <h2>📈 Performance Metrics</h2>
-            {% else %}
-            <h2>📈 Performance Metrics Comparison</h2>
-            {% endif %}
-
-            <div class="table-scroll">
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Model</th>
-                            <th class="center">Auto-Tuned</th>
-                            <th class="center highlight">Test RMSE ⭐</th>
-                            <th class="center">Test R²</th>
-                            <th class="center">Test MAPE (%)</th>
-                            <th class="center">Train RMSE</th>
-                            <th class="center">Train R²</th>
-                            <th class="center">Train MAPE (%)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for model in models %}
-                        <tr {% if loop.index == 1 %}class="winner"{% endif %}>
-                            <td class="rank-cell">
-                                {% if loop.index == 1 %}🥇
-                                {% elif loop.index == 2 %}🥈
-                                {% elif loop.index == 3 %}🥉
-                                {% else %}{{ loop.index }}
-                                {% endif %}
-                            </td>
-                            <td class="model-name">{{ model.name }}</td>
-                            <td style="text-align: center;">
-                                {% if model.auto_tuned %}
-                                <span class="auto-tuned-badge yes">✅ Yes</span>
-                                {% else %}
-                                <span class="auto-tuned-badge no">Manual</span>
-                                {% endif %}
-                            </td>
-                            <td class="highlight-col" style="text-align: center;">
-                                <span class="metric-value">{{ model.rmse_test }}</span>
-                            </td>
-                            <td style="text-align: center;"><span class="metric-value">{{ model.r2_test }}</span></td>
-                            <td style="text-align: center;"><span class="metric-value">{{ model.mape_test }}</span></td>
-                            <td style="text-align: center; color: #718096;">{{ model.rmse_train }}</td>
-                            <td style="text-align: center; color: #718096;">{{ model.r2_train }}</td>
-                            <td style="text-align: center; color: #718096;">{{ model.mape_train }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="info-banner">
-                <strong>ℹ️ Note:</strong> Models are ranked by Test RMSE (lower is better). The test set metrics are most important for evaluating model performance.
-            </div>
-        </div>
-
-        <!-- Training Plots -->
-        <div class="content-card">
-            <h2>📊 Training Set Predictions</h2>
-            <div class="plots-grid">
-                {% for model in models %}
-                <div class="plot-card {% if loop.index == 1 %}winner{% endif %}">
-                    <h3>
-                        {% if loop.index == 1 %}🏆 {% endif %}{{ model.name }}
-                    </h3>
-                    <img src="/static/{{ model.key }}_train.png" alt="{{ model.name }} Training">
-                    <div class="plot-stats">
-                        RMSE: <strong>{{ model.rmse_train }}</strong> | R²: <strong>{{ model.r2_train }}</strong>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Testing Plots -->
-        <div class="content-card">
-            <h2>🎯 Testing Set Predictions</h2>
-            <div class="plots-grid">
-                {% for model in models %}
-                <div class="plot-card {% if loop.index == 1 %}winner{% endif %}">
-                    <h3>
-                        {% if loop.index == 1 %}🏆 {% endif %}{{ model.name }}
-                    </h3>
-                    <img src="/static/{{ model.key }}_test.png" alt="{{ model.name }} Testing">
-                    <div class="plot-stats">
-                        RMSE: <strong>{{ model.rmse_test }}</strong> | R²: <strong>{{ model.r2_test }}</strong>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Future Forecasting -->
-        <div class="forecast-section">
-            <div class="forecast-header">
-                <h2>🔮 Generate Future Forecasts</h2>
-                <p>Input future values of exogenous variables to generate forecasts for the next {{ horizon }} period(s)</p>
-            </div>
-
-            {% set ns = namespace(has_multivariate=false, has_arima=false) %}
-            {% for model in models %}
-                {% if model.key == 'arima' %}
-                    {% set ns.has_arima = true %}
-                {% else %}
-                    {% set ns.has_multivariate = true %}
-                {% endif %}
-            {% endfor %}
-
-            {% if ns.has_multivariate %}
-            <div class="forecast-form-container">
-                <h3>📊 Input Future Exogenous Variables</h3>
-                <p>Provide values for the next {{ horizon }} period(s). These will be used by multivariate models to generate forecasts.</p>
-
-                <form method="post" action="/generate_forecasts">
-                    <input type="hidden" name="models" value="{{ models|map(attribute='key')|join(',') }}">
-                    <input type="hidden" name="horizon" value="{{ horizon }}">
-                    <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
-
-                    <div class="table-scroll">
-                        <table class="forecast-table">
-                            <thead>
-                                <tr>
-                                    <th>Period</th>
-                                    <th>Rain (mm)</th>
-                                    <th>Temperature (°C)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for i in range(1, horizon + 1) %}
-                                <tr>
-                                    <td><strong>Period {{ i }}</strong></td>
-                                    <td>
-                                        <input type="number" name="rain_{{ i }}" step="0.1" 
-                                               placeholder="e.g., 45.2" required>
-                                    </td>
-                                    <td>
-                                        <input type="number" name="temperature_{{ i }}" step="0.1" 
-                                               placeholder="e.g., 28.5" required>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="quick-fill">
-                        <strong>💡 Quick Fill Options:</strong>
-                        <div class="quick-fill-buttons">
-                            <button type="button" onclick="fillHistoricalAverage()" class="quick-fill-btn success">
-                                📈 Use Random Values
-                            </button>
-                            <button type="button" onclick="fillLastKnown()" class="quick-fill-btn info">
-                                🔄 Use Random Values 2
-                            </button>
-                            <button type="button" onclick="clearAll()" class="quick-fill-btn danger">
-                                🗑️ Clear All
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="forecast-submit">
-                        <button type="submit" class="forecast-submit-btn">
-                            🚀 Generate Forecasts for Multivariate Models
-                        </button>
-                    </div>
-                </form>
-            </div>
-            {% endif %}
-
-            {% if ns.has_arima %}
-            <div class="arima-section">
-                <p><strong>ARIMA is a univariate model</strong> and doesn't require exogenous inputs.</p>
-                <form method="post" action="/generate_arima_forecast">
-                    <input type="hidden" name="horizon" value="{{ horizon }}">
-                    <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
-                    <button type="submit" class="forecast-submit-btn">
-                        🔮 Generate ARIMA Forecast
-                    </button>
-                </form>
-            </div>
-            {% endif %}
-        </div>
 
         <!-- Hyperparameters Section -->
         <div class="hyperparams-toggle">
@@ -927,6 +740,211 @@
             </div>
         </div>
 
+        <!-- Performance Metrics -->
+        <div class="content-card">
+            {% if models|length == 1 %}
+            <h2>📈 Performance Metrics</h2>
+            {% else %}
+            <h2>📈 Performance Metrics Comparison</h2>
+            {% endif %}
+
+            <div class="table-scroll">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Model</th>
+                            <th class="center">Auto-Tuned</th>
+                            <th class="center highlight">Test RMSE ⭐</th>
+                            <th class="center">Test MAE</th>
+                            <th class="center">Test MAPE (%)</th>
+                            <th class="center">Train RMSE</th>
+                            <th class="center">Train MAE</th>
+                            <th class="center">Train MAPE (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in models %}
+                        <tr {% if loop.index == 1 %}class="winner"{% endif %}>
+                            <td class="rank-cell">
+                                {% if loop.index == 1 %}🥇
+                                {% elif loop.index == 2 %}🥈
+                                {% elif loop.index == 3 %}🥉
+                                {% else %}{{ loop.index }}
+                                {% endif %}
+                            </td>
+                            <td class="model-name">{{ model.name }}</td>
+                            <td style="text-align: center;">
+                                {% if model.auto_tuned %}
+                                <span class="auto-tuned-badge yes">✅ Yes</span>
+                                {% else %}
+                                <span class="auto-tuned-badge no">Manual</span>
+                                {% endif %}
+                            </td>
+                            <td class="highlight-col" style="text-align: center;">
+                                <span class="metric-value">{{ model.rmse_test }}</span>
+                            </td>
+                            <td style="text-align: center;"><span class="metric-value">{{ model.mae_test }}</span></td>
+                            <td style="text-align: center;"><span class="metric-value">{{ model.mape_test }}</span></td>
+                            <td style="text-align: center; color: #718096;">{{ model.rmse_train }}</td>
+                            <td style="text-align: center; color: #718096;">{{ model.mae_train }}</td>
+                            <td style="text-align: center; color: #718096;">{{ model.mape_train }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-banner">
+                <strong>ℹ️ Note:</strong> Models are ranked by Test RMSE (lower is better). The test set metrics are most important for evaluating model performance.
+            </div>
+        </div>
+
+        <!-- Combined Training & Testing Plots -->
+<div class="content-card">
+    <h2>📊 Training & Testing Set Plots</h2>
+    <p style="color: #718096; margin-bottom: 1.5rem;">
+        Blue = Training period &nbsp;|&nbsp; Orange = Testing period &nbsp;|&nbsp; Dotted line = Train/Test split
+    </p>
+    <div class="plots-grid">
+        {% for model in models %}
+        <div class="plot-card {% if loop.index == 1 %}winner{% endif %}">
+            <h3>
+                {% if loop.index == 1 %}🏆 {% endif %}{{ model.name }}
+            </h3>
+            <img src="/static/{{ model.key }}_train.png" alt="{{ model.name }} Predictions">
+            <div class="plot-stats">
+                Train → RMSE: <strong>{{ model.rmse_train }}</strong> | MAE: <strong>{{ model.mae_train }}</strong>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                Test → RMSE: <strong>{{ model.rmse_test }}</strong> | MAE: <strong>{{ model.mae_test }}</strong>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+      <!-- Future Forecasting -->
+<!-- Future Forecasting -->
+<div class="forecast-section">
+    <div class="forecast-header">
+        <h2>🔮 Generate Future Forecasts</h2>
+        {% if all_univariate %}
+        <p>All models were trained on univariate data and will forecast based on historical patterns only</p>
+        {% else %}
+        <p>Input future values of exogenous variables to generate forecasts for the next {{ horizon }} period(s)</p>
+        {% endif %}
+    </div>
+
+    {% if all_univariate %}
+    {# ALL models are univariate - show single button for all #}
+    <div class="arima-section">
+        <h3 style="color: #667eea; font-size: 1.5rem; margin-bottom: 1rem;">📊 Generate Forecasts (All Models)</h3>
+        <p>All selected models will forecast the next <strong>{{ horizon }}</strong> period(s) based on historical patterns only.</p>
+        <p style="font-size: 0.95rem; color: #666; margin-top: 0.5rem;">
+            Models: <strong>{{ models|map(attribute='name')|join(', ') }}</strong>
+        </p>
+        <!-- ✅ CHANGED: Use /generate_forecasts with univariate flag -->
+    <form method="post" action="/generate_forecasts">
+        <input type="hidden" name="models" value="{{ models|map(attribute='key')|join(',') }}">
+        <input type="hidden" name="horizon" value="{{ horizon }}">
+        <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
+        <input type="hidden" name="univariate_mode" value="true">
+            <button type="submit" class="forecast-submit-btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                🔮 Generate Forecasts for All Models
+            </button>
+        </form>
+    </div>
+
+    {% else %}
+    {# Has multivariate models OR mixed #}
+    {% if has_multivariate %}
+    {# Show climate input form for multivariate models #}
+    <div class="forecast-form-container">
+        <h3>📊 Input Future Exogenous Variables (For Multivariate Models)</h3>
+        <p>Provide values for the next {{ horizon }} period(s). These will be used by multivariate models to generate forecasts.</p>
+        
+        {% if has_univariate %}
+        <p class="info-message" style="padding: 1rem; background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; margin-bottom: 1.5rem;">
+            ℹ️ Note: Univariate models (like ARIMA) will use only historical patterns. Use the separate button below for univariate forecasting.
+        </p>
+        {% endif %}
+
+        <form method="post" action="/generate_forecasts">
+            <input type="hidden" name="models" value="{{ models|map(attribute='key')|join(',') }}">
+            <input type="hidden" name="horizon" value="{{ horizon }}">
+            <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
+
+            <div class="table-scroll">
+                <table class="forecast-table">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            {% for col in exog_cols %}
+                            <th>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in range(1, horizon + 1) %}
+                        <tr>
+                            <td><strong>Period {{ i }}</strong></td>
+                            {% for col in exog_cols %}
+                            <td>
+                                <input type="number" name="future_exog_{{ col }}_{{ i }}"
+                                       step="any" placeholder="e.g., value {{ i }}" required>
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin: 1.5rem 0; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+    <button type="button" onclick="autoFillExog(this)"
+        style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;
+               border:none;padding:0.8rem 2rem;font-size:1rem;font-weight:600;
+               border-radius:50px;cursor:pointer;
+               box-shadow:0 4px 15px rgba(102,126,234,0.4);">
+        🤖 Auto-fill with ARIMA
+    </button>
+    <button type="button" onclick="clearAll()"
+        style="background:linear-gradient(135deg,#dc3545,#c82333);color:white;
+               border:none;padding:0.8rem 2rem;font-size:1rem;font-weight:600;
+               border-radius:50px;cursor:pointer;">
+        🗑️ Clear All
+    </button>
+    <span id="autofill_status_compare"
+        style="font-size:0.9rem;color:#667eea;font-style:italic;"></span>
+</div>
+
+            <div class="forecast-submit">
+                <button type="submit" class="forecast-submit-btn">
+                    🚀 Generate Multivariate Forecasts
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if has_univariate %}
+{# Show ARIMA button for univariate models #}
+<div class="arima-section" {% if has_multivariate %}style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #e2e8f0;"{% endif %}>
+    <h3 style="color: #667eea; font-size: 1.5rem; margin-bottom: 1rem;">📊 Univariate Model Forecasting</h3>
+    <p>Univariate models (like ARIMA) forecast based on historical patterns only — no climate inputs needed.</p>
+    <form method="post" action="/generate_arima_forecast">
+        <input type="hidden" name="horizon" value="{{ horizon }}">
+        <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
+        <button type="submit" class="forecast-submit-btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+            🔮 Generate Univariate Forecasts
+        </button>
+    </form>
+</div>
+    {% endif %}
+{% endif %}
+</div>
+
+        
+
         <!-- Action Buttons -->
         <div class="action-buttons">
             <a href="/detailed_comparison" class="action-btn primary">
@@ -944,60 +962,75 @@
 
 <script id="forecast-data" type="application/json">
 {
-    "historicalAvg": {
-        "rain": {{ historical_avg_rain|default(50.0) }},
-        "temperature": {{ historical_avg_temp|default(25.0) }}
-    },
-    "lastKnown": {
-        "rain": {{ last_rain|default(45.0) }},
-        "temperature": {{ last_temp|default(28.0) }}
-    },
     "horizon": {{ horizon }}
 }
 </script>
 
 <script>
     const forecastData = JSON.parse(document.getElementById('forecast-data').textContent);
-    
-    function fillHistoricalAverage() {
-        const horizon = forecastData.horizon;
-        const avg = forecastData.historicalAvg;
-        
-        for (let i = 1; i <= horizon; i++) {
-            const rainInput = document.querySelector(`input[name="rain_${i}"]`);
-            const tempInput = document.querySelector(`input[name="temperature_${i}"]`);
-            if (rainInput) rainInput.value = avg.rain.toFixed(1);
-            if (tempInput) tempInput.value = avg.temperature.toFixed(1);
+
+    async function autoFillExog(btn) {
+        const status = document.getElementById('autofill_status_compare');
+
+        btn.disabled    = true;
+        btn.textContent = '⏳ Forecasting...';
+        status.textContent = 'Running ARIMA on historical data...';
+
+        try {
+            const res = await fetch('/autofill_exog', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+
+            const data = await res.json();
+
+            if (data.status !== 'ok') {
+                status.textContent = '❌ Error: ' + (data.error || 'Unknown error');
+                btn.disabled    = false;
+                btn.textContent = '🤖 Auto-fill with ARIMA';
+                return;
+            }
+
+            // Fill individual period inputs: future_exog_COL_PERIOD
+            let colsFilled = 0;
+            for (const [col, values] of Object.entries(data.forecasts)) {
+                values.forEach((val, idx) => {
+                    const period = idx + 1;
+                    const input  = document.querySelector(
+                        `input[name="future_exog_${col}_${period}"]`
+                    );
+                    if (input) {
+                        input.value            = val;
+                        input.style.borderColor = '#28a745';
+                    }
+                });
+                colsFilled++;
+            }
+
+            status.textContent  = `✅ Auto-filled ${colsFilled} column(s) using ARIMA!`;
+            btn.textContent     = '🤖 Auto-fill with ARIMA';
+            btn.disabled        = false;
+
+        } catch (err) {
+            status.textContent  = '❌ Request failed: ' + err.message;
+            btn.textContent     = '🤖 Auto-fill with ARIMA';
+            btn.disabled        = false;
         }
     }
-    
-    function fillLastKnown() {
-        const horizon = forecastData.horizon;
-        const last = forecastData.lastKnown;
-        
-        for (let i = 1; i <= horizon; i++) {
-            const rainInput = document.querySelector(`input[name="rain_${i}"]`);
-            const tempInput = document.querySelector(`input[name="temperature_${i}"]`);
-            if (rainInput) rainInput.value = last.rain.toFixed(1);
-            if (tempInput) tempInput.value = last.temperature.toFixed(1);
-        }
-    }
-    
+
     function clearAll() {
-        const horizon = forecastData.horizon;
-        
-        for (let i = 1; i <= horizon; i++) {
-            const rainInput = document.querySelector(`input[name="rain_${i}"]`);
-            const tempInput = document.querySelector(`input[name="temperature_${i}"]`);
-            if (rainInput) rainInput.value = '';
-            if (tempInput) tempInput.value = '';
-        }
+        document.querySelectorAll('input[name^="future_exog_"]').forEach(input => {
+            input.value            = '';
+            input.style.borderColor = '';
+        });
+        document.getElementById('autofill_status_compare').textContent = '';
     }
-    
+
     function toggleHyperparams() {
         const section = document.getElementById('hyperparamsSection');
-        const button = event.target;
-        
+        const button  = event.target;
+
         if (section.classList.contains('show')) {
             section.classList.remove('show');
             button.textContent = '⚙️ View Hyperparameter Details';

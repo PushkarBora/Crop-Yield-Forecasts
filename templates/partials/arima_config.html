@@ -1,26 +1,180 @@
 <h3>ARIMA Parameters</h3>
 
-<label for="auto_arima">
-    <input 
-        type="checkbox" 
-        id="auto_arima" 
-        name="auto_arima" 
-        value="true" 
-        checked
-    >
-    Auto-Select Best ARIMA Order
-</label>
-<br><br>
+<!-- ========================= -->
+<!-- ARIMA CONFIG PARTIAL      -->
+<!-- ========================= -->
 
-<label for="arima_p">AR Order (p)</label><br>
-<input type="number" id="arima_p" name="arima_p" value="1"><br><br>
+<style>
+    .arima-disabled-input {
+        background: #f0f0f0;
+        cursor: not-allowed;
+    }
+    .arima-hidden {
+        display: none;
+    }
+    .arima-note {
+        background: #f7fafc;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1.5rem;
+        font-style: italic;
+        color: #718096;
+        font-size: 0.9rem;
+    }
+    .arima-combo-count {
+        font-size: 1.4rem;
+        font-weight: 700;
+        display: block;
+        margin: 0.3rem 0;
+    }
+    .arima-auto-desc {
+        font-size: 0.9em;
+        color: #666;
+    }
+</style>
 
-<label for="arima_d">Differencing Order (d)</label><br>
-<input type="number" id="arima_d" name="arima_d" value="1"><br><br>
+<!-- Auto-Tune Toggle -->
+<div class="auto-tune-section">
+    <label for="auto_arima">
+        <input
+            type="checkbox"
+            id="auto_arima"
+            name="auto_arima"
+            value="true"
+            checked
+        >
+        <span>🚀 Auto-Select Best ARIMA Order (Recommended)</span>
+    </label>
+</div>
 
-<label for="arima_q">MA Order (q)</label><br>
-<input type="number" id="arima_q" name="arima_q" value="0"><br><br>
+<!-- ============================================================ -->
+<!-- AUTO SEARCH INFO (visible when auto-select enabled)          -->
+<!-- ============================================================ -->
+<div id="arima_auto_section" class="grid-search-section">
+    <h4>🔍 Auto ARIMA Search Configuration</h4>
+    <p class="arima-auto-desc">
+        The system automatically tests all p, d, q combinations and selects the order with the lowest AIC on training data.
+    </p>
 
-<p class="help-text">
-    <i>Note: If "Auto-Select" is checked, manual p , d and q values will be ignored. The model will automatically find the best parameters.</i>
+    <!-- p range -->
+    <div class="parameter-group">
+        <label>AR Order (p) — Search Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="arima_p_from">From</label>
+                <input type="number" id="arima_p_from" value="0" disabled
+                       class="arima-disabled-input"
+                       aria-label="AR Order minimum (fixed at 0)">
+            </div>
+            <div>
+                <label for="arima_p_to">To</label>
+                <input type="number" id="arima_p_to" value="3" disabled
+                       class="arima-disabled-input"
+                       aria-label="AR Order maximum (fixed at 3)">
+            </div>
+            <div>
+                <label for="arima_p_step">Step</label>
+                <input type="number" id="arima_p_step" value="1" disabled
+                       class="arima-disabled-input"
+                       aria-label="AR Order step (fixed at 1)">
+            </div>
+        </div>
+        <small class="help-text-small">💡 Tests p ∈ [0, 1, 2, 3] — number of autoregressive lags</small>
+    </div>
+
+    <!-- d range -->
+    <div class="parameter-group">
+        <label>Differencing Order (d) — Search Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="arima_d_from">From</label>
+                <input type="number" id="arima_d_from" value="0" disabled
+                       class="arima-disabled-input"
+                       aria-label="Differencing Order minimum (fixed at 0)">
+            </div>
+            <div>
+                <label for="arima_d_to">To</label>
+                <input type="number" id="arima_d_to" value="2" disabled
+                       class="arima-disabled-input"
+                       aria-label="Differencing Order maximum (fixed at 2)">
+            </div>
+            <div>
+                <label for="arima_d_step">Step</label>
+                <input type="number" id="arima_d_step" value="1" disabled
+                       class="arima-disabled-input"
+                       aria-label="Differencing Order step (fixed at 1)">
+            </div>
+        </div>
+        <small class="help-text-small">💡 Tests d ∈ [0, 1, 2] — times to difference for stationarity</small>
+    </div>
+
+    <!-- q range -->
+    <div class="parameter-group">
+        <label>MA Order (q) — Search Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="arima_q_from">From</label>
+                <input type="number" id="arima_q_from" value="0" disabled
+                       class="arima-disabled-input"
+                       aria-label="MA Order minimum (fixed at 0)">
+            </div>
+            <div>
+                <label for="arima_q_to">To</label>
+                <input type="number" id="arima_q_to" value="3" disabled
+                       class="arima-disabled-input"
+                       aria-label="MA Order maximum (fixed at 3)">
+            </div>
+            <div>
+                <label for="arima_q_step">Step</label>
+                <input type="number" id="arima_q_step" value="1" disabled
+                       class="arima-disabled-input"
+                       aria-label="MA Order step (fixed at 1)">
+            </div>
+        </div>
+        <small class="help-text-small">💡 Tests q ∈ [0, 1, 2, 3] — number of moving average terms</small>
+    </div>
+
+    <!-- Combination Estimate -->
+    <div class="combination-estimate good">
+        <strong>✅ Estimated Combinations:</strong>
+        <span class="arima-combo-count">48 ARIMA orders tested</span>
+        <small>Calculation: 4 (p values) × 3 (d values) × 4 (q values) = 48 combinations. Best selected by AIC.</small>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MANUAL PARAMETERS (visible when auto-select disabled)        -->
+<!-- ============================================================ -->
+<div id="arima_manual_section" class="manual-section arima-hidden">
+    <h4>🎛️ Manual ARIMA Configuration</h4>
+
+    <label for="arima_p">AR Order (p)</label>
+    <input type="number" id="arima_p" name="arima_p" value="1" min="0" max="10">
+
+    <label for="arima_d">Differencing Order (d)</label>
+    <input type="number" id="arima_d" name="arima_d" value="1" min="0" max="3">
+
+    <label for="arima_q">MA Order (q)</label>
+    <input type="number" id="arima_q" name="arima_q" value="0" min="0" max="10">
+</div>
+
+<p class="help-text arima-note">
+    <strong>💡 Note:</strong> ARIMA is univariate only — no exogenous inputs needed.
+    Forecast output includes <strong>80%</strong> and <strong>95%</strong> prediction intervals automatically.
 </p>
+
+<!-- JavaScript for toggle -->
+<script>
+document.getElementById('auto_arima').addEventListener('change', function() {
+    document.getElementById('arima_auto_section').style.display   = this.checked ? 'block' : 'none';
+    document.getElementById('arima_manual_section').style.display = this.checked ? 'none'  : 'block';
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const cb = document.getElementById('auto_arima');
+    if (cb) {
+        document.getElementById('arima_auto_section').style.display   = cb.checked ? 'block' : 'none';
+        document.getElementById('arima_manual_section').style.display = cb.checked ? 'none'  : 'block';
+    }
+});
+</script>

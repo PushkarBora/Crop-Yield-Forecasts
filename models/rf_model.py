@@ -2,537 +2,592 @@ import numpy as np
 import pandas as pd
 import os
 import pickle
+import random
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import root_mean_squared_error, r2_score
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import root_mean_squared_error, mean_absolute_error
+from sklearn.model_selection import GridSearchCV
 import warnings
 warnings.filterwarnings('ignore')
 
-def generate_param_range(min_val, max_val, step):
-    """
-    Generate a list of values from min to max with given step.
-    Works for both integers and floats.
-    """
-    import numpy as np
-    if isinstance(step, int) and isinstance(min_val, int):
-        return list(range(min_val, max_val + 1, step))
-    else:
-        return list(np.arange(min_val, max_val + step, step))
+# ============================================================
+# REPRODUCIBILITY
+# ============================================================
+SEED = 42
+random.seed(SEED)
+np.random.seed(SEED)
 
+def clean_dataframe(df):
+    num_cols = df.select_dtypes(include=[np.number]).columns
+    obj_cols = df.select_dtypes(exclude=[np.number]).columns
+    df[num_cols] = df[num_cols].interpolate(method='linear').ffill().bfill()
+    df[obj_cols] = df[obj_cols].ffill().bfill()
+    return df.dropna()
 # ============================================================
-# AUTO-TUNING FUNCTION WITH USER-DEFINED GRID SEARCH
+# AUTO-TUNE  (grid search over user-defined ranges)
 # ============================================================
-def auto_tune_rf(X_train, y_train, X_val, y_val, params,log_callback=None):
+def auto_tune_rf(X_train, y_train, X_val, y_val, params, log_callback=None):
     """
     Auto-tune Random Forest using USER-DEFINED grid search ranges from params.
     """
-    from sklearn.model_selection import GridSearchCV
-    # ✅ ADD LOG FUNCTION
     def log(msg):
         if log_callback:
             log_callback(msg)
         print(msg)
 
-    log("\n🔍 Starting Random Forest Grid Search Auto-Tuning (USER RANGES)")
-    
-    # ============================================================
-    # READ USER-DEFINED RANGES
-    # ============================================================
+    log("\n🔍 Starting Random Forest Grid Search Auto-Tuning")
+
+    # ── Build value ranges ─────────────────────────────────────────────
     n_estimators_values = list(range(
         params["rf_n_estimators_min"],
         params["rf_n_estimators_max"] + 1,
         params["rf_n_estimators_step"]
     ))
-    
+
     max_depth_values = list(range(
         params["rf_max_depth_min"],
         params["rf_max_depth_max"] + 1,
         params["rf_max_depth_step"]
     ))
-    # Add None option for unlimited depth
     if params.get("rf_max_depth_include_none", True):
         max_depth_values.append(None)
-    
+
     min_samples_split_values = list(range(
         params["rf_min_samples_split_min"],
         params["rf_min_samples_split_max"] + 1,
         params["rf_min_samples_split_step"]
     ))
-    
+
     min_samples_leaf_values = list(range(
         params["rf_min_samples_leaf_min"],
         params["rf_min_samples_leaf_max"] + 1,
         params["rf_min_samples_leaf_step"]
     ))
-    
-    # Max features options
+
     max_features_options = []
-    if params.get("rf_max_features_sqrt", True):
-        max_features_options.append('sqrt')
-    if params.get("rf_max_features_log2", True):
-        max_features_options.append('log2')
-    if params.get("rf_max_features_none", False):
-        max_features_options.append(None)
-    
-    # Bootstrap options
-    bootstrap_options = []
-    if params.get("rf_bootstrap_true", True):
-        bootstrap_options.append(True)
-    if params.get("rf_bootstrap_false", True):
-        bootstrap_options.append(False)
-    
-    # Validate at least one option selected
+    if params.get("rf_max_features_sqrt", True):  max_features_options.append('sqrt')
+    if params.get("rf_max_features_log2", True):  max_features_options.append('log2')
+    if params.get("rf_max_features_none", False): max_features_options.append(None)
     if not max_features_options:
         max_features_options = ['sqrt']
+
+    bootstrap_options = []
+    if params.get("rf_bootstrap_true",  True):  bootstrap_options.append(True)
+    if params.get("rf_bootstrap_false", False): bootstrap_options.append(False)
     if not bootstrap_options:
         bootstrap_options = [True]
-    
-    # ============================================================
-    # PARAMETER GRID
-    # ============================================================
+
     param_grid = {
-        'n_estimators': n_estimators_values,
-        'max_depth': max_depth_values,
+        'n_estimators'    : n_estimators_values,
+        'max_depth'       : max_depth_values,
         'min_samples_split': min_samples_split_values,
-        'min_samples_leaf': min_samples_leaf_values,
-        'max_features': max_features_options,
-        'bootstrap': bootstrap_options
+        'min_samples_leaf' : min_samples_leaf_values,
+        'max_features'    : max_features_options,
+        'bootstrap'       : bootstrap_options,
     }
-    
-    # Calculate total combinations
-    total_combinations = (
-        len(n_estimators_values) * 
-        len(max_depth_values) * 
-        len(min_samples_split_values) * 
-        len(min_samples_leaf_values) * 
-        len(max_features_options) * 
-        len(bootstrap_options)
-    )
-    
-    # ✅ PRINT ALL PARAMETERS
-    log("📦 Grid summary:")
-    log(f"   n_estimators: {n_estimators_values}")
-    log(f"   max_depth: {max_depth_values}")
+
+    total = (len(n_estimators_values) * len(max_depth_values) *
+             len(min_samples_split_values) * len(min_samples_leaf_values) *
+             len(max_features_options) * len(bootstrap_options))
+
+    log(f"🔢 Total combinations: {total}")
+    log(f"   n_estimators    : {n_estimators_values}")
+    log(f"   max_depth       : {max_depth_values}")
     log(f"   min_samples_split: {min_samples_split_values}")
-    log(f"   min_samples_leaf: {min_samples_leaf_values}")
-    log(f"   max_features: {max_features_options}")
-    log(f"   bootstrap: {bootstrap_options}")
-    log(f"🔢 Total combinations: {total_combinations}")
-    log("⏳ This may take a while...\n")
-    
-    # Create base model
-    base_model = RandomForestRegressor(random_state=42)
-    
-    # GridSearchCV - tests ALL combinations
-    grid_search = GridSearchCV(
-        estimator=base_model,
-        param_grid=param_grid,
-        cv=3,  # 3-fold cross-validation
-        scoring='neg_mean_squared_error',
-        n_jobs=-1,  # Use all CPU cores
-        verbose=1
+    log(f"   min_samples_leaf : {min_samples_leaf_values}")
+    log(f"   max_features    : {max_features_options}")
+    log(f"   bootstrap       : {bootstrap_options}")
+    log("⏳ Running 3-fold cross-validation...")
+
+    gs = GridSearchCV(
+        RandomForestRegressor(random_state=SEED),
+        param_grid,
+        cv=3, scoring='neg_mean_squared_error',
+        n_jobs=-1, verbose=0
     )
-    
-    # Fit on training data
-    log("   Running grid search with 3-fold cross-validation...")
-    grid_search.fit(X_train, y_train)
-    
-    # Get best parameters
-    best_params = grid_search.best_params_
-    best_score = -grid_search.best_score_  # Convert back to positive MSE
-    
-    log(f"\n✅ Grid Search Complete!")
-    log(f"   Best Parameters: {best_params}")
-    log(f"   Best CV MSE: {best_score:.4f}")
-    
-    # Validate on validation set
-    best_model = grid_search.best_estimator_
-    val_pred = best_model.predict(X_val)
-    val_rmse = root_mean_squared_error(y_val, val_pred)
-    
-    log(f"   Validation RMSE: {val_rmse:.4f}\n")
-    
-    return best_params
+    gs.fit(X_train, y_train)
+
+    best = gs.best_params_
+    log(f"✅ Best params: {best}  |  CV MSE: {-gs.best_score_:.4f}")
+    val_rmse = root_mean_squared_error(y_val, gs.best_estimator_.predict(X_val))
+    log(f"   Validation RMSE: {val_rmse:.4f}")
+    return best
+
+
 # ============================================================
-# FORECAST-ONLY (NO TRAINING, NO PLOTS)
+# BOOTSTRAP PREDICTION INTERVALS
 # ============================================================
-def _forecast_only_rf(
-    params,
-    horizon,
-    future_rain,
-    future_mean_t,
-):
-    # Load saved bundle
-    if not os.path.exists("static/rf_bundle.pkl"):
-        raise FileNotFoundError(
-            "Random Forest model not trained yet. Please train the model first before forecasting."
-        )
-    
+def _bootstrap_forecast(model, X_last, horizon, n_vars, target_idx,
+                         future_exog_scaled,
+                         x_scaler_mean, x_scaler_scale,
+                         y_scaler_mean, y_scaler_scale,
+                         lags, residuals, n_boot=200):
+    """
+    Bootstrap forecast for RF prediction intervals.
+    Adds bootstrapped residual noise to produce interval estimates.
+    """
+    random.seed(SEED)
+    np.random.seed(SEED)
+
+    all_runs = []
+    for _ in range(n_boot):
+        preds = []
+        win = X_last.copy()   # (LAGS * n_vars,) flat, X-scaled
+
+        for step in range(horizon):
+            x_in = win.reshape(1, -1)
+            pred_scaled = model.predict(x_in)[0]
+            # Add bootstrapped residual noise
+            noise = np.random.choice(residuals)
+            pred_actual = (pred_scaled + noise) * y_scaler_scale + y_scaler_mean
+            preds.append(pred_actual)
+
+            # Roll window: reshape → update target → flatten back
+            win_2d = win.reshape(lags, n_vars)
+            new_row = win_2d[-1].copy()
+            new_row[target_idx] = (
+                (pred_actual - x_scaler_mean[target_idx]) / x_scaler_scale[target_idx]
+            )
+            if future_exog_scaled is not None:
+                exog_ptr = 0
+                for i in range(n_vars):
+                    if i != target_idx:
+                        new_row[i] = future_exog_scaled[step, exog_ptr]
+                        exog_ptr += 1
+            win_2d = np.vstack([win_2d[1:], new_row])
+            win = win_2d.flatten()
+
+        all_runs.append(preds)
+
+    all_runs  = np.array(all_runs)
+    mean_pred = all_runs.mean(axis=0)
+    std_pred  = all_runs.std(axis=0)
+
+    lower_95 = mean_pred - 1.96 * std_pred
+    upper_95 = mean_pred + 1.96 * std_pred
+    lower_80 = mean_pred - 1.28 * std_pred
+    upper_80 = mean_pred + 1.28 * std_pred
+
+    return mean_pred, lower_95, upper_95, lower_80, upper_80
+
+
+# ============================================================
+# FORECAST-ONLY  (loads saved bundle, no retraining)
+# ============================================================
+def _forecast_only_rf(params, horizon, future_rain, future_mean_t):
+    for path in ("static/rf_bundle.pkl", "static/rf_model.pkl"):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"{path} not found. Please train RF first.")
+
     with open("static/rf_bundle.pkl", "rb") as f:
         bundle = pickle.load(f)
-    
-    # Load model
     with open("static/rf_model.pkl", "rb") as f:
         model = pickle.load(f)
-    
-    FEATURES = bundle["features"]
-    feat_idx = {f: i for i, f in enumerate(FEATURES)}
-    WINDOW = bundle["window"]
-    
-    # Load last window and scaler
-    last_window = bundle["last_window"]
-    scaler_mean = bundle["scaler_mean"]
-    scaler_scale = bundle["scaler_scale"]
-    
-    # Scale future inputs
-    future_rain_scaled = (
-        np.array(future_rain) - scaler_mean[feat_idx["rain_lag_1"]]
-    ) / scaler_scale[feat_idx["rain_lag_1"]]
-    
-    future_mean_t_scaled = (
-        np.array(future_mean_t) - scaler_mean[feat_idx["mean_t_lag_1"]]
-    ) / scaler_scale[feat_idx["mean_t_lag_1"]]
-    
-    # Forecast loop
-    future_log_diffs = []
-    
-    for h in range(horizon):
-        # Flatten window for Random Forest
-        x_flat = last_window.reshape(1, -1)
-        
-        # Predict
-        pred = model.predict(x_flat)[0]
-        future_log_diffs.append(pred)
-        
-        # Shift window
-        last_window = np.roll(last_window, -1, axis=0)
-        
-        # Update with new values
-        last_window[-1, feat_idx["log_diff_lag_1"]] = pred
-        last_window[-1, feat_idx["rain_lag_1"]] = future_rain_scaled[h]
-        last_window[-1, feat_idx["mean_t_lag_1"]] = future_mean_t_scaled[h]
-        
-        if "time_lag_1" in feat_idx:
-            last_window[-1, feat_idx["time_lag_1"]] += 1
-    
-    # Reconstruct yield
-    last_log = bundle["last_log"]
-    future_log = np.cumsum(future_log_diffs) + last_log
-    future_yield = np.exp(future_log)
-    
-    future_years = np.arange(
-        bundle["last_year"] + 1,
-        bundle["last_year"] + 1 + horizon
+
+    saved_exog_cols  = bundle["exog_cols"]
+    all_cols         = bundle["all_cols"]
+    target_idx       = bundle["target_idx"]
+    x_scaler_mean    = bundle["x_scaler_mean"]
+    x_scaler_scale   = bundle["x_scaler_scale"]
+    y_scaler_mean    = bundle["y_scaler_mean"]
+    y_scaler_scale   = bundle["y_scaler_scale"]
+    last_window      = bundle["last_window"]   # (LAGS*n_vars,) flat, X-scaled
+    time_labels      = bundle["time_labels"]
+    lags             = bundle["lags"]
+    n_vars           = len(all_cols)
+    residuals        = bundle["residuals"]     # scaled residuals for bootstrap
+
+    # ── Scale future exog if needed ────────────────────────────────────
+    future_exog_scaled = None
+    if saved_exog_cols:
+        future_exog_dict = params.get("future_exog")
+        future_exog_scaled = np.zeros((horizon, len(saved_exog_cols)))
+
+        if future_exog_dict:
+            for j, col in enumerate(saved_exog_cols):
+                if col not in future_exog_dict:
+                    raise ValueError(f"Missing future values for column '{col}'.")
+                col_idx = all_cols.index(col)
+                vals = np.array(future_exog_dict[col][:horizon], dtype=float)
+                future_exog_scaled[:, j] = (
+                    (vals - x_scaler_mean[col_idx]) / x_scaler_scale[col_idx]
+                )
+
+        elif future_rain is not None and future_mean_t is not None:
+            for j, col in enumerate(saved_exog_cols):
+                col_lower = col.lower()
+                col_idx   = all_cols.index(col)
+                if "rain" in col_lower:
+                    vals = np.array(future_rain[:horizon], dtype=float)
+                elif "temp" in col_lower or "mean_t" in col_lower:
+                    vals = np.array(future_mean_t[:horizon], dtype=float)
+                else:
+                    raise ValueError(
+                        f"Cannot auto-map column '{col}'. "
+                        "Pass values via future_exog dict instead."
+                    )
+                future_exog_scaled[:, j] = (
+                    (vals - x_scaler_mean[col_idx]) / x_scaler_scale[col_idx]
+                )
+        else:
+            raise ValueError(
+                "Model was trained with exogenous variables. "
+                "Provide future_exog dict or future_rain/future_mean_t."
+            )
+
+    # ── Bootstrap forecast ──────────────────────────────────────────────
+    mean_pred, lower_95, upper_95, lower_80, upper_80 = _bootstrap_forecast(
+        model, last_window, horizon, n_vars, target_idx,
+        future_exog_scaled,
+        x_scaler_mean, x_scaler_scale,
+        y_scaler_mean, y_scaler_scale,
+        lags, residuals, n_boot=200,
     )
-    
-    return {
-        "forecast_table": pd.DataFrame({
-            "Year": future_years,
-            "Forecast": future_yield
-        })
-    }
+
+    future_labels = time_labels[:horizon] if time_labels else list(range(1, horizon + 1))
+
+    df = pd.DataFrame({
+        "Period"        : future_labels,
+        "Forecast"      : np.round(mean_pred, 3),
+        "Lower 80%"     : np.round(lower_80,  3),
+        "Upper 80%"     : np.round(upper_80,  3),
+        "Lower 95%"     : np.round(lower_95,  3),
+        "Upper 95%"     : np.round(upper_95,  3),
+        "Interval (95%)": [f"[{l:.1f}, {u:.1f}]"
+                           for l, u in zip(lower_95, upper_95)],
+    })
+
+    return {"forecast_table": df}
 
 
-# Main Entry Function
+# ============================================================
+# MAIN ENTRY POINT
+# ============================================================
 def run_rf(
-    data: pd.DataFrame,
-    params: dict,
-    horizon: int,
-    frequency: str,
-    future_rain=None,
-    future_mean_t=None,
-    mode: str = "train",
-    log_callback=None  # ✅ ADD THIS
+    data,
+    params,
+    horizon,
+    frequency,
+    future_rain   = None,
+    future_mean_t = None,
+    mode          : str = "train",
+    log_callback  = None,
 ):
     """
-    Website-ready Random Forest model (flattened sliding window)
-    Input  : DataFrame with columns [year, mean_t, rain, yield]
-    Output : dict (metrics + train/test tables)
+    Random Forest model — raw lag features, no log differencing, no sliding window.
+    Mirrors the LSTM/GRU/RNN/ANN/SVR implementation exactly.
+
+    Parameters
+    ----------
+    data         : Raw DataFrame
+    target_col   : read from params["target_col"]
+    time_col     : read from params["time_col"]
+    exog_cols    : read from params["exog_cols"]
+    mode         : "train" | "forecast"
     """
-     # ✅ ADD LOG FUNCTION
     def log(msg):
         if log_callback:
             log_callback(msg)
         print(msg)
 
-    # Forecast mode
+    # ── FORECAST MODE ──────────────────────────────────────────────────
     if mode == "forecast":
-        return _forecast_only_rf(
-            params=params,
-            horizon=horizon,
-            future_rain=future_rain,
-            future_mean_t=future_mean_t,
-        )
-    
-    # Validate training mode
-    if mode == "train" and data is None:
-        raise ValueError(
-            "Training Random Forest requires historical data, but data=None was received."
-        )
-    
-    # HYPERPARAMETERS
-    WINDOW = params.get("window", 4)
-    LAGS = params.get("lags", 3)
-    split = params.get("split", 0.85)
-    
-    #Check if auto-tuning is enabled
-    use_auto_tune = params.get("auto_tune_rf", True)
-    # Random Forest core
-    n_estimators = params.get("n_estimators", 350)
-    max_depth = params.get("max_depth", 3)
-    min_samples_split = params.get("min_samples_split", 6)
-    min_samples_leaf = params.get("min_samples_leaf", 1)
-    max_features = params.get("max_features", 1)
-    bootstrap = params.get("bootstrap", True)
-    random_state = params.get("random_state", 42)
-    
-    # Data Cleaning
-    data = data.rename(columns={
-        "Year": "year",
-        "Mean_T": "mean_t",
-        "Mean_Rain": "rain",
-        "Yield": "yield"
-    })
-    
-    data = data[["year", "mean_t", "rain", "yield"]]
-    data = data.sort_values("year").reset_index(drop=True)
-    data = data.interpolate(method="linear").dropna()
-    
-    # Log-Difference Target
-    data["log_yield"] = np.log(data["yield"])
-    data["log_diff"] = data["log_yield"].diff()
-    data["time_idx"] = np.arange(len(data))
-    data = data.dropna().reset_index(drop=True)
-    
-    # Explicit Lags
-    for lag in range(1, LAGS + 1):
-        data[f"log_diff_lag_{lag}"] = data["log_diff"].shift(lag)
-        data[f"rain_lag_{lag}"] = data["rain"].shift(lag)
-        data[f"mean_t_lag_{lag}"] = data["mean_t"].shift(lag)
-        data[f"time_lag_{lag}"] = data["time_idx"].shift(lag)
-    
-    data = data.dropna().reset_index(drop=True)
-    
-    # Feature Set
-    FEATURES = [c for c in data.columns if "lag_" in c]
-    
-    # Sliding Window
-    def make_sequences(df):
-        X, y = [], []
-        for i in range(len(df) - WINDOW):
-            X.append(df[FEATURES].iloc[i:i+WINDOW].values)
-            y.append(df["log_diff"].iloc[i+WINDOW])
-        return np.array(X), np.array(y)
-    
-    X, y = make_sequences(data)
-    
-    # Train–Test Split
-    split_idx = int(split * len(X))
-    X_train, X_test = X[:split_idx], X[split_idx:]
-    y_train, y_test = y[:split_idx], y[split_idx:]
-    
-    # Scaling
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(
-        X_train.reshape(-1, X_train.shape[-1])
-    ).reshape(X_train.shape)
-    
-    X_test = scaler.transform(
-        X_test.reshape(-1, X_test.shape[-1])
-    ).reshape(X_test.shape)
-    
-    # Flatten for Random Forest
-    X_train_rf = X_train.reshape(X_train.shape[0], -1)
-    X_test_rf  = X_test.reshape(X_test.shape[0], -1)
+        if future_rain is None:
+            future_rain = params.get("future_rain")
+        if future_mean_t is None:
+            future_mean_t = params.get("future_mean_t")
+        return _forecast_only_rf(params, horizon, future_rain, future_mean_t)
 
-    # ✅ AUTO-TUNE (if enabled)
-    if use_auto_tune:
-        log("\n🔧 Auto-tuning enabled - searching for optimal hyperparameters...")
-        
-        # Create validation set from training data (80-20 split)
-        val_split = int(0.8 * len(X_train_rf))
-        X_train_tune = X_train_rf[:val_split]
-        y_train_tune = y_train[:val_split]
-        X_val_tune = X_train_rf[val_split:]
-        y_val_tune = y_train[val_split:]
-        
-        best_params_rf = auto_tune_rf(
-            X_train_tune, y_train_tune,
-            X_val_tune, y_val_tune,
-            params,  # ✅ Pass params dict
-            log_callback=log_callback
+    # ── Validate ────────────────────────────────────────────────────────
+    if data is None:
+        raise ValueError("data must be provided in train mode.")
+
+    # ── Column mappings ─────────────────────────────────────────────────
+    target_col = params.get("target_col", "Yield")
+    time_col   = params.get("time_col",   "Year")
+    exog_cols  = params.get("exog_cols",  [])
+    if exog_cols is None:
+        exog_cols = []
+
+    has_exogenous = len(exog_cols) > 0
+
+    log(f"📊 Mode: {'Multivariate' if has_exogenous else 'Univariate'}")
+    log(f"   Study variable : {target_col}")
+    log(f"   Time column    : {time_col}")
+    log(f"   Exog variables : {exog_cols if exog_cols else 'None'}")
+
+    # ── Hyperparameters ─────────────────────────────────────────────────
+    LAGS      = params.get("rf_lags") or params.get("lags", 3)
+    split     = params.get("split", 0.85)
+    use_tune  = params.get("auto_tune_rf", True)
+
+    n_estimators     = params.get("n_estimators",      350)
+    max_depth        = params.get("max_depth",          3)
+    min_samples_split= params.get("min_samples_split",  6)
+    min_samples_leaf = params.get("min_samples_leaf",   1)
+    max_features     = params.get("max_features",       "sqrt")
+    bootstrap        = params.get("bootstrap",          True)
+    random_state     = params.get("random_state",       SEED)
+
+    log(f"   Lags           : {LAGS}")
+
+    # ── Data preparation ────────────────────────────────────────────────
+    cols_needed = [time_col, target_col] + exog_cols
+    df = data[cols_needed].copy()
+    if pd.api.types.is_numeric_dtype(df[time_col]):
+        df = df.sort_values(time_col).reset_index(drop=True)
+    else:
+        df = df.reset_index(drop=True)
+    df = clean_dataframe(df)
+
+    # Variable order: target first, then exog
+    all_var_cols = [target_col] + exog_cols
+    n_vars       = len(all_var_cols)
+    target_idx   = 0
+
+    # ── Build raw lag features  (NO log differencing) ───────────────────
+    for lag in range(1, LAGS + 1):
+        df[f"__lag_{lag}_{target_col}"] = df[target_col].shift(lag)
+        for ec in exog_cols:
+            df[f"__lag_{lag}_{ec}"] = df[ec].shift(lag)
+
+    df = df.dropna().reset_index(drop=True)
+    log(f"   Dataset size   : {len(df)} samples after lagging")
+
+    # ── Build X flat: (N, LAGS*n_vars) ──────────────────────────────────
+    def build_X(df_):
+        samples = []
+        for i in range(len(df_)):
+            seq = []
+            for lag in range(1, LAGS + 1):
+                row = [df_[f"__lag_{lag}_{target_col}"].iloc[i]]
+                for ec in exog_cols:
+                    row.append(df_[f"__lag_{lag}_{ec}"].iloc[i])
+                seq.append(row)
+            samples.append(seq)
+        arr = np.array(samples, dtype=np.float32)   # (N, LAGS, n_vars)
+        return arr.reshape(arr.shape[0], -1)         # (N, LAGS*n_vars)
+
+    X = build_X(df)
+    y = df[target_col].values.astype(np.float32)
+
+    log(f"   Input shape    : {X.shape}  (samples, lags×variables)")
+
+    # ── Train / test split ───────────────────────────────────────────────
+    split_idx       = int(split * len(X))
+    X_train, X_test = X[:split_idx],  X[split_idx:]
+    y_train, y_test = y[:split_idx],  y[split_idx:]
+
+    # ── Scale X ──────────────────────────────────────────────────────────
+    x_scaler  = StandardScaler()
+    X_train_s = x_scaler.fit_transform(X_train)
+    X_test_s  = x_scaler.transform(X_test)
+    X_all_s   = x_scaler.transform(X)
+
+    # ── Scale y ──────────────────────────────────────────────────────────
+    y_scaler  = StandardScaler()
+    y_train_s = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
+    y_test_s  = y_scaler.transform(y_test.reshape(-1, 1)).flatten()
+
+    # ── AUTO-TUNE ────────────────────────────────────────────────────────
+    if use_tune:
+        log("\n🔧 Auto-tuning RF hyperparameters...")
+        val_sp = int(0.8 * len(X_train_s))
+        best_p = auto_tune_rf(
+            X_train_s[:val_sp], y_train_s[:val_sp],
+            X_train_s[val_sp:], y_train_s[val_sp:],
+            params, log_callback=log_callback,
         )
-        
-        # Override with best parameters
-        n_estimators = best_params_rf['n_estimators']
-        max_depth = best_params_rf['max_depth']
-        min_samples_split = best_params_rf['min_samples_split']
-        min_samples_leaf = best_params_rf['min_samples_leaf']
-        max_features = best_params_rf['max_features']
-        bootstrap = best_params_rf['bootstrap']
-        
-        log(f"✅ Using optimized Random Forest parameters")
-   
-    # Train Random Forest
+        n_estimators      = best_p['n_estimators']
+        max_depth         = best_p['max_depth']
+        min_samples_split = best_p['min_samples_split']
+        min_samples_leaf  = best_p['min_samples_leaf']
+        max_features      = best_p['max_features']
+        bootstrap         = best_p['bootstrap']
+        log("✅ Using auto-tuned RF parameters")
+
+    # ── Fit Random Forest ────────────────────────────────────────────────
+    random.seed(SEED)
+    np.random.seed(SEED)
+
     rf = RandomForestRegressor(
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        min_samples_split=min_samples_split,
-        min_samples_leaf=min_samples_leaf,
-        max_features=max_features,
-        bootstrap=bootstrap,
-        criterion="squared_error",
-        random_state=random_state,
-        n_jobs=-1
+        n_estimators     = n_estimators,
+        max_depth        = max_depth,
+        min_samples_split= min_samples_split,
+        min_samples_leaf = min_samples_leaf,
+        max_features     = max_features,
+        bootstrap        = bootstrap,
+        criterion        = "squared_error",
+        random_state     = random_state,
+        n_jobs           = -1
     )
-    
-    rf.fit(X_train_rf, y_train)
-    
-    # Prediction & Reconstruction
-    train_preds = rf.predict(X_train_rf)
-    test_preds  = rf.predict(X_test_rf)
-    
-    # Training Reconstruction
-    last_log_train = data["log_yield"].iloc[WINDOW - 1]
-    pred_log_train = np.cumsum(train_preds) + last_log_train
-    pred_train = np.exp(pred_log_train)
-    
-    actual_train = data["yield"].iloc[
-        WINDOW:WINDOW + len(pred_train)
-    ].values
-    
-    years_train = data["year"].iloc[
-        WINDOW:WINDOW + len(pred_train)
-    ].values
-    
-    # Test Reconstruction
-    start_idx = split_idx + WINDOW
-    last_log_test = data["log_yield"].iloc[start_idx - 1]
-    
-    pred_log_test = np.cumsum(test_preds) + last_log_test
-    pred_test = np.exp(pred_log_test)
-    
-    actual_test = np.exp(
-        np.cumsum(y_test[:len(test_preds)]) + last_log_test
-    )
-    
-    years_test = data["year"].iloc[
-        start_idx:start_idx + len(actual_test)
-    ].values
-    
-    # Metrics
-    rmse_train = root_mean_squared_error(actual_train, pred_train)
-    r2_train = r2_score(actual_train, pred_train)
-    mape_train = np.mean(
-        np.abs((actual_train - pred_train) / actual_train)
-    ) * 100
-    
-    rmse_test = root_mean_squared_error(actual_test, pred_test)
-    r2_test = r2_score(actual_test, pred_test)
-    mape_test = np.mean(
-        np.abs((actual_test - pred_test) / actual_test)
-    ) * 100
-    
-    # Save model and bundle (ONLY IN TRAIN MODE)
-    if mode == "train":
-        import matplotlib.pyplot as plt
-        
-        os.makedirs("static", exist_ok=True)
-        
-        # Save model
-        with open("static/rf_model.pkl", "wb") as f:
-            pickle.dump(rf, f)
-        
-        # Save bundle
-        with open("static/rf_bundle.pkl", "wb") as f:
-            pickle.dump({
-                "last_window": X_test[-1],
-                "features": FEATURES,
-                "scaler_mean": scaler.mean_,
-                "scaler_scale": scaler.scale_,
-                "last_log": np.log(pred_test[-1]),  # Use predicted value
-                "last_year": int(data["year"].iloc[-1]),
-                "window": WINDOW,
-                "params": params,
-            }, f)
-        
-        # Training plot
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(years_train, actual_train, label="Actual (Train)")
-        ax.plot(
-            years_train,
-            pred_train,
-            label="Predicted (Train)",
-            linestyle="--",
-            marker="o",
-            markersize=4
-        )
-        ax.set_title("Random Forest Model - Training Set")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Yield")
-        ax.legend()
-        fig.tight_layout()
-        fig.savefig("static/rf_train.png", dpi=150)
-        plt.close(fig)
-        
-        # Testing plot
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(years_test, actual_test, label="Actual (Test)")
-        ax.plot(
-            years_test,
-            pred_test,
-            label="Predicted (Test)",
-            linestyle="--",
-            marker="o",
-            markersize=4
-        )
-        ax.set_title("Random Forest Model - Testing Set")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Yield")
-        ax.legend()
-        fig.tight_layout()
-        fig.savefig("static/rf_test.png", dpi=150)
-        plt.close(fig)
-    
-    # Return
+    rf.fit(X_train_s, y_train_s)
+
+    # ── Predict & inverse-scale ──────────────────────────────────────────
+    tr_preds_s = rf.predict(X_train_s)
+    te_preds_s = rf.predict(X_test_s)
+
+    pred_tr   = y_scaler.inverse_transform(tr_preds_s.reshape(-1, 1)).flatten()
+    pred_te   = y_scaler.inverse_transform(te_preds_s.reshape(-1, 1)).flatten()
+    actual_tr = y_train.copy()
+    actual_te = y_test.copy()
+
+    min_tr = min(len(actual_tr), len(pred_tr))
+    min_te = min(len(actual_te), len(pred_te))
+    actual_tr, pred_tr = actual_tr[:min_tr], pred_tr[:min_tr]
+    actual_te, pred_te = actual_te[:min_te], pred_te[:min_te]
+
+    time_labels_seq = df[time_col].tolist()
+    train_times = time_labels_seq[:split_idx][:min_tr]
+    test_times  = time_labels_seq[split_idx:][:min_te]
+
+    # ── Scaled residuals for bootstrap intervals ─────────────────────────
+    residuals_scaled = y_train_s[:min_tr] - tr_preds_s[:min_tr]
+
+    # ── Metrics ──────────────────────────────────────────────────────────
+    def mape(a, p):
+        return float(np.mean(np.abs((a - p) / np.where(a == 0, 1e-8, a))) * 100)
+
+    rmse_tr = float(root_mean_squared_error(actual_tr, pred_tr))
+    mae_tr   = float(mean_absolute_error(actual_tr, pred_tr))
+    mape_tr = mape(actual_tr, pred_tr)
+
+    rmse_te = float(root_mean_squared_error(actual_te, pred_te))
+    mae_te   = float(mean_absolute_error(actual_te, pred_te))
+    mape_te = mape(actual_te, pred_te)
+
+    log(f"\n📊 Results:")
+    log(f"   Train — RMSE: {rmse_tr:.3f}, MAE: {mae_tr:.3f}, MAPE: {mape_tr:.2f}%")
+    log(f"   Test  — RMSE: {rmse_te:.3f}, MAE: {mae_te:.3f}, MAPE: {mape_te:.2f}%")
+
+    # ── Save bundle ───────────────────────────────────────────────────────
+    os.makedirs("static", exist_ok=True)
+
+    last_window_np = X_all_s[-1]   # (LAGS*n_vars,) flat, X-scaled
+
+    last_t = df[time_col].iloc[-1]
+    try:
+        future_time_labels = [int(last_t) + i for i in range(1, horizon + 1)]
+    except (TypeError, ValueError):
+        orig_sequence = data[time_col].tolist()
+        first_val = orig_sequence[0]
+        try:
+            cycle_len = orig_sequence[1:].index(first_val) + 1
+        except ValueError:
+            cycle_len = len(orig_sequence)
+        cycle = orig_sequence[:cycle_len]
+        last_cycle_pos = cycle.index(last_t)
+        future_time_labels = [
+            cycle[(last_cycle_pos + i) % cycle_len]
+            for i in range(1, horizon + 1)
+        ]
+
+    with open("static/rf_model.pkl", "wb") as f:
+        pickle.dump(rf, f)
+
+    with open("static/rf_bundle.pkl", "wb") as f:
+        pickle.dump({
+            # Scaler info
+            "x_scaler_mean"  : x_scaler.mean_,
+            "x_scaler_scale" : x_scaler.scale_,
+            "y_scaler_mean"  : float(y_scaler.mean_[0]),
+            "y_scaler_scale" : float(y_scaler.scale_[0]),
+            # Column metadata
+            "target_col"     : target_col,
+            "time_col"       : time_col,
+            "exog_cols"      : exog_cols,
+            "all_cols"       : all_var_cols,
+            "target_idx"     : target_idx,
+            # Forecast state
+            "last_window"    : last_window_np,
+            "last_time"      : df[time_col].iloc[-1],
+            "time_labels"    : future_time_labels,
+            # For bootstrap intervals
+            "residuals"      : residuals_scaled,
+            # Metadata
+            "params"         : params,
+            "has_exogenous"  : has_exogenous,
+            "lags"           : LAGS,
+            "n_vars"         : n_vars,
+        }, f)
+
+    # ── Plots ─────────────────────────────────────────────────────────────
+    # ── Plots ─────────────────────────────────────────────────────────────
+    fig, ax = plt.subplots(figsize=(14, 5))
+
+    train_x = list(range(len(actual_tr)))
+    test_x  = list(range(len(actual_tr), len(actual_tr) + len(actual_te)))
+
+    ax.plot(train_x, actual_tr, color="steelblue",  label="Actual (Train)")
+    ax.plot(train_x, pred_tr,   color="steelblue",  label="Predicted (Train)",
+            linestyle="--", marker="o", ms=4, alpha=0.8)
+    ax.plot(test_x,  actual_te, color="darkorange", label="Actual (Test)")
+    ax.plot(test_x,  pred_te,   color="darkorange", label="Predicted (Test)",
+            linestyle="--", marker="o", ms=4, alpha=0.8)
+
+    ax.axvline(x=len(actual_tr) - 1, color="black", linestyle=":", linewidth=2,
+                label="Train/Test Split")
+
+    all_times = train_times + test_times
+    all_x     = train_x + test_x
+    step = max(1, len(all_x) // 12) if len(all_x) > 24 else 1
+    ax.set_xticks(all_x[::step])
+    ax.set_xticklabels(all_times[::step], rotation=45, ha="right")
+
+    ax.set_title("Random Forest — Training & Testing Set")
+    ax.set_xlabel(time_col)
+    ax.set_ylabel(target_col)
+    ax.legend()
+    plt.tight_layout()
+
+    # Save as both so compare.html works for both sections
+    plt.savefig("static/rf_train.png", dpi=120)
+    plt.savefig("static/rf_test.png",  dpi=120)
+    plt.close()
+
+    # ── Results dict ──────────────────────────────────────────────────────
     return {
-        "model_key": "rf",  # ✅ Added for consistency
-        "model_name": "Random Forest",
-        "horizon": horizon,
-        "frequency": frequency,
-        
-        # ✅ ADD MODEL CONFIGURATION
-    "model_config": {
-        "n_estimators": n_estimators,
-        "max_depth": max_depth,
-        "min_samples_split": min_samples_split,
-        "min_samples_leaf": min_samples_leaf,
-        "max_features": max_features,
-        "bootstrap": "Yes" if bootstrap else "No",
-        "random_state": random_state,
-    },
-    "auto_tuned": use_auto_tune,
-        
-        "rmse_train": round(rmse_train, 3),
-        "r2_train": round(r2_train, 3),
-        "mape_train": round(mape_train, 2),
-        
-        "rmse_test": round(rmse_test, 3),
-        "r2_test": round(r2_test, 3),
-        "mape_test": round(mape_test, 2),
-        
+        "model_key"   : "rf",
+        "model_name"  : "Random Forest",
+        "frequency"   : frequency,
+        "horizon"     : horizon,
+        "data_type"   : "Multivariate" if has_exogenous else "Univariate",
+
+        "model_config": {
+            "n_estimators"    : n_estimators,
+            "max_depth"       : max_depth,
+            "min_samples_split": min_samples_split,
+            "min_samples_leaf" : min_samples_leaf,
+            "max_features"    : max_features,
+            "bootstrap"       : "Yes" if bootstrap else "No",
+            "random_state"    : random_state,
+            "lags"            : LAGS,
+        },
+        "auto_tuned": use_tune,
+
+        "rmse_train" : round(rmse_tr, 3),
+        "mae_train"   : round(mae_tr,   3),
+        "mape_train" : round(mape_tr,  2),
+
+        "rmse_test"  : round(rmse_te, 3),
+        "mae_test"    : round(mae_te,   3),
+        "mape_test"  : round(mape_te,  2),
+
         "train_table": pd.DataFrame({
-            "Year": years_train,
-            "Actual": actual_train,
-            "Predicted": pred_train
+            time_col   : train_times,
+            "Actual"   : actual_tr,
+            "Predicted": pred_tr,
         }),
-        
+
         "test_table": pd.DataFrame({
-            "Year": years_test,
-            "Actual": actual_test,
-            "Predicted": pred_test
+            time_col   : test_times,
+            "Actual"   : actual_te,
+            "Predicted": pred_te,
         }),
-        
-        "forecast_table": None  # ✅ Always None during training
+
+        "forecast_table": None,
     }

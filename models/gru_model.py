@@ -1,215 +1,58 @@
 import numpy as np
 import pandas as pd
+import os
+import sys
+import random
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+# ============================================================
+# REPRODUCIBILITY
+# ============================================================
+SEED = 42
+random.seed(SEED)
+np.random.seed(SEED)
+
+try:
+    torch_dll_path = os.path.join(
+        sys.exec_prefix, "Lib", "site-packages", "torch", "lib"
+    )
+    if os.path.exists(torch_dll_path):
+        os.add_dll_directory(torch_dll_path)
+except Exception:
+    pass
+
 import torch
 import torch.nn as nn
 
+torch.manual_seed(SEED)
+torch.cuda.manual_seed_all(SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import root_mean_squared_error, r2_score
+from sklearn.metrics import root_mean_squared_error,mean_absolute_error
+
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
+def clean_dataframe(df):
+    num_cols = df.select_dtypes(include=[np.number]).columns
+    obj_cols = df.select_dtypes(exclude=[np.number]).columns
+    df[num_cols] = df[num_cols].interpolate(method='linear').ffill().bfill()
+    df[obj_cols] = df[obj_cols].ffill().bfill()
+    return df.dropna()
 # ============================================================
-# AUTO-TUNING FUNCTION WITH GRID SEARCH
+# MODEL ARCHITECTURE
 # ============================================================
-def auto_tune_gru(
-    X_train,
-    y_train,
-    X_val,
-    y_val,
-    device,
-    n_features,
-    params,  # ✅ ADD THIS
-    max_epochs=100,
-    log_callback=None
-):
-    """
-    Auto-tune GRU using USER-DEFINED grid search ranges from params.
-    """
-    import itertools
-    import numpy as np
-    import torch
-    import torch.nn as nn
-    
-    # ✅ ADD LOG FUNCTION
-    def log(msg):
-        if log_callback:
-            log_callback(msg)
-        print(msg)
-
-    log("\n🔍 Starting GRU Grid Search Auto-Tuning (USER RANGES)")
-    
-    # ============================================================
-    # READ USER-DEFINED RANGES - USE WHILE LOOP TO FIX FLOATING POINT
-    # ============================================================
-    hidden_size_values = list(range(
-        params["gru_hidden_size_min"],
-        params["gru_hidden_size_max"] + 1,
-        params["gru_hidden_size_step"]
-    ))
-    
-    num_layers_values = list(range(
-        params["gru_num_layers_min"],
-        params["gru_num_layers_max"] + 1,
-        params["gru_num_layers_step"]
-    ))
-    
-    # ✅ FIX: Use while loop to avoid floating point errors
-    gru_dropout_values = []
-    val = params["gru_gru_dropout_min"]
-    while val <= params["gru_gru_dropout_max"] + 1e-9:
-        gru_dropout_values.append(round(val, 3))
-        val += params["gru_gru_dropout_step"]
-    
-    fc_dropout_values = []
-    val = params["gru_fc_dropout_min"]
-    while val <= params["gru_fc_dropout_max"] + 1e-9:
-        fc_dropout_values.append(round(val, 3))
-        val += params["gru_fc_dropout_step"]
-    
-    learning_rate_values = []
-    val = params["gru_learning_rate_min"]
-    while val <= params["gru_learning_rate_max"] + 1e-9:
-        learning_rate_values.append(round(val, 6))
-        val += params["gru_learning_rate_step"]
-    
-    weight_decay_values = []
-    val = params["gru_weight_decay_min"]
-    while val <= params["gru_weight_decay_max"] + 1e-9:
-        weight_decay_values.append(round(val, 7))
-        val += params["gru_weight_decay_step"]
-    
-    huber_delta_values = []
-    val = params["gru_huber_delta_min"]
-    while val <= params["gru_huber_delta_max"] + 1e-9:
-        huber_delta_values.append(round(val, 2))
-        val += params["gru_huber_delta_step"]
-    
-    patience_values = list(range(
-        params["gru_patience_min"],
-        params["gru_patience_max"] + 1,
-        params["gru_patience_step"]
-    ))
-    
-    # ============================================================
-    # PARAMETER GRID
-    # ============================================================
-    param_grid = {
-        'hidden_size': hidden_size_values,
-        'num_layers': num_layers_values,
-        'gru_dropout': gru_dropout_values,
-        'fc_dropout': fc_dropout_values,
-        'learning_rate': learning_rate_values,
-        'weight_decay': weight_decay_values,
-        'huber_delta': huber_delta_values,
-        'patience': patience_values
-    }
-    
-    # Generate all combinations
-    keys = param_grid.keys()
-    combinations = [dict(zip(keys, v)) for v in itertools.product(*param_grid.values())]
-    
-    total_combinations = len(combinations)
-    
-    # ✅ PRINT ALL PARAMETERS
-    log("📦 Grid summary:")
-    log(f"   hidden_size: {hidden_size_values}")
-    log(f"   num_layers: {num_layers_values}")
-    log(f"   gru_dropout: {gru_dropout_values}")
-    log(f"   fc_dropout: {fc_dropout_values}")
-    log(f"   learning_rate: {learning_rate_values}")
-    log(f"   weight_decay: {weight_decay_values}")
-    log(f"   huber_delta: {huber_delta_values}")
-    log(f"   patience: {patience_values}")
-    log(f"🔢 Total combinations: {total_combinations}")
-    log("⏳ This may take a while...\n")
-    
-    best_val_loss = float('inf')
-    best_params = None
-    
-    # Convert to torch tensors
-    X_train_t = torch.tensor(X_train, dtype=torch.float32, device=device)
-    y_train_t = torch.tensor(y_train, dtype=torch.float32, device=device)
-    X_val_t = torch.tensor(X_val, dtype=torch.float32, device=device)
-    y_val_t = torch.tensor(y_val, dtype=torch.float32, device=device)
-    
-    # Test each combination
-    for idx, p in enumerate(combinations, 1):
-        if idx % 100 == 0:
-            log(f"   Progress: {idx}/{total_combinations} ({idx/total_combinations*100:.1f}%)")
-        
-        try:
-            # Create model
-            model = GRUModel(
-                n_features=n_features,
-                hidden_size=p['hidden_size'],
-                num_layers=p['num_layers'],
-                gru_dropout=p['gru_dropout'],
-                fc_dropout=p['fc_dropout']
-            ).to(device)
-            
-            # Setup training
-            optimizer = torch.optim.Adam(
-                model.parameters(),
-                lr=p['learning_rate'],
-                weight_decay=p['weight_decay']
-            )
-            
-            loss_fn = nn.HuberLoss(delta=p['huber_delta'])
-            
-            # Training loop with early stopping
-            best_epoch_loss = float('inf')
-            patience_counter = 0
-            
-            for epoch in range(max_epochs):
-                # Train
-                model.train()
-                optimizer.zero_grad()
-                preds = model(X_train_t)
-                loss = loss_fn(preds, y_train_t)
-                loss.backward()
-                optimizer.step()
-                
-                # Validate
-                model.eval()
-                with torch.no_grad():
-                    val_preds = model(X_val_t)
-                    val_loss = loss_fn(val_preds, y_val_t).item()
-                
-                # Early stopping
-                if val_loss < best_epoch_loss:
-                    best_epoch_loss = val_loss
-                    patience_counter = 0
-                else:
-                    patience_counter += 1
-                    if patience_counter >= p['patience']:
-                        break
-            
-            # Update best if better
-            if best_epoch_loss < best_val_loss:
-                best_val_loss = best_epoch_loss
-                best_params = p.copy()
-                log(f"   ✨ New best! Val Loss: {best_val_loss:.6f} at combination {idx}/{total_combinations}")
-        
-        except Exception as e:
-            continue
-    
-    log(f"✅ Grid Search Complete!")
-    log(f"   Best Parameters: {best_params}")
-    log(f"   Best Validation Loss: {best_val_loss:.6f}")
-    
-    return best_params
-
-
-#GRU Architecture
 class GRUModel(nn.Module):
-    def __init__(
-        self,
-        n_features,
-        hidden_size,
-        num_layers,
-        gru_dropout,
-        fc_dropout
-    ):
+    """
+    GRU for time-series regression.
+    Input shape : (batch, seq_len, n_features)  — seq_len = LAGS
+    Output shape: (batch,)  — single-step prediction (scaled)
+    """
+    def __init__(self, n_features, hidden_size, num_layers, gru_dropout, fc_dropout):
         super().__init__()
 
         self.gru = nn.GRU(
@@ -217,459 +60,678 @@ class GRUModel(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             dropout=gru_dropout if num_layers > 1 else 0.0,
-            batch_first=True
+            batch_first=True,
         )
-
-        self.dropout = nn.Dropout(fc_dropout)
 
         self.fc = nn.Sequential(
             nn.Linear(hidden_size, hidden_size),
-            nn.ReLU(),                 # activation_fc = ReLU
-            nn.Linear(hidden_size, 1)
+            nn.ReLU(),
+            nn.Dropout(fc_dropout),       # extra dropout for MC sampling
+            nn.Linear(hidden_size, 1),
         )
 
     def forward(self, x):
         out, _ = self.gru(x)
-        out = out[:, -1, :]           # last time step
-        out = self.dropout(out)
+        out = out[:, -1, :]              # take last time-step
         return self.fc(out).squeeze(-1)
 
-def _forecast_only_gru(
-    params,
-    horizon,
-    future_rain,
-    future_mean_t,
-):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    bundle = torch.load("static/gru_bundle.pt", weights_only=False)
-    FEATURES = bundle["features"]
-    feat_idx = {f: i for i, f in enumerate(FEATURES)}
-
-    model = GRUModel(
-        n_features=len(FEATURES),
-        hidden_size=bundle["hidden_size"],  # ✅ CORRECT - from trained model
-        num_layers=bundle["num_layers"],  # ✅ CORRECT
-        gru_dropout=bundle["gru_dropout"],  # ✅ CORRECT
-        fc_dropout=bundle["fc_dropout"],  # ✅ CORRECT
-    ).to(device)
-
-    model.load_state_dict(
-        torch.load("static/gru_weights.pt", map_location=device, weights_only=False)
-    )
-    model.eval()
-
-    last_window = bundle["last_window"].to(device).unsqueeze(0)
-
-    scaler_mean = bundle["scaler_mean"]
-    scaler_scale = bundle["scaler_scale"]
-
-    future_rain_scaled = (
-        np.array(future_rain) - scaler_mean[feat_idx["rain_lag_1"]]
-    ) / scaler_scale[feat_idx["rain_lag_1"]]
-
-    future_mean_t_scaled = (
-        np.array(future_mean_t) - scaler_mean[feat_idx["mean_t_lag_1"]]
-    ) / scaler_scale[feat_idx["mean_t_lag_1"]]
-
-    future_log_diffs = []
-
-    with torch.no_grad():
-        for h in range(horizon):
-            pred = model(last_window).item()
-            future_log_diffs.append(pred)
-
-            last_window = torch.roll(last_window, shifts=-1, dims=1)
-
-            last_window[0, -1, feat_idx["log_diff_lag_1"]] = pred
-            last_window[0, -1, feat_idx["rain_lag_1"]] = future_rain_scaled[h]
-            last_window[0, -1, feat_idx["mean_t_lag_1"]] = future_mean_t_scaled[h]
-
-            if "time_lag_1" in feat_idx:
-                last_window[0, -1, feat_idx["time_lag_1"]] += 1
-
-    future_log = np.cumsum(future_log_diffs) + bundle["last_log"]
-    future_yield = np.exp(future_log)
-
-    future_years = np.arange(
-        bundle["last_year"] + 1,
-        bundle["last_year"] + 1 + horizon
-    )
-
-    return {
-        "forecast_table": pd.DataFrame({
-            "Year": future_years,
-            "Forecast": future_yield
-        })
-    }
-
-#MAIN FUNCTION
-def run_gru(
-    data: pd.DataFrame,
-    params: dict,
-    horizon: int,
-    frequency: str,
+# ============================================================
+# AUTO-TUNE  (grid search over user-defined ranges)
+# ============================================================
+def auto_tune_gru(
+    X_train, y_train, X_val, y_val,
+    device, n_features, params,
     log_callback=None
 ):
+    import itertools
 
-    """
-    Website-ready GRU model
-    Input  : DataFrame with columns [year, mean_t, rain, yield]
-    Output : dict (metrics + train/test tables)
-    """
-    # ✅ ADD LOG FUNCTION
     def log(msg):
         if log_callback:
             log_callback(msg)
         print(msg)
-#MANUAL HYPERPARAMETER BLOCK
-    # ===============================
-    # GRU HYPERPARAMETERS
-    # ===============================
-    if data is None:
-        return _forecast_only_gru(
-        params=params,
-        horizon=horizon,
-        future_rain=params["future_rain"],
-        future_mean_t=params["future_mean_t"],
+
+    log("\n🔍 Starting GRU Grid Search Auto-Tuning")
+
+    def irange(lo, hi, step):
+        return list(range(lo, hi + 1, step))
+
+    def frange(lo, hi, step, decimals=6):
+        vals, v = [], lo
+        while v <= hi + 1e-9:
+            vals.append(round(v, decimals))
+            v += step
+        return vals
+
+    grid = {
+        "hidden_size":   irange(params["gru_hidden_size_min"],
+                                params["gru_hidden_size_max"],
+                                params["gru_hidden_size_step"]),
+        "num_layers":    irange(params["gru_num_layers_min"],
+                                params["gru_num_layers_max"],
+                                params["gru_num_layers_step"]),
+        "gru_dropout":   frange(params["gru_gru_dropout_min"],
+                                params["gru_gru_dropout_max"],
+                                params["gru_gru_dropout_step"], 3),
+        "fc_dropout":    frange(params["gru_fc_dropout_min"],
+                                params["gru_fc_dropout_max"],
+                                params["gru_fc_dropout_step"], 3),
+        "learning_rate": frange(params["gru_learning_rate_min"],
+                                params["gru_learning_rate_max"],
+                                params["gru_learning_rate_step"], 6),
+        "weight_decay":  frange(params["gru_weight_decay_min"],
+                                params["gru_weight_decay_max"],
+                                params["gru_weight_decay_step"], 7),
+        "huber_delta":   frange(params["gru_huber_delta_min"],
+                                params["gru_huber_delta_max"],
+                                params["gru_huber_delta_step"], 2),
+        "patience":      irange(params["gru_patience_min"],
+                                params["gru_patience_max"],
+                                params["gru_patience_step"]),
+    }
+
+    combos = [dict(zip(grid, v)) for v in itertools.product(*grid.values())]
+    log(f"🔢 Total combinations: {len(combos)}")
+
+    Xtr = torch.tensor(X_train, dtype=torch.float32, device=device)
+    ytr = torch.tensor(y_train, dtype=torch.float32, device=device)
+    Xva = torch.tensor(X_val,   dtype=torch.float32, device=device)
+    yva = torch.tensor(y_val,   dtype=torch.float32, device=device)
+
+    best_val, best_p = float("inf"), None
+
+    for idx, p in enumerate(combos, 1):
+        if idx % 50 == 0:
+            log(f"   Progress: {idx}/{len(combos)} ({idx/len(combos)*100:.1f}%)")
+        try:
+            model = GRUModel(
+                n_features=n_features,
+                hidden_size=p["hidden_size"],
+                num_layers=p["num_layers"],
+                gru_dropout=p["gru_dropout"],
+                fc_dropout=p["fc_dropout"],
+            ).to(device)
+
+            crit = nn.HuberLoss(delta=p["huber_delta"])
+            opt  = torch.optim.Adam(model.parameters(),
+                                    lr=p["learning_rate"],
+                                    weight_decay=p["weight_decay"])
+            best_ep, pat = float("inf"), 0
+
+            for _ in range(200):
+                model.train(); opt.zero_grad()
+                crit(model(Xtr), ytr).backward(); opt.step()
+
+                model.eval()
+                with torch.no_grad():
+                    vl = crit(model(Xva), yva).item()
+                if vl < best_ep:
+                    best_ep, pat = vl, 0
+                else:
+                    pat += 1
+                    if pat >= p["patience"]:
+                        break
+
+            if best_ep < best_val:
+                best_val, best_p = best_ep, p.copy()
+                log(f"   ✨ New best Val Loss: {best_val:.6f} at #{idx}")
+
+        except Exception as e:
+            log(f"   ⚠️ Skipped #{idx}: {e}")
+            continue
+
+    log(f"✅ Best params: {best_p}  |  Val Loss: {best_val:.6f}")
+    return best_p
+
+
+# ============================================================
+# MC DROPOUT AUTOREGRESSIVE FORECAST
+# ============================================================
+def _forecast_autoregressive_mc(model, last_window, horizon,
+                                  n_vars, target_idx,
+                                  future_exog_scaled,
+                                  x_scaler_mean, x_scaler_scale,
+                                  y_scaler_mean, y_scaler_scale,
+                                  device, n_samples=200):
+    """
+    Monte Carlo Dropout forecast.
+    last_window shape : (LAGS, n_vars)  — X-scaled
+    Returns: mean_pred, lower_95, upper_95, lower_80, upper_80
+    """
+    all_runs = []
+    model.train()   # activate dropout for MC sampling
+
+    with torch.no_grad():
+        for _ in range(n_samples):
+            preds = []
+            win = last_window.clone()   # (LAGS, n_vars)
+
+            for step in range(horizon):
+                pred_scaled = model(win.unsqueeze(0)).item()
+                pred_actual = pred_scaled * y_scaler_scale + y_scaler_mean
+                preds.append(pred_actual)
+
+                # Roll window
+                new_row = win[-1].clone()
+                new_row[target_idx] = (
+                    (pred_actual - x_scaler_mean[target_idx])
+                    / x_scaler_scale[target_idx]
+                )
+                if future_exog_scaled is not None:
+                    exog_ptr = 0
+                    for i in range(n_vars):
+                        if i != target_idx:
+                            new_row[i] = future_exog_scaled[step, exog_ptr]
+                            exog_ptr += 1
+
+                win = torch.cat([win[1:], new_row.unsqueeze(0)], dim=0)
+
+            all_runs.append(preds)
+
+    model.eval()
+
+    all_runs  = np.array(all_runs)          # (n_samples, horizon)
+    mean_pred = all_runs.mean(axis=0)
+    std_pred  = all_runs.std(axis=0)
+
+    lower_95 = mean_pred - 1.96 * std_pred
+    upper_95 = mean_pred + 1.96 * std_pred
+    lower_80 = mean_pred - 1.28 * std_pred
+    upper_80 = mean_pred + 1.28 * std_pred
+
+    return mean_pred, lower_95, upper_95, lower_80, upper_80
+
+
+# ============================================================
+# FORECAST-ONLY  (loads saved bundle, no retraining)
+# ============================================================
+def _forecast_only_gru(params, horizon, future_rain, future_mean_t):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    for path in ("static/gru_bundle.pt", "static/gru_weights.pt"):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"{path} not found. Please train the model first.")
+
+    bundle = torch.load("static/gru_bundle.pt", weights_only=False)
+
+    model = GRUModel(
+        n_features  = bundle["n_features"],
+        hidden_size = bundle["hidden_size"],
+        num_layers  = bundle["num_layers"],
+        gru_dropout = bundle["gru_dropout"],
+        fc_dropout  = bundle["fc_dropout"],
+    ).to(device)
+    model.load_state_dict(
+        torch.load("static/gru_weights.pt", map_location=device, weights_only=False)
     )
 
-    # Time-series
-    WINDOW = params.get("window", 4)
-    LAGS = params.get("lags", 3)
-    split = params.get("split", 0.85)
-    
-    #Check if auto-tuning is enabled
-    use_auto_tune = params.get("auto_tune_gru", True)
-    # Model architecture
-    hidden_size = params.get("hidden_size", 8)
-    num_layers = params.get("num_layers", 2)
-    gru_dropout = params.get("gru_dropout", 0.0)
-    fc_dropout = params.get("fc_dropout", 0.3)
+    saved_exog_cols = bundle["exog_cols"]
+    all_cols        = bundle["all_cols"]
+    target_idx      = bundle["target_idx"]
+    x_scaler_mean   = bundle["x_scaler_mean"]
+    x_scaler_scale  = bundle["x_scaler_scale"]
+    y_scaler_mean   = bundle["y_scaler_mean"]
+    y_scaler_scale  = bundle["y_scaler_scale"]
+    last_window     = bundle["last_window"].to(device)
+    time_labels     = bundle["time_labels"]
+    n_vars          = len(all_cols)
 
-    # Training
-    lr = params.get("learning_rate", 0.002)
-    weight_decay = params.get("weight_decay", 1e-4)
-    num_epochs = params.get("epochs", 150)
-    patience = params.get("patience", 30)
+    # ── Scale future exog if needed ──────────────────────────────────
+    future_exog_scaled = None
+    if saved_exog_cols:
+        future_exog_dict = params.get("future_exog")  # dict: {col: [vals]}
+        future_exog_scaled = np.zeros((horizon, len(saved_exog_cols)))
 
-    # Optimization
-    huber_delta = params.get("huber_delta", 1.0)
+        if future_exog_dict:
+            # Dynamic mode — any column names supported
+            for j, col in enumerate(saved_exog_cols):
+                if col not in future_exog_dict:
+                    raise ValueError(f"Missing future values for column '{col}'.")
+                col_idx = all_cols.index(col)
+                vals = np.array(future_exog_dict[col][:horizon], dtype=float)
+                future_exog_scaled[:, j] = (
+                    (vals - x_scaler_mean[col_idx]) / x_scaler_scale[col_idx]
+                )
 
-    #    ✅ DEFINE DEVICE EARLY
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-#Data Cleaning
-    data = data.rename(columns={
-        "Year": "year",
-        "Mean_T": "mean_t",
-        "Mean_Rain": "rain",
-        "Yield": "yield"
+        elif future_rain is not None and future_mean_t is not None:
+            # Legacy mode — name-based mapping (rain/temp only)
+            for j, col in enumerate(saved_exog_cols):
+                col_lower = col.lower()
+                col_idx   = all_cols.index(col)
+                if "rain" in col_lower:
+                    vals = np.array(future_rain[:horizon], dtype=float)
+                elif "temp" in col_lower or "mean_t" in col_lower:
+                    vals = np.array(future_mean_t[:horizon], dtype=float)
+                else:
+                    raise ValueError(
+                        f"Cannot auto-map column '{col}'. "
+                        f"Pass values via future_exog dict instead."
+                    )
+                future_exog_scaled[:, j] = (
+                    (vals - x_scaler_mean[col_idx]) / x_scaler_scale[col_idx]
+                )
+        else:
+            raise ValueError(
+                "Model was trained with exogenous variables. "
+                "Provide future_exog dict or future_rain/future_mean_t."
+            )
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
+    # ── MC Dropout forecast ──────────────────────────────────────────
+    mean_pred, lower_95, upper_95, lower_80, upper_80 = _forecast_autoregressive_mc(
+        model, last_window, horizon,
+        n_vars, target_idx,
+        future_exog_scaled,
+        x_scaler_mean, x_scaler_scale,
+        y_scaler_mean, y_scaler_scale,
+        device, n_samples=200,
+    )
+
+    future_labels = time_labels[:horizon] if time_labels else list(range(1, horizon + 1))
+
+    df = pd.DataFrame({
+        "Period"        : future_labels,
+        "Forecast"      : np.round(mean_pred, 3),
+        "Lower 80%"     : np.round(lower_80,  3),
+        "Upper 80%"     : np.round(upper_80,  3),
+        "Lower 95%"     : np.round(lower_95,  3),
+        "Upper 95%"     : np.round(upper_95,  3),
+        "Interval (95%)": [f"[{l:.1f}, {u:.1f}]"
+                           for l, u in zip(lower_95, upper_95)],
     })
 
-    data = data[["year", "mean_t", "rain", "yield"]]
-    data = data.sort_values("year").reset_index(drop=True)
-    data = data.interpolate(method="linear").dropna()
+    return {"forecast_table": df}
 
-#Log-Difference Target
-    data["log_yield"] = np.log(data["yield"])
-    data["log_diff"] = data["log_yield"].diff()
-    data["time_idx"] = np.arange(len(data))
-    data = data.dropna().reset_index(drop=True)
 
-#Explicit Lags
-    
+# ============================================================
+# MAIN ENTRY POINT
+# ============================================================
+def run_gru(
+    data,
+    params,
+    horizon,
+    frequency,
+    future_rain   = None,
+    future_mean_t = None,
+    mode          : str = "train",
+    log_callback  = None,
+):
+    """
+    GRU model — lag-based, raw values, no log differencing.
+    Mirrors the LSTM implementation exactly.
+
+    Parameters
+    ----------
+    data         : Raw DataFrame
+    target_col   : read from params["target_col"]
+    time_col     : read from params["time_col"]
+    exog_cols    : read from params["exog_cols"]
+    mode         : "train" | "forecast"
+    """
+
+    def log(msg):
+        if log_callback:
+            log_callback(msg)
+        print(msg)
+
+    # ------------------------------------------------------------------
+    # FORECAST-ONLY MODE
+    # ------------------------------------------------------------------
+    if mode == "forecast":
+        if future_rain is None:
+            future_rain = params.get("future_rain")
+        if future_mean_t is None:
+            future_mean_t = params.get("future_mean_t")
+        return _forecast_only_gru(params, horizon, future_rain, future_mean_t)
+
+    # ------------------------------------------------------------------
+    # Validate
+    # ------------------------------------------------------------------
+    if data is None:
+        raise ValueError("data must be provided in train mode.")
+
+    target_col = params.get("target_col", "Yield")
+    time_col   = params.get("time_col",   "Year")
+    exog_cols  = params.get("exog_cols",  [])
+    if exog_cols is None:
+        exog_cols = []
+
+    has_exogenous = len(exog_cols) > 0
+
+    log(f"📊 Mode: {'Multivariate' if has_exogenous else 'Univariate'}")
+    log(f"   Study variable : {target_col}")
+    log(f"   Time column    : {time_col}")
+    log(f"   Exog variables : {exog_cols if exog_cols else 'None'}")
+
+    # ------------------------------------------------------------------
+    # Hyperparameters
+    # ------------------------------------------------------------------
+    LAGS         = params.get("gru_lags") or params.get("lags", 3)
+    split        = params.get("split", 0.85)
+    use_tune     = params.get("auto_tune_gru", True)
+
+    hidden_size  = params.get("hidden_size",   8)
+    num_layers   = params.get("num_layers",    2)
+    gru_dropout  = params.get("gru_dropout",   0.0)
+    fc_dropout   = params.get("fc_dropout",    0.3)
+    lr           = params.get("learning_rate", 0.003)
+    weight_decay = params.get("weight_decay",  1e-4)
+    epochs       = params.get("epochs",        200)
+    patience     = params.get("patience",      30)
+    huber_delta  = params.get("huber_delta",   1.0)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # ------------------------------------------------------------------
+    # Data preparation
+    # ------------------------------------------------------------------
+    cols_needed = [time_col, target_col] + exog_cols
+    df = data[cols_needed].copy()
+    if pd.api.types.is_numeric_dtype(df[time_col]):
+        df = df.sort_values(time_col).reset_index(drop=True)
+    else:
+        df = df.reset_index(drop=True)
+    df = clean_dataframe(df)
+
+    # Variable order: target first, then exog (mirrors LSTM)
+    all_var_cols = [target_col] + exog_cols
+    n_vars       = len(all_var_cols)
+    target_idx   = 0
+
+    # ------------------------------------------------------------------
+    # Build lag features on raw values  (NO log differencing)
+    # ------------------------------------------------------------------
     for lag in range(1, LAGS + 1):
-        data[f"log_diff_lag_{lag}"] = data["log_diff"].shift(lag)
-        data[f"rain_lag_{lag}"] = data["rain"].shift(lag)
-        data[f"mean_t_lag_{lag}"] = data["mean_t"].shift(lag)
-        data[f"time_lag_{lag}"] = data["time_idx"].shift(lag)
+        df[f"__lag_{lag}_{target_col}"] = df[target_col].shift(lag)
+        for ec in exog_cols:
+            df[f"__lag_{lag}_{ec}"] = df[ec].shift(lag)
 
-    data = data.dropna().reset_index(drop=True)
+    df = df.dropna().reset_index(drop=True)
 
-#Feature Set
-    # Define features programmatically
-    FEATURES = [c for c in data.columns if "lag_" in c]
+    log(f"   Dataset size   : {len(df)} samples")
 
-#Sliding Window
-   
+    # Build X: (N, LAGS, n_vars)
+    def build_X(df_):
+        samples = []
+        for i in range(len(df_)):
+            seq = []
+            for lag in range(1, LAGS + 1):
+                row = [df_[f"__lag_{lag}_{target_col}"].iloc[i]]
+                for ec in exog_cols:
+                    row.append(df_[f"__lag_{lag}_{ec}"].iloc[i])
+                seq.append(row)
+            samples.append(seq)
+        return np.array(samples, dtype=np.float32)   # (N, LAGS, n_vars)
 
-    def make_sequences(df):
-        X, y = [], []
-        for i in range(len(df) - WINDOW):
-            X.append(df[FEATURES].iloc[i:i+WINDOW].values)
-            y.append(df["log_diff"].iloc[i+WINDOW])
-        return np.array(X), np.array(y)
+    X = build_X(df)
+    y = df[target_col].values.astype(np.float32)
 
-    X, y = make_sequences(data)
+    log(f"   Input shape    : {X.shape}  (samples, lags, variables)")
 
-#Train–Test Split
-    split_idx = int(split * len(X))
-    X_train, X_test = X[:split_idx], X[split_idx:]
-    y_train, y_test = y[:split_idx], y[split_idx:]
+    # ------------------------------------------------------------------
+    # Train / test split
+    # ------------------------------------------------------------------
+    split_idx       = int(split * len(X))
+    X_train, X_test = X[:split_idx],  X[split_idx:]
+    y_train, y_test = y[:split_idx],  y[split_idx:]
 
-    # ✅ AUTO-TUNE (if enabled)
-    if use_auto_tune:
-        log("\n🔧 Auto-tuning enabled - searching for optimal hyperparameters...")
-        
-        # Create validation set from training data (80-20 split)
-        val_split = int(0.8 * len(X_train))
-        X_train_tune = X_train[:val_split]
-        y_train_tune = y_train[:val_split]
-        X_val_tune = X_train[val_split:]
-        y_val_tune = y_train[val_split:]
-    
-        # Scale for tuning
-        scaler_tune = StandardScaler()
-        X_train_tune_scaled = scaler_tune.fit_transform(
-            X_train_tune.reshape(-1, X_train_tune.shape[-1])
-        ).reshape(X_train_tune.shape)
-        X_val_tune_scaled = scaler_tune.transform(
-            X_val_tune.reshape(-1, X_val_tune.shape[-1])
-        ).reshape(X_val_tune.shape)
-    
-        best_params_gru = auto_tune_gru(
-            X_train_tune_scaled, y_train_tune,
-            X_val_tune_scaled, y_val_tune,
-            device, X_train.shape[2],
-            params,  # ✅ ADD THIS
-            max_epochs=100,
-            log_callback=log_callback
+    # ------------------------------------------------------------------
+    # Scale X  (fit on train only)
+    # ------------------------------------------------------------------
+    x_scaler = StandardScaler()
+    n_s, n_l, n_v = X_train.shape
+    X_train_s = x_scaler.fit_transform(X_train.reshape(-1, n_v)).reshape(X_train.shape)
+    X_test_s  = x_scaler.transform(X_test.reshape(-1, n_v)).reshape(X_test.shape)
+    X_all_s   = x_scaler.transform(X.reshape(-1, n_v)).reshape(X.shape)
+
+    # ------------------------------------------------------------------
+    # Scale y  (fit on train only)
+    # ------------------------------------------------------------------
+    y_scaler  = StandardScaler()
+    y_train_s = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
+    y_test_s  = y_scaler.transform(y_test.reshape(-1, 1)).flatten()
+
+    # ------------------------------------------------------------------
+    # AUTO-TUNE
+    # ------------------------------------------------------------------
+    if use_tune:
+        log("\n🔧 Auto-tuning GRU hyperparameters...")
+        val_sp = int(0.8 * len(X_train_s))
+        best_p = auto_tune_gru(
+            X_train_s[:val_sp], y_train_s[:val_sp],
+            X_train_s[val_sp:], y_train_s[val_sp:],
+            device, n_v, params,
+            log_callback=log_callback,
         )
-    
-        # Override with best parameters
-        hidden_size = best_params_gru['hidden_size']
-        num_layers = best_params_gru['num_layers']
-        gru_dropout = best_params_gru['gru_dropout']
-        fc_dropout = best_params_gru['fc_dropout']
-        lr = best_params_gru['learning_rate']  # ✅ CORRECT KEY
-        weight_decay = best_params_gru['weight_decay']
-        huber_delta = best_params_gru['huber_delta']
-        patience = best_params_gru['patience']
-    
-        log(f"✅ Using optimized GRU parameters")
+        hidden_size  = best_p["hidden_size"]
+        num_layers   = best_p["num_layers"]
+        gru_dropout  = best_p["gru_dropout"]
+        fc_dropout   = best_p["fc_dropout"]
+        lr           = best_p["learning_rate"]
+        weight_decay = best_p["weight_decay"]
+        huber_delta  = best_p["huber_delta"]
+        patience     = best_p["patience"]
+        log("✅ Using auto-tuned parameters")
 
-#Scaling (TRAIN ONLY)
-    scaler = StandardScaler()
+    # Reset seed before model creation for reproducibility
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
 
-    X_train = scaler.fit_transform(
-        X_train.reshape(-1, X_train.shape[-1])
-    ).reshape(X_train.shape)
+    # ------------------------------------------------------------------
+    # Build tensors & model
+    # ------------------------------------------------------------------
+    X_tr_t = torch.tensor(X_train_s, dtype=torch.float32, device=device)
+    X_te_t = torch.tensor(X_test_s,  dtype=torch.float32, device=device)
+    y_tr_t = torch.tensor(y_train_s, dtype=torch.float32, device=device)
+    y_te_t = torch.tensor(y_test_s,  dtype=torch.float32, device=device)
 
-    X_test = scaler.transform(
-        X_test.reshape(-1, X_test.shape[-1])
-    ).reshape(X_test.shape)
-
-#Torch Setup
-    
-
-    X_train = torch.tensor(X_train, dtype=torch.float32).to(device)
-    X_test  = torch.tensor(X_test,  dtype=torch.float32).to(device)
-    y_train = torch.tensor(y_train, dtype=torch.float32).to(device)
-    y_test  = torch.tensor(y_test,  dtype=torch.float32).to(device)
-
-#Training
     model = GRUModel(
-        n_features=X.shape[2],
+        n_features=n_v,
         hidden_size=hidden_size,
         num_layers=num_layers,
         gru_dropout=gru_dropout,
-        fc_dropout=fc_dropout
+        fc_dropout=fc_dropout,
     ).to(device)
 
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=lr,
-        weight_decay=weight_decay
-    )
+    # ------------------------------------------------------------------
+    # Training
+    # ------------------------------------------------------------------
+    optimizer  = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    loss_fn    = nn.HuberLoss(delta=huber_delta)
+    best_loss  = float("inf")
+    best_state = None
+    counter    = 0
 
-    loss_fn = nn.HuberLoss(delta=huber_delta)
+    log(f"\n🏋️ Training for up to {epochs} epochs (patience={patience})...")
+    for ep in range(epochs):
+        model.train(); optimizer.zero_grad()
+        loss = loss_fn(model(X_tr_t), y_tr_t)
+        loss.backward(); optimizer.step()
 
-    best_loss = float("inf")
-    counter = 0
-
-    for epoch in range(num_epochs):
-        model.train()
-        optimizer.zero_grad()
-
-        preds = model(X_train)
-        loss = loss_fn(preds, y_train)
-
-        loss.backward()
-        optimizer.step()
+        if (ep + 1) % 50 == 0 or ep == 0:
+            log(f"   Epoch {ep+1}/{epochs} | Loss: {loss.item():.6f}")
 
         if loss.item() < best_loss:
-            best_loss = loss.item()
-            best_state = model.state_dict()
-            counter = 0
+            best_loss  = loss.item()
+            best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            counter    = 0
         else:
             counter += 1
+            if counter >= patience:
+                log(f"   Early stopping at epoch {ep+1}")
+                break
 
-        if counter >= patience:
-            break
+    model.load_state_dict({k: v.to(device) for k, v in best_state.items()})
 
-    model.load_state_dict(best_state)
-
-#Prediction & Reconstruction
+    # ------------------------------------------------------------------
+    # Evaluation — inverse-scale to actual values
+    # ------------------------------------------------------------------
     model.eval()
     with torch.no_grad():
-        train_preds = model(X_train).cpu().numpy()
-        test_preds = model(X_test).cpu().numpy()
+        tr_preds_s = model(X_tr_t).cpu().numpy()
+        te_preds_s = model(X_te_t).cpu().numpy()
 
-    # Training
-    last_log_train = data["log_yield"].iloc[WINDOW - 1]
-    pred_log_train = np.cumsum(train_preds) + last_log_train
-    pred_train = np.exp(pred_log_train)
+    pred_tr   = y_scaler.inverse_transform(tr_preds_s.reshape(-1, 1)).flatten()
+    pred_te   = y_scaler.inverse_transform(te_preds_s.reshape(-1, 1)).flatten()
+    actual_tr = y_train.copy()
+    actual_te = y_test.copy()
 
-    actual_train = data["yield"].iloc[
-        WINDOW:WINDOW + len(pred_train)
-    ].values
+    min_tr = min(len(actual_tr), len(pred_tr))
+    min_te = min(len(actual_te), len(pred_te))
+    actual_tr, pred_tr = actual_tr[:min_tr], pred_tr[:min_tr]
+    actual_te, pred_te = actual_te[:min_te], pred_te[:min_te]
 
-    years_train = data["year"].iloc[
-        WINDOW:WINDOW + len(pred_train)
-    ].values
+    time_labels_seq = df[time_col].tolist()
+    train_times = time_labels_seq[:split_idx][:min_tr]
+    test_times  = time_labels_seq[split_idx:][:min_te]
 
-    # Testing (forecast horizon aware)
-    start_idx = split_idx + WINDOW
-    last_log_test = data["log_yield"].iloc[start_idx - 1]
+    def mape(a, p):
+        return float(np.mean(np.abs((a - p) / np.where(a == 0, 1e-8, a))) * 100)
 
-    pred_log_test = np.cumsum(test_preds) + last_log_test
-    pred_test = np.exp(pred_log_test)
-
-    actual_test = np.exp(
-        np.cumsum(y_test.cpu().numpy()) + last_log_test
-    )
-
-    years_test = data["year"].iloc[
-        start_idx:start_idx + len(actual_test)
-    ].values
-
-#Metrics
-    rmse_train = root_mean_squared_error(actual_train, pred_train)
-    r2_train = r2_score(actual_train, pred_train)
-    mape_train = np.mean(
-        np.abs((actual_train - pred_train) / actual_train)
-    ) * 100
-
-    rmse_test = root_mean_squared_error(actual_test, pred_test)
-    r2_test = r2_score(actual_test, pred_test)
-    mape_test = np.mean(
-        np.abs((actual_test - pred_test) / actual_test)
-    ) * 100
-
-    import matplotlib.pyplot as plt
-    import os
-
+    # ------------------------------------------------------------------
+    # Save bundle
+    # ------------------------------------------------------------------
     os.makedirs("static", exist_ok=True)
+
+    last_window_np = X_all_s[-1]   # (LAGS, n_vars) — X-scaled
+    last_window_t  = torch.tensor(last_window_np, dtype=torch.float32)
+
+    # Auto future time labels
+    last_t = df[time_col].iloc[-1]
+    try:
+        future_time_labels = [int(last_t) + i for i in range(1, horizon + 1)]
+    except (TypeError, ValueError):
+        orig_sequence = data[time_col].tolist()
+        first_val = orig_sequence[0]
+        try:
+            cycle_len = orig_sequence[1:].index(first_val) + 1
+        except ValueError:
+            cycle_len = len(orig_sequence)
+        cycle = orig_sequence[:cycle_len]
+        last_cycle_pos = cycle.index(last_t)
+        future_time_labels = [
+            cycle[(last_cycle_pos + i) % cycle_len]
+            for i in range(1, horizon + 1)
+        ]
+
     torch.save(model.state_dict(), "static/gru_weights.pt")
-
     torch.save({
-    "last_window": X_test[-1].detach().cpu(),
-    "features": FEATURES,
-    "scaler_mean": scaler.mean_,
-    "scaler_scale": scaler.scale_,
-    "last_log": np.log(pred_test[-1]),
-    "last_year": int(data["year"].iloc[-1]),
-    
-    # ✅ SAVE MODEL ARCHITECTURE (critical for loading)
-    "hidden_size": hidden_size,
-    "num_layers": num_layers,
-    "gru_dropout": gru_dropout,
-    "fc_dropout": fc_dropout,
-    
-    "params": params,
-}, "static/gru_bundle.pt")
+        # Architecture
+        "n_features"    : n_v,
+        "hidden_size"   : hidden_size,
+        "num_layers"    : num_layers,
+        "gru_dropout"   : gru_dropout,
+        "fc_dropout"    : fc_dropout,
+        # X scaler
+        "x_scaler_mean" : x_scaler.mean_,
+        "x_scaler_scale": x_scaler.scale_,
+        # y scaler
+        "y_scaler_mean" : float(y_scaler.mean_[0]),
+        "y_scaler_scale": float(y_scaler.scale_[0]),
+        # Column metadata
+        "target_col"    : target_col,
+        "time_col"      : time_col,
+        "exog_cols"     : exog_cols,
+        "all_cols"      : all_var_cols,
+        "target_idx"    : target_idx,
+        # Forecast state
+        "last_window"   : last_window_t,
+        "last_time"     : df[time_col].iloc[-1],
+        "time_labels"   : future_time_labels,
+        # Metadata
+        "params"        : params,
+        "has_exogenous" : has_exogenous,
+        "lags"          : LAGS,
+    }, "static/gru_bundle.pt")
 
+    # ------------------------------------------------------------------
+    # Plots
+    # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Plots
+    # ------------------------------------------------------------------
+    fig, ax = plt.subplots(figsize=(14, 5))
 
-# -------------------------
-# TRAINING PLOT
-# -------------------------
-    fig, ax = plt.subplots(figsize=(10, 5))
+    train_x = list(range(len(actual_tr)))
+    test_x  = list(range(len(actual_tr), len(actual_tr) + len(actual_te)))
 
-    ax.plot(years_train, actual_train, label="Actual (Train)")
-    ax.plot(
-    years_train,
-    pred_train,
-    label="Predicted (Train)",
-    linestyle="--",
-    marker="o",
-    markersize=4
-)
+    ax.plot(train_x, actual_tr, color="steelblue",  label="Actual (Train)")
+    ax.plot(train_x, pred_tr,   color="steelblue",  label="Predicted (Train)",
+            linestyle="--", marker="o", ms=4, alpha=0.8)
+    ax.plot(test_x,  actual_te, color="darkorange", label="Actual (Test)")
+    ax.plot(test_x,  pred_te,   color="darkorange", label="Predicted (Test)",
+            linestyle="--", marker="o", ms=4, alpha=0.8)
 
-    ax.set_title("GRU Model - Training Set")
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Yield")
+    ax.axvline(x=len(actual_tr) - 1, color="black", linestyle=":", linewidth=2,
+            label="Train/Test Split")
+
+    all_times = train_times + test_times
+    all_x     = train_x + test_x
+    step = max(1, len(all_x) // 12) if len(all_x) > 24 else 1
+    ax.set_xticks(all_x[::step])
+    ax.set_xticklabels(all_times[::step], rotation=45, ha="right")
+
+    ax.set_title("GRU — Training & Testing Set")
+    ax.set_xlabel(time_col); ax.set_ylabel(target_col)
     ax.legend()
+    plt.tight_layout()
+    plt.savefig("static/gru_train.png", dpi=120)
+    plt.savefig("static/gru_test.png",  dpi=120)
+    plt.close()
 
-    fig.tight_layout()
-    fig.savefig("static/gru_train.png", dpi=150)
-    plt.close(fig)
-
-# -------------------------
-# TESTING PLOT
-# -------------------------
-    fig, ax = plt.subplots(figsize=(10, 5))
-
-    ax.plot(years_test, actual_test, label="Actual (Test)")
-    ax.plot(
-    years_test,
-    pred_test,
-    label="Predicted (Test)",
-    linestyle="--",
-    marker="o",
-    markersize=4
-    )
-
-    ax.set_title("GRU Model - Testing Set")
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Yield")
-    ax.legend()
-
-    fig.tight_layout()
-    fig.savefig("static/gru_test.png", dpi=150)
-    plt.close(fig)
-
-
-#RETURN
-    return {
-        "model_key": "gru",
-        "model_name": "GRU",
-        "horizon": horizon,
-
-        "frequency": frequency,
-
-        # ✅ ADD MODEL CONFIGURATION
-        "model_config": {
-            "hidden_size": hidden_size,
-            "num_layers": num_layers,
-            "gru_dropout": gru_dropout,
-            "fc_dropout": fc_dropout,
-            "learning_rate": lr,
-            "weight_decay": weight_decay,
-            "huber_delta": round(huber_delta, 2),
-            "patience": patience,
-            "epochs_used": num_epochs,
-        },
-        "auto_tuned": use_auto_tune,
-
-        "rmse_train": round(rmse_train, 3),
-        "r2_train": round(r2_train, 3),
-        "mape_train": round(mape_train, 2),
-
-        "rmse_test": round(rmse_test, 3),
-        "r2_test": round(r2_test, 3),
-        "mape_test": round(mape_test, 2),
-
-        "train_table": pd.DataFrame({
-            "Year": years_train,
-            "Actual": actual_train,
-            "Predicted": pred_train
-        }),
-
-        "test_table": pd.DataFrame({
-            "Year": years_test,
-            "Actual": actual_test,
-            "Predicted": pred_test
-        }),
-        "forecast_table": None #Always None during training - only populated in forecast mode
-        
+    # ------------------------------------------------------------------
+    # Results dict
+    # ------------------------------------------------------------------
+    model_config = {
+        "hidden_size"  : hidden_size,
+        "num_layers"   : num_layers,
+        "gru_dropout"  : gru_dropout,
+        "fc_dropout"   : fc_dropout,
+        "learning_rate": lr,
+        "weight_decay" : weight_decay,
+        "huber_delta"  : round(huber_delta, 2),
+        "patience"     : patience,
+        "lags"         : LAGS,
     }
+
+    results = {
+        "model_key"   : "gru",
+        "model_name"  : "GRU",
+        "frequency"   : frequency,
+        "horizon"     : horizon,
+        "data_type"   : "Multivariate" if has_exogenous else "Univariate",
+        "model_config": model_config,
+        "auto_tuned"  : use_tune,
+
+        "rmse_train"  : round(float(root_mean_squared_error(actual_tr, pred_tr)), 3),
+        "mae_train"    : round(float(mean_absolute_error(actual_tr, pred_tr)), 3),
+        "mape_train"  : round(mape(actual_tr, pred_tr), 2),
+
+        "rmse_test"   : round(float(root_mean_squared_error(actual_te, pred_te)), 3),
+        "mae_test"     : round(float(mean_absolute_error(actual_te, pred_te)), 3),
+        "mape_test"   : round(mape(actual_te, pred_te), 2),
+
+        "train_table" : pd.DataFrame({
+            time_col    : train_times,
+            "Actual"    : actual_tr,
+            "Predicted" : pred_tr,
+        }),
+
+        "test_table"  : pd.DataFrame({
+            time_col    : test_times,
+            "Actual"    : actual_te,
+            "Predicted" : pred_te,
+        }),
+
+        "forecast_table": None,
+    }
+
+    log(f"\n📊 Results:")
+    log(f"   Train — RMSE: {results['rmse_train']}, MAE: {results['mae_train']}, MAPE: {results['mape_train']}%")
+    log(f"   Test  — RMSE: {results['rmse_test']},  MAE: {results['mae_test']},  MAPE: {results['mape_test']}%")
+
+    return results

@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+
+{% block title %}Select Models - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page Container */
+    .models-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .models-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .page-header p {
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.9);
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    /* Main Form Card */
+    .form-card {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        animation: fadeInUp 0.8s ease 0.2s backwards;
+    }
+
+    /* Section Headers */
+    .section-header {
+        font-size: 1.8rem;
+        color: #2d3748;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 3px solid transparent;
+        border-image: linear-gradient(90deg, #667eea, #764ba2) 1;
+        font-weight: 600;
+    }
+
+    /* Selection Controls */
+    .selection-controls {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .select-btn {
+        padding: 0.7rem 1.5rem;
+        border: 2px solid #667eea;
+        background: white;
+        color: #667eea;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.95rem;
+    }
+
+    .select-btn:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .deselect-btn {
+        background: #f56565;
+        border-color: #f56565;
+        color: white;
+    }
+
+    .deselect-btn:hover {
+        background: #e53e3e;
+        border-color: #e53e3e;
+    }
+
+    /* Model Categories */
+    .model-category {
+        margin-bottom: 2.5rem;
+    }
+
+    .category-title {
+        font-size: 1.3rem;
+        color: #2d3748;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+
+    .category-title::before {
+        content: '';
+        width: 4px;
+        height: 24px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        margin-right: 1rem;
+        border-radius: 2px;
+    }
+
+    .models-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* Custom Checkbox Card */
+    .model-checkbox-card {
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .model-checkbox-card input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .checkbox-content {
+        padding: 1.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 15px;
+        background: white;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .checkbox-content:hover {
+        border-color: #667eea;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+    }
+
+    .model-checkbox-card input[type="checkbox"]:checked ~ .checkbox-content {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: white;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .checkbox-icon {
+        width: 24px;
+        height: 24px;
+        border: 2px solid #cbd5e0;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .model-checkbox-card input[type="checkbox"]:checked ~ .checkbox-content .checkbox-icon {
+        background: white;
+        border-color: white;
+    }
+
+    .checkbox-icon::after {
+        content: '✓';
+        color: #667eea;
+        font-weight: bold;
+        font-size: 1.1rem;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.2s;
+    }
+
+    .model-checkbox-card input[type="checkbox"]:checked ~ .checkbox-content .checkbox-icon::after {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .model-label-text {
+        font-weight: 600;
+        font-size: 1.05rem;
+    }
+
+    /* Submit Button */
+    .submit-container {
+        text-align: center;
+        margin-top: 3rem;
+    }
+
+    .submit-btn {
+        padding: 1.2rem 4rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    }
+
+    /* Info Banner */
+    .info-banner {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+
+    .info-banner p {
+        color: #2d3748;
+        margin: 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .info-banner strong {
+        color: #667eea;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .form-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .models-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .submit-btn {
+            padding: 1rem 2.5rem;
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="models-page">
+    <div class="models-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🤖 Select Forecasting Models</h1>
+            <p>Choose one model for detailed analysis or multiple models for performance comparison.</p>
+        </div>
+
+        <!-- Main Form -->
+        <form action="{{ url_for('configure_models') }}" method="POST" id="modelForm">
+            <div class="form-card">
+                
+                <h2 class="section-header">Select Model(s)</h2>
+                
+                <div class="info-banner">
+                    <p><strong>💡 Pro Tip:</strong> Select <strong>one model</strong> for detailed analysis or <strong>multiple models</strong> (minimum 1, maximum 8) to compare performance side-by-side!</p>
+                </div>
+
+                <div class="model-selection">
+                    <div class="selection-controls">
+                        <button type="button" class="select-btn" onclick="selectAll()">✓ Select All</button>
+                        <button type="button" class="select-btn deselect-btn" onclick="deselectAll()">✗ Deselect All</button>
+                    </div>
+
+                    <!-- Deep Learning Models -->
+                    <div class="model-category">
+                        <h3 class="category-title">🧠 Deep Learning Models</h3>
+                        <div class="models-grid">
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="lstm">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">LSTM</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="gru">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">GRU</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="rnn">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">RNN</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="transformer">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">Transformer</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="ann">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">ANN</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Machine Learning Models -->
+                    <div class="model-category">
+                        <h3 class="category-title">🌲 Machine Learning Models</h3>
+                        <div class="models-grid">
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="rf">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">Random Forest</span>
+                                </div>
+                            </label>
+
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="svr">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">SVR</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Statistical Models -->
+                    <div class="model-category">
+                        <h3 class="category-title">📊 Statistical Model</h3>
+                        <div class="models-grid">
+                            <label class="model-checkbox-card">
+                                <input type="checkbox" name="models" value="arima">
+                                <div class="checkbox-content">
+                                    <div class="checkbox-icon"></div>
+                                    <span class="model-label-text">ARIMA</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="submit-container">
+                    <button type="submit" class="submit-btn">Next → Configure Hyperparameters</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Select all checkboxes
+    function selectAll() {
+        const checkboxes = document.querySelectorAll('input[name="models"]');
+        checkboxes.forEach(cb => cb.checked = true);
+    }
+
+    // Deselect all checkboxes
+    function deselectAll() {
+        const checkboxes = document.querySelectorAll('input[name="models"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+
+    // Form validation
+    document.getElementById('modelForm').addEventListener('submit', function(e) {
+        const checkboxes = document.querySelectorAll('input[name="models"]:checked');
+        
+        if (checkboxes.length === 0) {
+            e.preventDefault();
+            alert('⚠️ Please select at least one model!');
+            return false;
+        }
+
+        if (checkboxes.length > 8) {
+            e.preventDefault();
+            alert('⚠️ Maximum 8 models can be selected at once!');
+            return false;
+        }
+
+        // Show loading state
+        const submitBtn = this.querySelector('.submit-btn');
+        submitBtn.textContent = 'Processing...';
+        submitBtn.disabled = true;
+    });
+</script>
+{% endblock %}

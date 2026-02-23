@@ -501,9 +501,9 @@
                 </div>
                 
                 <div class="metric-card training">
-                    <div class="metric-label">Training R²</div>
-                    <div class="metric-value">{{ "%.4f"|format(results.r2_train) }}</div>
-                    <div class="metric-sublabel">Coefficient of Determination</div>
+                    <div class="metric-label">Training MAE</div>
+                    <div class="metric-value">{{ "%.4f"|format(results.mae_train) }}</div>
+                    <div class="metric-sublabel">Mean Absolute Error</div>
                 </div>
                 
                 <div class="metric-card training">
@@ -520,9 +520,9 @@
                 </div>
                 
                 <div class="metric-card testing">
-                    <div class="metric-label">Testing R²</div>
-                    <div class="metric-value">{{ "%.4f"|format(results.r2_test) }}</div>
-                    <div class="metric-sublabel">Coefficient of Determination</div>
+                    <div class="metric-label">Testing MAE</div>
+                    <div class="metric-value">{{ "%.4f"|format(results.mae_test) }}</div>
+                    <div class="metric-sublabel">Mean Absolute Error</div>
                 </div>
                 
                 <div class="metric-card testing">
@@ -559,14 +559,6 @@
             <div class="table-container">
                 {{ results.test_table.to_html(index=False, classes='data-table') | safe }}
             </div>
-
-            <div class="plot-container">
-                <img
-                    src="{{ url_for('static', filename=results.model_key ~ '_test.png') }}"
-                    alt="{{ results.model_name }} Testing Performance"
-                    title="{{ results.model_name }} Testing Performance"
-                >
-            </div>
         </div>
 
         <!-- Future Climate Inputs -->
@@ -575,11 +567,11 @@
             <h3>Future Forecast</h3>
             
             <div class="future-box">
-                {% if is_arima %}
+                {% if is_univariate %}
                 <h3>📊 Generate Forecast</h3>
                 <p>
-                    ARIMA is a univariate model and will forecast the next <strong>{{ results.horizon }}</strong> 
-                    years based on historical patterns only.
+                    This model was trained on univariate data and will forecast the next 
+                    <strong>{{ results.horizon }}</strong> periods based on historical patterns only.
                 </p>
                 {% else %}
                 <h3>🌧️📈 Future Climate Inputs</h3>
@@ -592,24 +584,84 @@
                 <form method="POST" action="/predict">
                     <!-- Hidden fields to preserve state -->
                     <input type="hidden" name="model" value="{{ results.model_key }}">
-                    <input type="hidden" name="horizon" value="{{ request.form.horizon }}">
-                    <input type="hidden" name="frequency" value="{{ request.form.frequency }}">
+                    <input type="hidden" name="horizon" value="{{ results.horizon }}">
+                    <input type="hidden" name="frequency" value="{{ results.frequency }}">
                 
                     {% if is_arima %}
-                    <input type="hidden" name="arima_forecast_trigger" value="true">
+                        {# ARIMA uses special trigger #}
+                        <input type="hidden" name="arima_forecast_trigger" value="true">
+                    {% elif is_univariate %}
+                        {# Other univariate models use this trigger #}
+                        <input type="hidden" name="univariate_forecast_trigger" value="true">
                     {% endif %}
                 
-                    {% if not is_arima %}
-                    <label>🌡️ Mean Temperature (°C)</label>
-                    <textarea name="future_mean_t" rows="2"
-                        placeholder="Example: 26.1 26.3 26.5 26.8 27.0" 
-                        required></textarea>
-                
-                    <label>🌧️ Rainfall (mm)</label>
-                    <textarea name="future_rain" rows="2"
-                        placeholder="Example: 820 790 760 745 720" 
-                        required></textarea>
-                    {% endif %}
+                    {% if not is_univariate %}
+<!-- Auto-fill button -->
+<button type="button" onclick="autoFillExog()" 
+    style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;
+           border:none;padding:0.8rem 2rem;font-size:1rem;font-weight:600;
+           border-radius:50px;cursor:pointer;margin-bottom:1.5rem;
+           box-shadow:0 4px 15px rgba(102,126,234,0.4);">
+    🤖 Auto-fill with ARIMA
+</button>
+<div id="autofill_status" style="margin-bottom:1rem;font-size:0.9rem;color:#667eea;font-style:italic;"></div>
+
+
+    {% for col in exog_cols %}
+<label>📊 {{ col }}</label>
+<textarea name="future_exog_{{ col }}" id="textarea_{{ col }}" rows="2"
+    placeholder="Enter {{ results.horizon }} value(s) space-separated, e.g. 1.0 2.0"
+    required></textarea>
+{% endfor %}
+{% endif %}
+
+
+<script>
+async function autoFillExog() {
+    const btn    = event.target;
+    const status = document.getElementById('autofill_status');
+
+    btn.disabled    = true;
+    btn.textContent = '⏳ Forecasting...';
+    status.textContent = 'Running ARIMA on historical data...';
+
+    try {
+        const res = await fetch('/autofill_exog', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+
+        const data = await res.json();
+
+        if (data.status !== 'ok') {
+            status.textContent = '❌ Error: ' + (data.error || 'Unknown error');
+            return;
+        }
+
+        // Fill each textarea
+        let filled = 0;
+        for (const [col, values] of Object.entries(data.forecasts)) {
+            const ta = document.getElementById('textarea_' + col);
+            if (ta) {
+                ta.value = values.join(' ');
+                ta.style.borderColor = '#28a745';
+                filled++;
+            }
+        }
+
+        status.textContent = `✅ Auto-filled ${filled} column(s) using ARIMA forecast!`;
+        btn.textContent    = '🤖 Auto-fill with ARIMA';
+        btn.disabled       = false;
+
+    } catch (err) {
+        status.textContent = '❌ Request failed: ' + err.message;
+        btn.textContent    = '🤖 Auto-fill with ARIMA';
+        btn.disabled       = false;
+    }
+}
+</script>
+                        
                 
                     <button type="submit" class="forecast-btn">
                         🔮 Generate Forecast
