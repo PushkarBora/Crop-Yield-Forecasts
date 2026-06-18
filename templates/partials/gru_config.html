@@ -34,7 +34,7 @@
             <input type="number" id="gru_lags_max" name="gru_lags_max" value="5" min="1" max="20">
         </div>
         <div>
-            <label for="gru_lags_step">Step</label>
+            <label for="gru_lags_step">By</label>
             <input type="number" id="gru_lags_step" name="gru_lags_step" value="1" min="1" max="5">
         </div>
     </div>
@@ -54,7 +54,7 @@
                 <input type="number" id="gru_hidden_size_max" name="gru_hidden_size_max" value="16" min="1" aria-label="Hidden size maximum">
             </div>
             <div>
-                <label for="gru_hidden_size_step">Step</label>
+                <label for="gru_hidden_size_step">By</label>
                 <input type="number" id="gru_hidden_size_step" name="gru_hidden_size_step" value="4" min="1" aria-label="Hidden size step">
             </div>
         </div>
@@ -75,7 +75,7 @@
                 <input type="number" id="gru_num_layers_max" name="gru_num_layers_max" value="3" min="1" aria-label="Layers maximum">
             </div>
             <div>
-                <label for="gru_num_layers_step">Step</label>
+                <label for="gru_num_layers_step">By</label>
                 <input type="number" id="gru_num_layers_step" name="gru_num_layers_step" value="1" min="1" aria-label="Layers step">
             </div>
         </div>
@@ -96,7 +96,7 @@
                 <input type="number" step="0.05" id="gru_gru_dropout_max" name="gru_gru_dropout_max" value="0.2" min="0" max="0.9" aria-label="GRU dropout maximum">
             </div>
             <div>
-                <label for="gru_gru_dropout_step">Step</label>
+                <label for="gru_gru_dropout_step">By</label>
                 <input type="number" step="0.05" id="gru_gru_dropout_step" name="gru_gru_dropout_step" value="0.1" min="0.05" max="0.5" aria-label="GRU dropout step">
             </div>
         </div>
@@ -117,7 +117,7 @@
                 <input type="number" step="0.05" id="gru_fc_dropout_max" name="gru_fc_dropout_max" value="0.3" min="0" max="0.9" aria-label="FC dropout maximum">
             </div>
             <div>
-                <label for="gru_fc_dropout_step">Step</label>
+                <label for="gru_fc_dropout_step">By</label>
                 <input type="number" step="0.05" id="gru_fc_dropout_step" name="gru_fc_dropout_step" value="0.1" min="0.05" max="0.5" aria-label="FC dropout step">
             </div>
         </div>
@@ -138,7 +138,7 @@
                 <input type="number" step="0.0001" id="gru_learning_rate_max" name="gru_learning_rate_max" value="0.005" aria-label="Learning rate maximum">
             </div>
             <div>
-                <label for="gru_learning_rate_step">Step</label>
+                <label for="gru_learning_rate_step">By</label>
                 <input type="number" step="0.0001" id="gru_learning_rate_step" name="gru_learning_rate_step" value="0.001" aria-label="Learning rate step">
             </div>
         </div>
@@ -159,7 +159,7 @@
                 <input type="number" step="0.00001" id="gru_weight_decay_max" name="gru_weight_decay_max" value="0.0005" aria-label="Weight decay maximum">
             </div>
             <div>
-                <label for="gru_weight_decay_step">Step</label>
+                <label for="gru_weight_decay_step">By</label>
                 <input type="number" step="0.00001" id="gru_weight_decay_step" name="gru_weight_decay_step" value="0.0001" aria-label="Weight decay step">
             </div>
         </div>
@@ -180,7 +180,7 @@
                 <input type="number" step="0.1" id="gru_huber_delta_max" name="gru_huber_delta_max" value="1.5" aria-label="Huber delta maximum">
             </div>
             <div>
-                <label for="gru_huber_delta_step">Step</label>
+                <label for="gru_huber_delta_step">By</label>
                 <input type="number" step="0.1" id="gru_huber_delta_step" name="gru_huber_delta_step" value="0.4" aria-label="Huber delta step">
             </div>
         </div>
@@ -201,7 +201,7 @@
                 <input type="number" id="gru_epochs_max" name="gru_epochs_max" value="300" min="50" aria-label="Epochs maximum">
             </div>
             <div>
-                <label for="gru_epochs_step">Step</label>
+                <label for="gru_epochs_step">By</label>
                 <input type="number" id="gru_epochs_step" name="gru_epochs_step" value="100" min="50" aria-label="Epochs step">
             </div>
         </div>
@@ -222,7 +222,7 @@
                 <input type="number" id="gru_patience_max" name="gru_patience_max" value="50" min="5" aria-label="Patience maximum">
             </div>
             <div>
-                <label for="gru_patience_step">Step</label>
+                <label for="gru_patience_step">By</label>
                 <input type="number" id="gru_patience_step" name="gru_patience_step" value="10" min="5" aria-label="Patience step">
             </div>
         </div>
@@ -238,38 +238,39 @@
     </div>
 </div>
 
+<!-- ✅ AFTER -->
 <div id="gru_manual_section" class="manual-section gru-hidden">
     <h4>Manual Hyperparameter Configuration</h4>
     
-        <label for="gru_lags">Number of Lags (input time steps)</label><br>
+    <label for="gru_lags">Number of Lags (input time steps)</label><br>
     <input type="number" id="gru_lags" name="gru_lags" value="3" min="1" max="20"><br><br>
     
-    <label for="hidden_size">Hidden Size</label><br>
-    <input type="number" id="hidden_size" name="hidden_size" value="8" min="1"><br><br>
+    <label for="gru_hidden_size">Hidden Size</label><br>
+    <input type="number" id="gru_hidden_size" name="hidden_size" value="8" min="1"><br><br>
 
-    <label for="num_layers">Number of Layers</label><br>
-    <input type="number" id="num_layers" name="num_layers" value="2" min="1"><br><br>
+    <label for="gru_num_layers">Number of Layers</label><br>
+    <input type="number" id="gru_num_layers" name="num_layers" value="2" min="1"><br><br>
 
     <label for="gru_dropout">GRU Dropout</label><br>
     <input type="number" step="0.05" id="gru_dropout" name="gru_dropout" value="0.0" min="0" max="0.9"><br><br>
 
-    <label for="fc_dropout">Fully Connected Dropout</label><br>
-    <input type="number" step="0.05" id="fc_dropout" name="fc_dropout" value="0.3" min="0" max="0.9"><br><br>
+    <label for="gru_fc_dropout">Fully Connected Dropout</label><br>
+    <input type="number" step="0.05" id="gru_fc_dropout" name="fc_dropout" value="0.3" min="0" max="0.9"><br><br>
     
-    <label for="learning_rate">Learning Rate</label><br>
-    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003"><br><br>
+    <label for="gru_learning_rate">Learning Rate</label><br>
+    <input type="number" step="0.0001" id="gru_learning_rate" name="learning_rate" value="0.003"><br><br>
 
-    <label for="weight_decay">Weight Decay</label><br>
-    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001"><br><br>
+    <label for="gru_weight_decay">Weight Decay</label><br>
+    <input type="number" step="0.00001" id="gru_weight_decay" name="weight_decay" value="0.0001"><br><br>
 
-    <label for="epochs">Number of Epochs</label><br>
-    <input type="number" id="epochs" name="epochs" value="200"><br><br>
+    <label for="gru_epochs">Number of Epochs</label><br>
+    <input type="number" id="gru_epochs" name="epochs" value="200"><br><br>
 
-    <label for="patience">Early Stopping Patience</label><br>
-    <input type="number" id="patience" name="patience" value="30"><br><br>
+    <label for="gru_patience">Early Stopping Patience</label><br>
+    <input type="number" id="gru_patience" name="patience" value="30"><br><br>
 
-    <label for="huber_delta">Huber Loss Delta</label><br>
-    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0"><br><br>
+    <label for="gru_huber_delta">Huber Loss Delta</label><br>
+    <input type="number" step="0.1" id="gru_huber_delta" name="huber_delta" value="1.0"><br><br>
 </div>
 
 <p class="help-text">
@@ -291,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function calculateGRUCombinations() {
-    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+    const calc = (min, max, step) => Math.floor((max - min) / step + 1e-9) + 1;
     
     const lags = calc(
         parseFloat(document.getElementById('gru_lags_min').value),

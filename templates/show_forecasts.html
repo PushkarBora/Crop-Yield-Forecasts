@@ -524,21 +524,42 @@
                         {% elif model_name|upper == 'RNN' %}🔁
                         {% elif model_name|upper == 'TRANSFORMER' %}⚡
                         {% elif model_name|upper == 'ANN' %}🕸️
+                        {% elif model_name|upper == 'WAVELET_ANN' %}🌊🕸️
+                        {% elif model_name|upper == 'WAVELET_LSTM' %}🌊🧠
                         {% elif model_name|upper == 'SVR' %}📐
                         {% elif model_name|upper == 'RF' %}🌲
+                        {% elif model_name|upper == 'XGB' %}🌿
+                        {% elif model_name|upper == 'GBM' %}🌳
+                        {% elif model_name|upper == 'KNN' %}🎯
+                        {% elif model_name|upper == 'CNN' %}🧊
+                        {% elif model_name|upper == 'STACKED_LSTM' %}🔁
+                        {% elif model_name|upper == 'BD_LSTM' %}↔️
+                        {% elif model_name|upper == 'CONV_LSTM' %}🌀
+                        {% elif model_name|upper == 'DEEP_LSTM' %}🔱
                         {% elif model_name|upper == 'ARIMA' %}📈
+                        {% elif model_name|upper == 'SARIMA' %}🌊
+                        {% elif model_name|upper == 'TBATS' %}📡
+                        {% elif model_name|upper == 'RW' %}🎲
+                        {% elif model_name|upper == 'ETS' %}📈
+                        {% elif model_name|upper == 'AREGARCH' %}📊
+                        {% elif model_name|upper == 'ARGARCH' %}📊
+                        {% elif model_name|upper == 'ARMAGARCH' %}📈
+                        {% elif model_name|upper == 'ARTGARCH' %}📉
+                        {% elif model_name|upper == 'ARGJRGARCH' %}⚡
                         {% else %}🤖
                         {% endif %}
                     </div>
                     <div class="forecast-card-title">
                         <h3>{{ model_name|upper }}</h3>
                         <div class="model-type">
-                            {% if model_name|upper in ['LSTM', 'GRU', 'RNN', 'TRANSFORMER', 'ANN'] %}
+                            {% if model_name|upper in ['LSTM', 'GRU', 'RNN', 'TRANSFORMER', 'CNN', 'STACKED_LSTM', 'BD_LSTM', 'CONV_LSTM', 'DEEP_LSTM', 'WAVELET_LSTM'] %}
                             Deep Learning Model
-                            {% elif model_name|upper in ['SVR', 'RF'] %}
+                            {% elif model_name|upper in ['ANN','SVR', 'RF', 'XGB','GBM', 'KNN', 'WAVELET_ANN'] %}
                             Machine Learning Model
-                            {% elif model_name|upper == 'ARIMA' %}
+                            {% elif model_name|upper in ['ARIMA', 'SARIMA', 'TBATS', 'RW', 'ETS'] %}
                             Statistical Model
+                            {% elif model_name|upper in ['AREGARCH', 'ARGARCH', 'ARMAGARCH', 'ARTGARCH', 'ARGJRGARCH'] %}
+                            Volatility Model
                             {% else %}
                             AI Model
                             {% endif %}
@@ -607,7 +628,7 @@
             <a href="/show_comparison" class="action-btn">
                 ← Back to Model Comparison
             </a>
-            <a href="/models" class="action-btn secondary">
+            <a href="/select_models" class="action-btn secondary">
                 🔄 Run New Analysis
             </a>
         </div>

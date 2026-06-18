@@ -1,0 +1,535 @@
+<!-- ============================================================
+     WAVELET-ANN CONFIG PARTIAL
+     Save as: templates/partials/wavelet_ann_config.html
+     Used by: hyperparams_comparison.html
+     NOTE: All IDs use _p suffix to avoid conflicts when multiple
+           model panels coexist on the comparison page.
+     ============================================================ -->
+
+<div class="auto-tune-section">
+    <label for="auto_tune_wann_p">
+        <input type="checkbox" id="auto_tune_wann_p" name="auto_tune_wann" value="true" checked>
+        <span>🌊 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+    </label>
+</div>
+
+<!-- ── GRID SEARCH SECTION ─────────────────────────────── -->
+<div id="wann_grid_search_ranges_p" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p style="color:#718096;margin-bottom:2rem;font-size:0.95rem;">
+        Tests all combinations of <strong>Wavelet × Level</strong>.
+        For each coefficient sub-series, the ANN hyperparameters are also grid-searched.
+        Best combination (lowest Test RMSE) is saved automatically.
+        <br><br>
+        <strong>Multivariate:</strong> exog lags are appended to each coefficient ANN automatically.
+    </p>
+
+    <!-- ── WAVELET SELECTION ─────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Wavelet Filters to Test</label>
+        <input type="text" id="wavelet_search_p"
+               placeholder="🔍 Search wavelets (e.g. db, sym, coif)..."
+               style="width:100%;padding:0.6rem 0.8rem;border:2px solid #e2e8f0;
+                      border-radius:8px 8px 0 0;font-size:0.95rem;
+                      box-sizing:border-box;border-bottom:1px solid #e2e8f0;"
+               oninput="filterWaveletsP(this.value)">
+
+        <div id="wavelet_list_container_p"
+             style="max-height:180px;overflow-y:auto;border:2px solid #e2e8f0;
+                    border-top:none;border-radius:0 0 8px 8px;background:white;padding:0.4rem 0;">
+        </div>
+
+        <input type="hidden" name="wann_wavelets" id="wann_wavelets_hidden_p" value="">
+
+        <div id="wavelet_selected_display_p"
+             style="margin-top:0.5rem;font-size:0.85rem;color:#e53e3e;font-style:italic;min-height:1.2em;">
+            ⚠️ Please select at least one wavelet filter
+        </div>
+        <small class="help-text-small">
+            💡 Grouped by family. Select one or more wavelets to test.
+            Default: haar, db2, db4, sym8.
+        </small>
+    </div>
+
+    <!-- ── DECOMPOSITION LEVEL ───────────────────────────── -->
+    <div class="parameter-group">
+        <label>Decomposition Level Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="wann_min_level_p">Minimum</label>
+                <input type="number" id="wann_min_level_p" name="wann_min_level" value="1" min="1" max="10">
+            </div>
+            <div>
+                <label for="wann_max_level_p">Maximum</label>
+                <input type="number" id="wann_max_level_p" name="wann_max_level" value="3" min="1" max="10">
+            </div>
+            <div style="display:flex;align-items:flex-end;padding-bottom:0.5rem;">
+                <small class="help-text-small" style="margin:0;color:#a0aec0;">(auto-capped by data length)</small>
+            </div>
+        </div>
+        <small class="help-text-small">💡 Max level is capped at floor(log₂(N)). Example: 1 to 3 → tests [1, 2, 3]</small>
+    </div>
+
+    <!-- ── ANN LAGS ──────────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Number of Lags Range (per coefficient ANN)</label>
+        <div class="range-input-group">
+            <div><label for="wann_lags_min_p">Minimum</label>
+                 <input type="number" id="wann_lags_min_p" name="wann_lags_min" value="2" min="1" max="20"></div>
+            <div><label for="wann_lags_max_p">Maximum</label>
+                 <input type="number" id="wann_lags_max_p" name="wann_lags_max" value="4" min="1" max="20"></div>
+            <div><label for="wann_lags_step_p">By</label>
+                 <input type="number" id="wann_lags_step_p" name="wann_lags_step" value="2" min="1" max="5"></div>
+        </div>
+        <small class="help-text-small">💡 Example: 2 to 4 by 2 → tests [2, 4]</small>
+    </div>
+
+    <!-- ── HIDDEN LAYER 1 ────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Hidden Layer 1 Size Range</label>
+        <div class="range-input-group">
+            <div><label for="ann_hidden_layer_1_min_p">Minimum</label>
+                 <input type="number" id="ann_hidden_layer_1_min_p" name="ann_hidden_layer_1_min" value="8" min="4"></div>
+            <div><label for="ann_hidden_layer_1_max_p">Maximum</label>
+                 <input type="number" id="ann_hidden_layer_1_max_p" name="ann_hidden_layer_1_max" value="16" min="4"></div>
+            <div><label for="ann_hidden_layer_1_step_p">By</label>
+                 <input type="number" id="ann_hidden_layer_1_step_p" name="ann_hidden_layer_1_step" value="8" min="2"></div>
+        </div>
+        <small class="help-text-small">💡 Example: 8 to 16 by 8 → tests [8, 16]</small>
+    </div>
+
+    <!-- ── HIDDEN LAYER 2 ────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Hidden Layer 2 Size Range</label>
+        <div class="range-input-group">
+            <div><label for="ann_hidden_layer_2_min_p">Minimum</label>
+                 <input type="number" id="ann_hidden_layer_2_min_p" name="ann_hidden_layer_2_min" value="4" min="2"></div>
+            <div><label for="ann_hidden_layer_2_max_p">Maximum</label>
+                 <input type="number" id="ann_hidden_layer_2_max_p" name="ann_hidden_layer_2_max" value="8" min="2"></div>
+            <div><label for="ann_hidden_layer_2_step_p">By</label>
+                 <input type="number" id="ann_hidden_layer_2_step_p" name="ann_hidden_layer_2_step" value="4" min="1"></div>
+        </div>
+        <small class="help-text-small">💡 Example: 4 to 8 by 4 → tests [4, 8]</small>
+    </div>
+
+    <!-- ── DROPOUT 1 ─────────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Dropout after Layer 1 Range</label>
+        <div class="range-input-group">
+            <div><label for="ann_dropout_1_min_p">Minimum</label>
+                 <input type="number" step="0.1" id="ann_dropout_1_min_p" name="ann_dropout_1_min" value="0.2" min="0" max="0.9"></div>
+            <div><label for="ann_dropout_1_max_p">Maximum</label>
+                 <input type="number" step="0.1" id="ann_dropout_1_max_p" name="ann_dropout_1_max" value="0.2" min="0" max="0.9"></div>
+            <div><label for="ann_dropout_1_step_p">By</label>
+                 <input type="number" step="0.1" id="ann_dropout_1_step_p" name="ann_dropout_1_step" value="0.1" min="0.05"></div>
+        </div>
+        <small class="help-text-small">💡 Set min=max to fix at one value (e.g. 0.2)</small>
+    </div>
+
+    <!-- ── DROPOUT 2 ─────────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Dropout after Layer 2 Range</label>
+        <div class="range-input-group">
+            <div><label for="ann_dropout_2_min_p">Minimum</label>
+                 <input type="number" step="0.1" id="ann_dropout_2_min_p" name="ann_dropout_2_min" value="0.3" min="0" max="0.9"></div>
+            <div><label for="ann_dropout_2_max_p">Maximum</label>
+                 <input type="number" step="0.1" id="ann_dropout_2_max_p" name="ann_dropout_2_max" value="0.3" min="0" max="0.9"></div>
+            <div><label for="ann_dropout_2_step_p">By</label>
+                 <input type="number" step="0.1" id="ann_dropout_2_step_p" name="ann_dropout_2_step" value="0.1" min="0.05"></div>
+        </div>
+        <small class="help-text-small">💡 Also used as MC Dropout at forecast time.</small>
+    </div>
+
+    <!-- ── LEARNING RATE ─────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Learning Rate Range</label>
+        <div class="range-input-group">
+            <div><label for="ann_learning_rate_min_p">Minimum</label>
+                 <input type="number" step="0.001" id="ann_learning_rate_min_p" name="ann_learning_rate_min" value="0.001"></div>
+            <div><label for="ann_learning_rate_max_p">Maximum</label>
+                 <input type="number" step="0.001" id="ann_learning_rate_max_p" name="ann_learning_rate_max" value="0.003"></div>
+            <div><label for="ann_learning_rate_step_p">By</label>
+                 <input type="number" step="0.001" id="ann_learning_rate_step_p" name="ann_learning_rate_step" value="0.002"></div>
+        </div>
+        <small class="help-text-small">⚙️ Example: 0.001 to 0.003 by 0.002 → tests [0.001, 0.003]</small>
+    </div>
+
+    <!-- ── WEIGHT DECAY ──────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Weight Decay Range</label>
+        <div class="range-input-group">
+            <div><label for="ann_weight_decay_min_p">Minimum</label>
+                 <input type="number" step="0.0001" id="ann_weight_decay_min_p" name="ann_weight_decay_min" value="0.0001"></div>
+            <div><label for="ann_weight_decay_max_p">Maximum</label>
+                 <input type="number" step="0.0001" id="ann_weight_decay_max_p" name="ann_weight_decay_max" value="0.0001"></div>
+            <div><label for="ann_weight_decay_step_p">By</label>
+                 <input type="number" step="0.0001" id="ann_weight_decay_step_p" name="ann_weight_decay_step" value="0.0001"></div>
+        </div>
+        <small class="help-text-small">📊 Set min=max to fix at one value</small>
+    </div>
+
+    <!-- ── HUBER DELTA ───────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Huber Delta Range</label>
+        <div class="range-input-group">
+            <div><label for="ann_huber_delta_min_p">Minimum</label>
+                 <input type="number" step="0.5" id="ann_huber_delta_min_p" name="ann_huber_delta_min" value="1.0"></div>
+            <div><label for="ann_huber_delta_max_p">Maximum</label>
+                 <input type="number" step="0.5" id="ann_huber_delta_max_p" name="ann_huber_delta_max" value="1.0"></div>
+            <div><label for="ann_huber_delta_step_p">By</label>
+                 <input type="number" step="0.5" id="ann_huber_delta_step_p" name="ann_huber_delta_step" value="0.5"></div>
+        </div>
+        <small class="help-text-small">🎯 Set min=max to fix at one value</small>
+    </div>
+
+    <!-- ── EPOCHS ────────────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Number of Epochs Range</label>
+        <div class="range-input-group">
+            <div><label for="ann_epochs_min_p">Minimum</label>
+                 <input type="number" id="ann_epochs_min_p" name="ann_epochs_min" value="200" min="50"></div>
+            <div><label for="ann_epochs_max_p">Maximum</label>
+                 <input type="number" id="ann_epochs_max_p" name="ann_epochs_max" value="200" min="50"></div>
+            <div><label for="ann_epochs_step_p">By</label>
+                 <input type="number" id="ann_epochs_step_p" name="ann_epochs_step" value="100" min="50"></div>
+        </div>
+        <small class="help-text-small">🔄 Set min=max to fix at one value</small>
+    </div>
+
+    <!-- ── PATIENCE ──────────────────────────────────────── -->
+    <div class="parameter-group">
+        <label>Early Stopping Patience Range</label>
+        <div class="range-input-group">
+            <div><label for="ann_patience_min_p">Minimum</label>
+                 <input type="number" id="ann_patience_min_p" name="ann_patience_min" value="30" min="5"></div>
+            <div><label for="ann_patience_max_p">Maximum</label>
+                 <input type="number" id="ann_patience_max_p" name="ann_patience_max" value="30" min="5"></div>
+            <div><label for="ann_patience_step_p">By</label>
+                 <input type="number" id="ann_patience_step_p" name="ann_patience_step" value="10" min="5"></div>
+        </div>
+        <small class="help-text-small">⏱️ Set min=max to fix at one value</small>
+    </div>
+
+    <!-- ── COMBINATION ESTIMATE ──────────────────────────── -->
+    <div id="wann_combination_estimate_p" class="combination-estimate warning"
+         style="padding:1.2rem 1.5rem;">
+
+        <strong style="font-size:1rem;">📊 Estimated Training Combinations</strong>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;
+                    margin-top:1rem;text-align:center;">
+
+            <div style="background:rgba(255,255,255,0.25);border-radius:10px;padding:0.8rem;">
+                <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.5px;opacity:0.85;">Outer Grid</div>
+                <div id="wann_outer_count_p"
+                     style="font-size:1.6rem;font-weight:800;line-height:1.2;">—</div>
+                <div style="font-size:0.72rem;opacity:0.8;margin-top:2px;">Wavelet × Level</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.25);border-radius:10px;padding:0.8rem;">
+                <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.5px;opacity:0.85;">Inner Grid (per coeff.)</div>
+                <div id="wann_inner_count_p"
+                     style="font-size:1.6rem;font-weight:800;line-height:1.2;">—</div>
+                <div style="font-size:0.72rem;opacity:0.8;margin-top:2px;">ANN hyperparams</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.35);border-radius:10px;padding:0.8rem;
+                        border:2px solid rgba(255,255,255,0.5);">
+                <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.5px;opacity:0.85;">Grand Total</div>
+                <div id="wann_total_combinations_p"
+                     style="font-size:1.6rem;font-weight:800;line-height:1.2;">—</div>
+                <div style="font-size:0.72rem;opacity:0.8;margin-top:2px;">Outer × Inner</div>
+            </div>
+        </div>
+
+        <div id="wann_combo_breakdown_p"
+             style="margin-top:1rem;font-size:0.82rem;opacity:0.9;line-height:1.6;"></div>
+
+        <small style="display:block;margin-top:0.8rem;opacity:0.75;font-size:0.75rem;">
+            💡 Each outer combo independently trains one ANN per coefficient (J+1 ANNs per combo).
+            Keep Grand Total under 100 for reasonable training time.
+        </small>
+    </div>
+</div>
+
+<!-- ── MANUAL SECTION ────────────────────────────────────────── -->
+<div id="wann_manual_section_p" class="manual-section" style="display:none;">
+    <h4>🎛️ Manual Wavelet-ANN Configuration</h4>
+
+    <label>Wavelet Filter</label>
+    <select name="wann_manual_wavelet" style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+            border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+        <option value="haar">Haar</option>
+        <option value="db2">DB2 (Daubechies-2)</option>
+        <option value="db4">DB4 (Daubechies-4)</option>
+        <option value="sym8" selected>sym8 (Least Asymmetric-8)</option>
+        <option value="db6">DB6</option>
+        <option value="coif3">Coiflet-3</option>
+        <option value="dmey">Discrete Meyer</option>
+    </select>
+
+    <label for="wann_manual_level_p">Decomposition Level</label>
+    <input type="number" id="wann_manual_level_p" name="wann_manual_level"
+           value="3" min="1" max="10"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_lags_p">Number of Lags (per coefficient ANN)</label>
+    <input type="number" id="wann_manual_lags_p" name="wann_lags_min"
+           value="3" min="1" max="20"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_hl1_p">Hidden Layer 1 Size</label>
+    <input type="number" id="wann_manual_hl1_p" name="ann_hidden_layer_1_min"
+           value="16" min="4"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_hl2_p">Hidden Layer 2 Size</label>
+    <input type="number" id="wann_manual_hl2_p" name="ann_hidden_layer_2_min"
+           value="8" min="2"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_d1_p">Dropout after Layer 1</label>
+    <input type="number" step="0.05" id="wann_manual_d1_p" name="ann_dropout_1_min"
+           value="0.2" min="0" max="0.9"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_d2_p">Dropout after Layer 2</label>
+    <input type="number" step="0.05" id="wann_manual_d2_p" name="ann_dropout_2_min"
+           value="0.3" min="0" max="0.9"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_lr_p">Learning Rate</label>
+    <input type="number" step="0.0001" id="wann_manual_lr_p" name="ann_learning_rate_min"
+           value="0.001"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_wd_p">Weight Decay</label>
+    <input type="number" step="0.00001" id="wann_manual_wd_p" name="ann_weight_decay_min"
+           value="0.0001"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_hd_p">Huber Delta</label>
+    <input type="number" step="0.5" id="wann_manual_hd_p" name="ann_huber_delta_min"
+           value="1.0"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_epochs_p">Epochs</label>
+    <input type="number" id="wann_manual_epochs_p" name="ann_epochs_min"
+           value="200" min="50"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+
+    <label for="wann_manual_patience_p">Early Stopping Patience</label>
+    <input type="number" id="wann_manual_patience_p" name="ann_patience_min"
+           value="30" min="5"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;
+                  border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+</div>
+
+<div class="help-text">
+    <strong>💡 How it works:</strong> Target series is decomposed via MODWT into detail (W1…WJ)
+    and smooth (VJ) coefficients. A separate ANN is trained on each coefficient.
+    Forecasts are summed to produce the final prediction.
+    MC Dropout (300 samples) generates 50%, 80% and 95% uncertainty intervals.
+</div>
+
+<!-- ── JavaScript (IIFE-scoped, _p suffix throughout) ────────── -->
+<script>
+(function () {
+    // ── Toggle auto/manual ────────────────────────────────────────────────
+    document.getElementById('auto_tune_wann_p').addEventListener('change', function () {
+        document.getElementById('wann_grid_search_ranges_p').style.display = this.checked ? 'block' : 'none';
+        document.getElementById('wann_manual_section_p').style.display     = this.checked ? 'none'  : 'block';
+        if (this.checked) calcP();
+    });
+
+    // ── Wavelet groups ────────────────────────────────────────────────────
+    const WAVELET_GROUPS_P = {
+        "Haar":               ["haar"],
+        "Daubechies (db)":    ["db1","db2","db3","db4","db5","db6","db7","db8",
+                               "db9","db10","db11","db12","db13","db14","db15",
+                               "db16","db17","db18","db19","db20","db21","db22",
+                               "db23","db24","db25","db26","db27","db28","db29",
+                               "db30","db31","db32","db33","db34","db35","db36",
+                               "db37","db38"],
+        "Symlets (sym)":      ["sym2","sym3","sym4","sym5","sym6","sym7","sym8",
+                               "sym9","sym10","sym11","sym12","sym13","sym14",
+                               "sym15","sym16","sym17","sym18","sym19","sym20"],
+        "Coiflets (coif)":    ["coif1","coif2","coif3","coif4","coif5","coif6",
+                               "coif7","coif8","coif9","coif10","coif11","coif12",
+                               "coif13","coif14","coif15","coif16","coif17"],
+        "Biorthogonal (bior)":["bior1.1","bior1.3","bior1.5","bior2.2","bior2.4",
+                               "bior2.6","bior2.8","bior3.1","bior3.3","bior3.5",
+                               "bior3.7","bior3.9","bior4.4","bior5.5","bior6.8"],
+        "Rev. Biorthogonal":  ["rbio1.1","rbio1.3","rbio1.5","rbio2.2","rbio2.4",
+                               "rbio2.6","rbio2.8","rbio3.1","rbio3.3","rbio3.5",
+                               "rbio3.7","rbio3.9","rbio4.4","rbio5.5","rbio6.8"],
+        "Discrete Meyer":     ["dmey"],
+    };
+
+    const DEFAULTS_P  = ["haar", "db2", "db4", "sym8"];
+    const containerP  = document.getElementById('wavelet_list_container_p');
+    const hiddenP     = document.getElementById('wann_wavelets_hidden_p');
+    const displayP    = document.getElementById('wavelet_selected_display_p');
+
+    function rcP(minVal, maxVal, step) {
+        if (step <= 0 || minVal > maxVal) return 1;
+        return Math.floor((maxVal - minVal) / step) + 1;
+    }
+
+    function gvP(id, fallback) {
+        const el = document.getElementById(id);
+        return el ? (parseFloat(el.value) || fallback) : fallback;
+    }
+
+    function calcP() {
+        const selected     = getSelectedP();
+        const waveletCount = selected.length;
+        const minLv        = gvP('wann_min_level_p', 1);
+        const maxLv        = gvP('wann_max_level_p', 3);
+        const levels       = Math.max(1, maxLv - minLv + 1);
+        const outerTotal   = waveletCount * levels;
+
+        const lagsCount = rcP(gvP('wann_lags_min_p',2),             gvP('wann_lags_max_p',4),              gvP('wann_lags_step_p',2));
+        const hl1Count  = rcP(gvP('ann_hidden_layer_1_min_p',8),    gvP('ann_hidden_layer_1_max_p',16),    gvP('ann_hidden_layer_1_step_p',8));
+        const hl2Count  = rcP(gvP('ann_hidden_layer_2_min_p',4),    gvP('ann_hidden_layer_2_max_p',8),     gvP('ann_hidden_layer_2_step_p',4));
+        const d1Count   = rcP(gvP('ann_dropout_1_min_p',0.2),       gvP('ann_dropout_1_max_p',0.2),        gvP('ann_dropout_1_step_p',0.1));
+        const d2Count   = rcP(gvP('ann_dropout_2_min_p',0.3),       gvP('ann_dropout_2_max_p',0.3),        gvP('ann_dropout_2_step_p',0.1));
+        const lrCount   = rcP(gvP('ann_learning_rate_min_p',0.001), gvP('ann_learning_rate_max_p',0.003),  gvP('ann_learning_rate_step_p',0.002));
+        const wdCount   = rcP(gvP('ann_weight_decay_min_p',0.0001), gvP('ann_weight_decay_max_p',0.0001),  gvP('ann_weight_decay_step_p',0.0001));
+        const hdCount   = rcP(gvP('ann_huber_delta_min_p',1.0),     gvP('ann_huber_delta_max_p',1.0),      gvP('ann_huber_delta_step_p',0.5));
+        const epCount   = rcP(gvP('ann_epochs_min_p',200),          gvP('ann_epochs_max_p',200),           gvP('ann_epochs_step_p',100));
+        const paCount   = rcP(gvP('ann_patience_min_p',30),         gvP('ann_patience_max_p',30),          gvP('ann_patience_step_p',10));
+
+        const innerTotal = lagsCount * hl1Count * hl2Count * d1Count * d2Count
+                         * lrCount * wdCount * hdCount * epCount * paCount;
+        const grandTotal = outerTotal * innerTotal;
+
+        const outerEl = document.getElementById('wann_outer_count_p');
+        const innerEl = document.getElementById('wann_inner_count_p');
+        const totalEl = document.getElementById('wann_total_combinations_p');
+        const breakEl = document.getElementById('wann_combo_breakdown_p');
+
+        if (outerEl) outerEl.textContent = waveletCount > 0 ? outerTotal.toLocaleString() : '—';
+        if (innerEl) innerEl.textContent = innerTotal.toLocaleString();
+        if (totalEl) totalEl.textContent = waveletCount > 0 ? grandTotal.toLocaleString() : '—';
+
+        if (breakEl && waveletCount > 0) {
+            breakEl.innerHTML =
+                `<strong>Outer:</strong> ${waveletCount} wavelet(s) × ${levels} level(s) = ${outerTotal} combos` +
+                `<br><strong>Inner ANN:</strong> Lags(${lagsCount}) × HL1(${hl1Count}) × HL2(${hl2Count}) × D1(${d1Count}) × D2(${d2Count}) × LR(${lrCount}) × WD(${wdCount}) × Huber(${hdCount}) × Epochs(${epCount}) × Patience(${paCount}) = ${innerTotal.toLocaleString()} combos`;
+        } else if (breakEl) {
+            breakEl.textContent = '⚠️ Select at least one wavelet to calculate.';
+        }
+
+        const el = document.getElementById('wann_combination_estimate_p');
+        if (el) {
+            el.className = 'combination-estimate';
+            if      (waveletCount === 0)  el.classList.add('warning');
+            else if (grandTotal <= 20)    el.classList.add('good');
+            else if (grandTotal <= 100)   el.classList.add('warning');
+            else                          el.classList.add('danger');
+        }
+    }
+
+    function getSelectedP() {
+        return hiddenP.value ? hiddenP.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+    }
+
+    function buildListP(filter) {
+        filter = (filter || '').toLowerCase();
+        containerP.innerHTML = '';
+
+        Object.entries(WAVELET_GROUPS_P).forEach(([group, wavelets]) => {
+            const visible = filter ? wavelets.filter(w => w.includes(filter)) : wavelets;
+            if (!visible.length) return;
+
+            const header = document.createElement('div');
+            header.textContent = group;
+            header.style.cssText = 'padding:4px 10px;font-size:0.75rem;font-weight:700;' +
+                'color:#764ba2;text-transform:uppercase;letter-spacing:0.5px;' +
+                'background:#f7f0ff;border-top:1px solid #ede9f7;margin-top:2px;';
+            containerP.appendChild(header);
+
+            visible.forEach(w => {
+                const isChecked = getSelectedP().includes(w);
+                const label = document.createElement('label');
+                label.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 14px;' +
+                    'cursor:pointer;font-size:0.9rem;color:#2d3748;transition:background 0.15s;';
+                label.onmouseenter = () => label.style.background = '#f0f4ff';
+                label.onmouseleave = () => label.style.background = '';
+
+                const cb = document.createElement('input');
+                cb.type = 'checkbox'; cb.value = w; cb.checked = isChecked;
+                cb.style.cssText = 'accent-color:#667eea;width:16px;height:16px;cursor:pointer;';
+                cb.addEventListener('change', updateSelectedP);
+
+                label.appendChild(cb);
+                label.appendChild(Object.assign(document.createElement('span'), {textContent: w}));
+                containerP.appendChild(label);
+            });
+        });
+    }
+
+    function updateSelectedP() {
+        const checked    = Array.from(containerP.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+        const prev       = getSelectedP();
+        const allVisible = Array.from(containerP.querySelectorAll('input[type=checkbox]')).map(cb => cb.value);
+        const fromHidden = prev.filter(w => !allVisible.includes(w));
+        const merged     = [...new Set([...fromHidden, ...checked])];
+
+        hiddenP.value = merged.join(',');
+
+        if (merged.length > 0) {
+            displayP.textContent = '✅ Selected (' + merged.length + '): ' + merged.join(', ');
+            displayP.style.color = '#38a169';
+        } else {
+            displayP.textContent = '⚠️ Please select at least one wavelet filter';
+            displayP.style.color = '#e53e3e';
+        }
+        calcP();
+    }
+
+    window.filterWaveletsP = function(val) { buildListP(val); };
+
+    // ── Init ─────────────────────────────────────────────────────────────
+    hiddenP.value = DEFAULTS_P.join(',');
+    buildListP('');
+    updateSelectedP();
+
+    ['wann_min_level_p','wann_max_level_p'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', calcP);
+    });
+
+    [
+        'wann_lags_min_p','wann_lags_max_p','wann_lags_step_p',
+        'ann_hidden_layer_1_min_p','ann_hidden_layer_1_max_p','ann_hidden_layer_1_step_p',
+        'ann_hidden_layer_2_min_p','ann_hidden_layer_2_max_p','ann_hidden_layer_2_step_p',
+        'ann_dropout_1_min_p','ann_dropout_1_max_p','ann_dropout_1_step_p',
+        'ann_dropout_2_min_p','ann_dropout_2_max_p','ann_dropout_2_step_p',
+        'ann_learning_rate_min_p','ann_learning_rate_max_p','ann_learning_rate_step_p',
+        'ann_weight_decay_min_p','ann_weight_decay_max_p','ann_weight_decay_step_p',
+        'ann_huber_delta_min_p','ann_huber_delta_max_p','ann_huber_delta_step_p',
+        'ann_epochs_min_p','ann_epochs_max_p','ann_epochs_step_p',
+        'ann_patience_min_p','ann_patience_max_p','ann_patience_step_p',
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', calcP);
+    });
+
+    calcP();
+})();
+</script>

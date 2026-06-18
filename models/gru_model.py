@@ -104,6 +104,7 @@ def auto_tune_gru(
         return vals
 
     grid = {
+        
         "hidden_size":   irange(params["gru_hidden_size_min"],
                                 params["gru_hidden_size_max"],
                                 params["gru_hidden_size_step"]),
@@ -128,6 +129,9 @@ def auto_tune_gru(
         "patience":      irange(params["gru_patience_min"],
                                 params["gru_patience_max"],
                                 params["gru_patience_step"]),
+        "epochs":        irange(params["gru_epochs_min"],
+                                params["gru_epochs_max"],
+                                params["gru_epochs_step"]),
     }
 
     combos = [dict(zip(grid, v)) for v in itertools.product(*grid.values())]
@@ -158,7 +162,7 @@ def auto_tune_gru(
                                     weight_decay=p["weight_decay"])
             best_ep, pat = float("inf"), 0
 
-            for _ in range(200):
+            for _ in range(p["epochs"]):
                 model.train(); opt.zero_grad()
                 crit(model(Xtr), ytr).backward(); opt.step()
 
@@ -496,15 +500,119 @@ def run_gru(
     # ------------------------------------------------------------------
     # AUTO-TUNE
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # AUTO-TUNE
+    # ------------------------------------------------------------------
     if use_tune:
         log("\n🔧 Auto-tuning GRU hyperparameters...")
-        val_sp = int(0.8 * len(X_train_s))
-        best_p = auto_tune_gru(
-            X_train_s[:val_sp], y_train_s[:val_sp],
-            X_train_s[val_sp:], y_train_s[val_sp:],
-            device, n_v, params,
-            log_callback=log_callback,
-        )
+
+        lags_values = list(range(
+            params.get("gru_lags_min", 2),
+            params.get("gru_lags_max", 5) + 1,
+            params.get("gru_lags_step", 1),
+        ))
+
+        global_best_val  = float("inf")
+        global_best_p    = None
+        global_best_lags = LAGS
+
+        for lag_val in lags_values:
+            log(f"\n🔁 Trying lags={lag_val}...")
+
+            # ── Rebuild X for this lag ──────────────────────────────
+            df_lag = data[cols_needed].copy()
+            if pd.api.types.is_numeric_dtype(df_lag[time_col]):
+                df_lag = df_lag.sort_values(time_col).reset_index(drop=True)
+            else:
+                df_lag = df_lag.reset_index(drop=True)
+            df_lag = clean_dataframe(df_lag)
+
+            for l in range(1, lag_val + 1):
+                df_lag[f"__lag_{l}_{target_col}"] = df_lag[target_col].shift(l)
+                for ec in exog_cols:
+                    df_lag[f"__lag_{l}_{ec}"] = df_lag[ec].shift(l)
+            df_lag = df_lag.dropna().reset_index(drop=True)
+
+            X_lag = []
+            for i in range(len(df_lag)):
+                seq = []
+                for l in range(1, lag_val + 1):
+                    row = [df_lag[f"__lag_{l}_{target_col}"].iloc[i]]
+                    for ec in exog_cols:
+                        row.append(df_lag[f"__lag_{l}_{ec}"].iloc[i])
+                    seq.append(row)
+                X_lag.append(seq)
+            X_lag = np.array(X_lag, dtype=np.float32)
+            y_lag = df_lag[target_col].values.astype(np.float32)
+
+            # ── Split & scale ───────────────────────────────────────
+            sp = int(split * len(X_lag))
+            X_tr_lag, X_va_lag = X_lag[:sp], X_lag[sp:]
+            y_tr_lag, y_va_lag = y_lag[:sp], y_lag[sp:]
+
+            sc_x = StandardScaler()
+            _, nl, nv = X_tr_lag.shape
+            X_tr_s = sc_x.fit_transform(X_tr_lag.reshape(-1, nv)).reshape(X_tr_lag.shape)
+            X_va_s = sc_x.transform(X_va_lag.reshape(-1, nv)).reshape(X_va_lag.shape)
+
+            sc_y = StandardScaler()
+            y_tr_s = sc_y.fit_transform(y_tr_lag.reshape(-1, 1)).flatten()
+            y_va_s = sc_y.transform(y_va_lag.reshape(-1, 1)).flatten()
+
+            # ── Inner grid search (no lags in grid) ─────────────────
+            val_sp = int(0.8 * len(X_tr_s))
+            best_p = auto_tune_gru(
+                X_tr_s[:val_sp], y_tr_s[:val_sp],
+                X_tr_s[val_sp:], y_tr_s[val_sp:],
+                device, nv, params,
+                log_callback=log_callback,
+            )
+
+            if best_p is None:
+                continue
+
+            # ── Re-evaluate on full val set ──────────────────────────
+            model_tmp = GRUModel(
+                n_features=nv,
+                hidden_size=best_p["hidden_size"],
+                num_layers=best_p["num_layers"],
+                gru_dropout=best_p["gru_dropout"],
+                fc_dropout=best_p["fc_dropout"],
+            ).to(device)
+
+            crit_tmp = nn.HuberLoss(delta=best_p["huber_delta"])
+            opt_tmp  = torch.optim.Adam(model_tmp.parameters(),
+                                        lr=best_p["learning_rate"],
+                                        weight_decay=best_p["weight_decay"])
+
+            Xtr_t = torch.tensor(X_tr_s, dtype=torch.float32, device=device)
+            ytr_t = torch.tensor(y_tr_s, dtype=torch.float32, device=device)
+            Xva_t = torch.tensor(X_va_s, dtype=torch.float32, device=device)
+            yva_t = torch.tensor(y_va_s, dtype=torch.float32, device=device)
+
+            pat_tmp, best_ep_tmp = 0, float("inf")
+            for _ in range(best_p["epochs"]):
+                model_tmp.train(); opt_tmp.zero_grad()
+                crit_tmp(model_tmp(Xtr_t), ytr_t).backward(); opt_tmp.step()
+                model_tmp.eval()
+                with torch.no_grad():
+                    vl = crit_tmp(model_tmp(Xva_t), yva_t).item()
+                if vl < best_ep_tmp:
+                    best_ep_tmp, pat_tmp = vl, 0
+                else:
+                    pat_tmp += 1
+                    if pat_tmp >= best_p["patience"]:
+                        break
+
+            if best_ep_tmp < global_best_val:
+                global_best_val  = best_ep_tmp
+                global_best_p    = best_p.copy()
+                global_best_lags = lag_val
+                log(f"   🏆 New global best: lags={lag_val}, val={global_best_val:.6f}")
+
+        # ── Apply best found ─────────────────────────────────────────
+        LAGS         = global_best_lags
+        best_p       = global_best_p
         hidden_size  = best_p["hidden_size"]
         num_layers   = best_p["num_layers"]
         gru_dropout  = best_p["gru_dropout"]
@@ -513,7 +621,43 @@ def run_gru(
         weight_decay = best_p["weight_decay"]
         huber_delta  = best_p["huber_delta"]
         patience     = best_p["patience"]
-        log("✅ Using auto-tuned parameters")
+        epochs       = best_p["epochs"]
+
+        log(f"\n✅ Best overall: lags={LAGS}, params={best_p}")
+
+        # ── Rebuild final X/y/scalers with best LAGS ─────────────────
+        for lag in range(1, LAGS + 1):
+            df[f"__lag_{lag}_{target_col}"] = df[target_col].shift(lag)
+            for ec in exog_cols:
+                df[f"__lag_{lag}_{ec}"] = df[ec].shift(lag)
+        df = df.dropna().reset_index(drop=True)
+
+        X = build_X(df)
+        y = df[target_col].values.astype(np.float32)
+
+        split_idx       = int(split * len(X))
+        X_train, X_test = X[:split_idx], X[split_idx:]
+        y_train, y_test = y[:split_idx], y[split_idx:]
+
+        n_s, n_l, n_v = X_train.shape
+        X_train_s = x_scaler.fit_transform(X_train.reshape(-1, n_v)).reshape(X_train.shape)
+        X_test_s  = x_scaler.transform(X_test.reshape(-1, n_v)).reshape(X_test.shape)
+        X_all_s   = x_scaler.transform(X.reshape(-1, n_v)).reshape(X.shape)
+        y_train_s = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
+        y_test_s  = y_scaler.transform(y_test.reshape(-1, 1)).flatten()
+
+        # Rebuild tensors
+        X_tr_t = torch.tensor(X_train_s, dtype=torch.float32, device=device)
+        X_te_t = torch.tensor(X_test_s,  dtype=torch.float32, device=device)
+        y_tr_t = torch.tensor(y_train_s, dtype=torch.float32, device=device)
+        y_te_t = torch.tensor(y_test_s,  dtype=torch.float32, device=device)
+
+    else:
+        LAGS = params.get("gru_lags") or params.get("lags", 3)
+        X_tr_t = torch.tensor(X_train_s, dtype=torch.float32, device=device)
+        X_te_t = torch.tensor(X_test_s,  dtype=torch.float32, device=device)
+        y_tr_t = torch.tensor(y_train_s, dtype=torch.float32, device=device)
+        y_te_t = torch.tensor(y_test_s,  dtype=torch.float32, device=device)
 
     # Reset seed before model creation for reproducibility
     random.seed(SEED)
@@ -524,10 +668,7 @@ def run_gru(
     # ------------------------------------------------------------------
     # Build tensors & model
     # ------------------------------------------------------------------
-    X_tr_t = torch.tensor(X_train_s, dtype=torch.float32, device=device)
-    X_te_t = torch.tensor(X_test_s,  dtype=torch.float32, device=device)
-    y_tr_t = torch.tensor(y_train_s, dtype=torch.float32, device=device)
-    y_te_t = torch.tensor(y_test_s,  dtype=torch.float32, device=device)
+   
 
     model = GRUModel(
         n_features=n_v,
@@ -714,6 +855,7 @@ def run_gru(
         "rmse_test"   : round(float(root_mean_squared_error(actual_te, pred_te)), 3),
         "mae_test"     : round(float(mean_absolute_error(actual_te, pred_te)), 3),
         "mape_test"   : round(mape(actual_te, pred_te), 2),
+        "residuals"   : (actual_tr - pred_tr).tolist(),   # ← ADD THIS
 
         "train_table" : pd.DataFrame({
             time_col    : train_times,

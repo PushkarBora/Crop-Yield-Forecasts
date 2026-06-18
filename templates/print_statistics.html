@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistics Results – DATAI</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Times New Roman", serif;
+      font-size: 12pt;
+      color: #111;
+      background: #fff;
+      padding: 30px 40px;
+    }
+
+    h1  { font-size: 18pt; margin-bottom: 4px; }
+    h2  { font-size: 13pt; margin: 22px 0 8px;
+          border-bottom: 1.5px solid #1F4E79;
+          padding-bottom: 3px; color: #1F4E79; }
+    h3  { font-size: 11.5pt; color: #2c5f8a; margin: 14px 0 4px; }
+    p   { margin: 3px 0; font-size: 11pt; }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10.5pt; }
+    th {
+      background: #1F4E79; color: #fff;
+      padding: 6px 10px; text-align: center; font-size: 10pt;
+    }
+    td { padding: 5px 10px; border: 1px solid #ddd; }
+    td.label { font-weight: 600; color: #2d3748; width: 45%; }
+    td.value { text-align: center; }
+    tr:nth-child(even) td { background: #EBF3FA; }
+
+    /* ── Conclusion badge ── */
+    .conclusion {
+      display: inline-block;
+      padding: 3px 12px; border-radius: 12px;
+      font-size: 9.5pt; font-weight: bold;
+    }
+    .conclusion.pass { background: #d4edda; color: #155724; }
+    .conclusion.fail { background: #f8d7da; color: #721c24; }
+    .conclusion.neutral { background: #e2e8f0; color: #2d3748; }
+
+    /* ── Section block ── */
+    .section-block { margin-bottom: 28px; page-break-inside: avoid; }
+
+    /* ── Buttons ── */
+    .btn-bar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .btn {
+      padding: 9px 22px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 11pt; font-weight: bold;
+      text-decoration: none; display: inline-block;
+    }
+    .btn-print  { background: #1F4E79; color: #fff; }
+    .btn-dl     { background: #27ae60; color: #fff; }
+    .btn-close  { background: #e0e0e0; color: #333; }
+
+    /* ── Plots ── */
+    .plot-img {
+      max-width: 100%; height: auto;
+      border: 1px solid #ddd; border-radius: 6px;
+      margin-top: 8px;
+    }
+
+    @media print {
+      .btn-bar { display: none !important; }
+      body { padding: 10px 15px; }
+      h2, h3 { page-break-after: avoid; }
+      table  { page-break-inside: auto; }
+      tr     { page-break-inside: avoid; }
+      .section-block { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Buttons -->
+<div class="btn-bar">
+  <button class="btn btn-print" onclick="window.print()">🖨 Print / Save as PDF</button>
+  <a class="btn btn-dl" href="{{ url_for('download_statistics') }}">⬇ Download Excel</a>
+  <button class="btn btn-close" onclick="window.close()">✕ Close</button>
+</div>
+
+<!-- Header -->
+<h1>DATAI – Statistical Analysis Report</h1>
+<p>
+  <strong>Study Variable:</strong> {{ target_col }} &nbsp;|&nbsp;
+  <strong>Data Type:</strong> {{ "Multivariate" if is_multivariate else "Univariate" }} &nbsp;|&nbsp;
+  <strong>Generated:</strong> {{ timestamp }}
+</p>
+{% if is_multivariate and exog_cols %}
+<p><strong>Exogenous Variables:</strong> {{ exog_cols | join(", ") }}</p>
+{% endif %}
+
+<!-- ══ 1. SUMMARY STATISTICS ══════════════════════════════════════════════ -->
+{% if results.summary_stats %}
+<h2>1. Summary Statistics</h2>
+{% for var, stats in results.summary_stats.items() %}
+<div class="section-block">
+  <h3>{{ var }}</h3>
+  <table>
+    <thead><tr><th style="text-align:left">Statistic</th><th>Value</th></tr></thead>
+    <tbody>
+      {% for stat_name, stat_val in stats.items() %}
+      <tr>
+        <td class="label">{{ stat_name }}</td>
+        <td class="value">
+          {% if stat_val is number %}
+            {{ "%.4f" | format(stat_val) }}
+          {% else %}
+            {{ stat_val }}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- ══ 2. NORMALITY TESTS ══════════════════════════════════════════════════ -->
+{% set normality = results.normality or results.normality_tests %}
+{% if normality %}
+<h2>2. Normality Test</h2>
+{% for var, res in normality.items() %}
+<div class="section-block">
+  <h3>{{ var }}</h3>
+  <table>
+    <thead><tr><th style="text-align:left">Test</th><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      {% for test_name, metrics in res.items() %}
+        {% if metrics is mapping %}
+          {% for metric, value in metrics.items() %}
+          <tr>
+            <td class="label">{{ test_name }}</td>
+            <td class="label">{{ metric }}</td>
+            <td class="value">{% if value is number %}{{ "%.4f" | format(value) }}{% else %}{{ value }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td class="label">{{ test_name }}</td>
+            <td class="label">Result</td>
+            <td class="value">{{ metrics }}</td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- ══ 3. STATIONARITY TESTS ═══════════════════════════════════════════════ -->
+{% set stationarity = results.stationarity or results.stationarity_tests %}
+{% if stationarity %}
+<h2>3. Stationarity Test</h2>
+{% for var, res in stationarity.items() %}
+<div class="section-block">
+  <h3>{{ var }}</h3>
+  <table>
+    <thead><tr><th style="text-align:left">Test</th><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      {% for test_name, metrics in res.items() %}
+        {% if metrics is mapping %}
+          {% for metric, value in metrics.items() %}
+          <tr>
+            <td class="label">{{ test_name }}</td>
+            <td class="label">{{ metric }}</td>
+            <td class="value">{% if value is number %}{{ "%.4f" | format(value) }}{% else %}{{ value }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td class="label">{{ test_name }}</td>
+            <td class="label">Result</td>
+            <td class="value">{{ metrics }}</td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- ══ 4. TREND TESTS ══════════════════════════════════════════════════════ -->
+{% set trend = results.trend or results.trend_tests %}
+{% if trend %}
+<h2>4. Trend Tests</h2>
+{% for var, res in trend.items() %}
+<div class="section-block">
+  <h3>{{ var }}</h3>
+  <table>
+    <thead><tr><th style="text-align:left">Test</th><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      {% for test_name, metrics in res.items() %}
+        {% if metrics is mapping %}
+          {% for metric, value in metrics.items() %}
+          <tr>
+            <td class="label">{{ test_name }}</td>
+            <td class="label">{{ metric }}</td>
+            <td class="value">{% if value is number %}{{ "%.4f" | format(value) }}{% else %}{{ value }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td class="label">{{ test_name }}</td>
+            <td class="label">Result</td>
+            <td class="value">{{ metrics }}</td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- ══ 5. NON-LINEARITY TESTS ══════════════════════════════════════════════ -->
+{% set nonlinearity = results.nonlinearity or results.nonlinearity_tests %}
+{% if nonlinearity %}
+<h2>5. Non-Linearity Test</h2>
+{% for var, res in nonlinearity.items() %}
+<div class="section-block">
+  <h3>{{ var }}</h3>
+  <table>
+    <thead><tr><th style="text-align:left">Test</th><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      {% for test_name, metrics in res.items() %}
+        {% if metrics is mapping %}
+          {% for metric, value in metrics.items() %}
+          <tr>
+            <td class="label">{{ test_name }}</td>
+            <td class="label">{{ metric }}</td>
+            <td class="value">{% if value is number %}{{ "%.4f" | format(value) }}{% else %}{{ value }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td class="label">{{ test_name }}</td>
+            <td class="label">Result</td>
+            <td class="value">{{ metrics }}</td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- ══ 6. PLOTS ════════════════════════════════════════════════════════════ -->
+{% if results.plots %}
+<h2>6. Visualizations</h2>
+{% for plot_name, plot_path in results.plots.items() %}
+<div class="section-block">
+  <h3>{{ plot_name | replace("_", " ") | title }}</h3>
+  <img class="plot-img" src="/static/{{ plot_path }}" alt="{{ plot_name }}">
+</div>
+{% endfor %}
+{% endif %}
+
+</body>
+</html>

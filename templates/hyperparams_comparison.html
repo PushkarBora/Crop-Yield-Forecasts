@@ -537,7 +537,7 @@
             <p><strong>ℹ️ Multi-Model Training:</strong> You selected {{ models|length }} models. Click on each model below to configure its hyperparameters, or leave auto-tuning enabled for optimal performance.</p>
         </div>
 
-        <form action="/train_comparison" method="post">
+        <form action="/train_comparison" method="post" novalidate>
 
             <!-- Hidden inputs -->
             <input type="hidden" name="frequency" value="{{ frequency }}">
@@ -569,9 +569,29 @@
                             {% elif model_name == "rnn" %}🔄
                             {% elif model_name == "transformer" %}🔮
                             {% elif model_name == "ann" %}🌐
+                            {% elif model_name == "wavelet_ann" %}🌊🌐
+                            {% elif model_name == "wavelet_lstm" %}🌊🧠
+                            {% elif model_name == "wavelet_transformer" %}🌊🔮
                             {% elif model_name == "svr" %}📊
                             {% elif model_name == "rf" %}🌲
+                            {% elif model_name == "xgb" %}🌿
+                            {% elif model_name == "gbm" %}🌳
+                            {% elif model_name == "knn" %}🎯
+                            {% elif model_name == "cnn" %}🧊
+                            {% elif model_name == "stacked_lstm" %}🔁
+                            {% elif model_name == "bd_lstm" %}↔️
+                            {% elif model_name == "conv_lstm" %}🌀
+                            {% elif model_name == "deep_lstm" %}🔱
                             {% elif model_name == "arima" %}📉
+                            {% elif model_name == "sarima" %}🌊
+                            {% elif model_name == "tbats" %}📡
+                            {% elif model_name == "rw" %}🎲
+                            {% elif model_name == "ets" %}📈
+                            {% elif model_name == "aregarch" %}📊
+                            {% elif model_name == "argarch" %}📊
+                            {% elif model_name == "armagarch" %}📈
+                            {% elif model_name == "artgarch" %}📉
+                            {% elif model_name == "argjrgarch" %}⚡
                             {% endif %}
                         </span>
                         <h3>{{ model_name|upper }} Configuration</h3>
@@ -592,12 +612,50 @@
                             {% include 'partials/transformer_config.html' %}
                         {% elif model_name == "ann" %}
                             {% include 'partials/ann_config.html' %}
+                        {% elif model_name == "wavelet_ann" %}
+                            {% include 'partials/wavelet_ann_config.html' %}
+                        {% elif model_name == "wavelet_lstm" %}
+                            {% include 'partials/wavelet_lstm_config.html' %}
+                        {% elif model_name == "wavelet_transformer" %}
+                            {% include 'partials/wavelet_transformer_config.html' %}
                         {% elif model_name == "svr" %}
                             {% include 'partials/svr_config.html' %}
                         {% elif model_name == "rf" %}
                             {% include 'partials/rf_config.html' %}
+                        {% elif model_name == "xgb" %}
+                            {% include 'partials/xgb_config.html' %}
+                        {% elif model_name == "gbm" %}
+                            {% include 'partials/gbm_config.html' %}
+                        {% elif model_name == "knn" %}
+                            {% include 'partials/knn_config.html' %}
+                        {% elif model_name == "cnn" %}
+                            {% include 'partials/cnn_config.html' %}
+                        {% elif model_name == "stacked_lstm" %}
+                            {% include 'partials/stacked_lstm_config.html' %}
+                        {% elif model_name == "bd_lstm" %}
+                            {% include 'partials/bd_lstm_config.html' %}
+                        {% elif model_name == "conv_lstm" %}
+                            {% include 'partials/conv_lstm_config.html' %}
+                        {% elif model_name == "deep_lstm" %}
+                            {% include 'partials/deep_lstm_config.html' %}
                         {% elif model_name == "arima" %}
                             {% include 'partials/arima_config.html' %}
+                        {% elif model_name == "sarima" %}
+                            {% include 'partials/sarima_config.html' %}
+                        {% elif model_name == "tbats" %}
+                            {% include 'partials/tbats_config.html' %}
+                        {% elif model_name == "rw" %}
+                            {% include 'partials/rw_config.html' %}
+                        {% elif model_name == "ets" %}
+                             {% include 'partials/ets_config.html' %} 
+                        {% elif model_name == "aregarch" %}
+                            {% include 'partials/aregarch_config.html' %}
+                        {% elif model_name == "argarch" %}
+                            {% include 'partials/argarch_config.html' %}
+                        {% elif model_name == "armagarch" %}
+                            {% include 'partials/armagarch_config.html' %}
+                        {% elif model_name == "artgarch" %}
+                            {% include 'partials/artgarch_config.html' %}
                         {% endif %}
                         
                     </div>
@@ -616,7 +674,7 @@
 
         <!-- Back Link -->
         <div class="back-link">
-            <a href="/models">← Back to Model Selection</a>
+            <a href="/select_models">← Back to Model Selection</a>
         </div>
     </div>
 </div>
@@ -727,6 +785,179 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         updateStatusBadge('arima', arimaCheckbox.checked);
     }
+
+    // EGARCH
+    const egarchCheckbox = document.getElementById('auto_egarch');
+    if (egarchCheckbox) {
+        egarchCheckbox.addEventListener('change', function() {
+            updateStatusBadge('egarch', this.checked);
+        });
+        updateStatusBadge('egarch', egarchCheckbox.checked);
+    }
+
+    // AREGARCH
+    const aregarchCheckbox = document.getElementById('auto_aregarch');
+    if (aregarchCheckbox) {
+        aregarchCheckbox.addEventListener('change', function() {
+            updateStatusBadge('aregarch', this.checked);
+        });
+        updateStatusBadge('aregarch', aregarchCheckbox.checked);
+    }
+    // GARCH
+    const garchCheckbox = document.getElementById('auto_garch');
+    if (garchCheckbox) {
+        garchCheckbox.addEventListener('change', function() {
+            updateStatusBadge('garch', this.checked);
+        });
+        updateStatusBadge('garch', garchCheckbox.checked);
+    }
+    // ARGARCH
+    const argarchCheckbox = document.getElementById('auto_argarch');
+    if (argarchCheckbox) {
+        argarchCheckbox.addEventListener('change', function() {
+            updateStatusBadge('argarch', this.checked);
+        });
+        updateStatusBadge('argarch', argarchCheckbox.checked);
+    }
+    // ARMAGARCH
+    const armagarchCheckbox = document.getElementById('auto_armagarch');
+    if (armagarchCheckbox) {
+        armagarchCheckbox.addEventListener('change', function() {
+            updateStatusBadge('armagarch', this.checked);
+        });
+        updateStatusBadge('armagarch', armagarchCheckbox.checked);
+    }
+    // ARTGARCH
+    const artgarchCheckbox = document.getElementById('auto_artgarch');
+    if (artgarchCheckbox) {
+        artgarchCheckbox.addEventListener('change', function() {
+            updateStatusBadge('artgarch', this.checked);
+        });
+        updateStatusBadge('artgarch', artgarchCheckbox.checked);
+    }
+    // TBATS
+    const tbatsCheckbox = document.getElementById('auto_tbats');
+    if (tbatsCheckbox) {
+        tbatsCheckbox.addEventListener('change', function() {
+            updateStatusBadge('tbats', this.checked);
+        });
+        updateStatusBadge('tbats', tbatsCheckbox.checked);
+    }
+    // RANDOMWALK
+    const rwCheckbox = document.getElementById('auto_rw');
+    if (rwCheckbox) {
+        rwCheckbox.addEventListener('change', function() {
+            updateStatusBadge('rw', this.checked);
+        });
+    }
+    // ETS
+    const etsCheckbox = document.getElementById('auto_ets_cmp');
+    if (etsCheckbox) {
+        etsCheckbox.addEventListener('change', function() {
+            updateStatusBadge('ets', this.checked);
+        });
+        updateStatusBadge('ets', etsCheckbox.checked);
+    }
+    // XGBoost
+    const xgbCheckbox = document.getElementById('auto_tune_xgb');
+    if (xgbCheckbox) {
+        xgbCheckbox.addEventListener('change', function() {
+            updateStatusBadge('xgb', this.checked);
+        });
+        updateStatusBadge('xgb', xgbCheckbox.checked);
+    }
+    // GBM
+    const gbmCheckbox = document.getElementById('auto_tune_gbm');
+    if (gbmCheckbox) {
+        gbmCheckbox.addEventListener('change', function() {
+            updateStatusBadge('gbm', this.checked);
+        });
+        updateStatusBadge('gbm', gbmCheckbox.checked);
+    }
+    //KNN
+    const knnCheckbox = document.getElementById('auto_tune_knn');
+    if (knnCheckbox) {
+        knnCheckbox.addEventListener('change', function() {
+            updateStatusBadge('knn', this.checked);
+        });
+        updateStatusBadge('knn', knnCheckbox.checked);
+    }
+    //CNN
+    const cnnCheckbox = document.getElementById('auto_tune_cnn');
+    if (cnnCheckbox) {
+        cnnCheckbox.addEventListener('change', function() {
+            updateStatusBadge('cnn', this.checked);
+        });
+        updateStatusBadge('cnn', cnnCheckbox.checked);
+    }
+    // Stacked LSTM
+    const slstmCheckbox = document.getElementById('auto_tune_stacked_lstm');
+    if (slstmCheckbox) {
+        slstmCheckbox.addEventListener('change', function() {
+            updateStatusBadge('stacked_lstm', this.checked);
+        });
+        updateStatusBadge('stacked_lstm', slstmCheckbox.checked);
+    }
+    // BD LSTM
+    const bdlstmCheckbox = document.getElementById('auto_tune_bd_lstm');
+    if (bdlstmCheckbox) {
+        bdlstmCheckbox.addEventListener('change', function() {
+            updateStatusBadge('bd_lstm', this.checked);
+        });
+        updateStatusBadge('bd_lstm', bdlstmCheckbox.checked);
+    }
+    // Conv-LSTM
+    const convlstmCheckbox = document.getElementById('auto_tune_conv_lstm');
+    if (convlstmCheckbox) {
+        convlstmCheckbox.addEventListener('change', function() {
+            updateStatusBadge('conv_lstm', this.checked);
+        });
+        updateStatusBadge('conv_lstm', convlstmCheckbox.checked);
+    }
+    // Deep LSTM
+    const deeplstmCheckbox = document.getElementById('auto_tune_deep_lstm');
+    if (deeplstmCheckbox) {
+        deeplstmCheckbox.addEventListener('change', function() {
+            updateStatusBadge('deep_lstm', this.checked);
+        });
+        updateStatusBadge('deep_lstm', deeplstmCheckbox.checked);
+    }
+    // Wavelet ANN
+    const waveletAnnCheckbox = document.getElementById('auto_tune_wann_p');
+    if (waveletAnnCheckbox) {
+        waveletAnnCheckbox.addEventListener('change', function() {
+            updateStatusBadge('wavelet_ann', this.checked);
+        });
+        updateStatusBadge('wavelet_ann', waveletAnnCheckbox.checked);
+    }
+    // Wavelet LSTM
+    const wlstmCheckbox = document.getElementById('auto_tune_wlstm_p');
+    if (wlstmCheckbox) {
+        wlstmCheckbox.addEventListener('change', function() {
+            updateStatusBadge('wavelet_lstm', this.checked);
+        });
+        updateStatusBadge('wavelet_lstm', wlstmCheckbox.checked);
+    }
+
+    //Sarima
+    const sarimaCheckbox = document.getElementById('auto_sarima');
+    if (sarimaCheckbox) {
+        sarimaCheckbox.addEventListener('change', function() {
+            updateStatusBadge('sarima', this.checked);
+        });
+        updateStatusBadge('sarima', sarimaCheckbox.checked);
+    }
+
+    // Wavelet Transformer
+    const waveletTransformerCheckbox = document.getElementById('auto_tune_wtransformer');
+    if (waveletTransformerCheckbox) {
+        waveletTransformerCheckbox.addEventListener('change', function() {
+            updateStatusBadge('wavelet_transformer', this.checked);
+        });
+        updateStatusBadge('wavelet_transformer', waveletTransformerCheckbox.checked);
+    }
+
+
 });
 </script>
 

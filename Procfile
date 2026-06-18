@@ -1,0 +1,1 @@
+web: gunicorn app:app --workers 1 --worker-class gthread --threads 8 --timeout 3600 --graceful-timeout 3600 --keep-alive 300 --preload --bind 0.0.0.0:8080

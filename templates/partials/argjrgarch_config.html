@@ -1,0 +1,252 @@
+<!-- ============================================================
+     AR-gjrgarch / ARX-gjrgarch Hyperparameter Configuration
+     Mean  : AR(ar_lags) / ARX(ar_lags)
+     Var   : GJR-GARCH(p, o, q)
+     Shared: diff_order, exog_lags, arch_lags
+     ============================================================ -->
+
+<!-- Auto-tune toggle -->
+<div class="auto-tune-section">
+    <label for="auto_argjrgarch">
+        <input type="checkbox" name="auto_argjrgarch" id="auto_argjrgarch" value="true" checked>
+        🔍 Auto-Tune AR-GJR-GARCH (Grid Search over ar_lags × p × o × q)
+    </label>
+    <p class="help-text-small" style="margin-top:0.5rem;">
+        Searches AR lags [1–3] × ARCH order p [1–2] × Threshold order o [1–2] × GARCH order q [1–2]
+        — up to <strong>24 combinations</strong>. Best selected by AIC.
+    </p>
+</div>
+
+<!-- Grid Search Section -->
+<div class="grid-search-section" id="argjrgarch_grid_section">
+    <h4>🔧 Grid Search Ranges</h4>
+
+    <!-- AR Lags range -->
+    <div class="parameter-group">
+        <label>AR Lags Range (Mean equation)</label>
+        <div class="range-input-group">
+            <div>
+                <label for="argjrgarch_ar_lags_min">Min</label>
+                <input type="number" id="argjrgarch_ar_lags_min" name="ar_lags_min" value="1" min="1" max="5" step="1">
+            </div>
+            <div>
+                <label for="argjrgarch_ar_lags_max">Max</label>
+                <input type="number" id="argjrgarch_ar_lags_max" name="ar_lags_max" value="3" min="1" max="5" step="1">
+            </div>
+            <div>
+                <label for="argjrgarch_ar_lags_step">Step</label>
+                <input type="number" id="argjrgarch_ar_lags_step" name="ar_lags_step" value="1" min="1" max="3" step="1">
+            </div>
+        </div>
+        <p class="help-text-small">Number of autoregressive lags in the mean equation (AR/ARX term).</p>
+    </div>
+
+    <!-- p range -->
+    <div class="parameter-group">
+        <label>ARCH Order p (squared shock terms)</label>
+        <div class="range-input-group">
+            <div>
+                <label for="argjrgarch_p_min">Min</label>
+                <input type="number" id="argjrgarch_p_min" name="gjrgarch_p_min" value="1" min="1" max="3" step="1">
+            </div>
+            <div>
+                <label for="argjrgarch_p_max">Max</label>
+                <input type="number" id="argjrgarch_p_max" name="gjrgarch_p_max" value="2" min="1" max="3" step="1">
+            </div>
+            <div>
+                <label for="argjrgarch_p_step">Step</label>
+                <input type="number" id="argjrgarch_p_step" name="gjrgarch_p_step" value="1" min="1" max="2" step="1">
+            </div>
+        </div>
+        <p class="help-text-small">ARCH lag order — number of lagged squared error terms in the variance equation.</p>
+    </div>
+
+    <!-- o range -->
+    <div class="parameter-group">
+        <label>Threshold Order o (leverage / asymmetry) — always ≥ 1</label>
+        <div class="range-input-group">
+            <div>
+                <label for="argjrgarch_o_min">Min</label>
+                <input type="number" id="argjrgarch_o_min" name="gjrgarch_o_min" value="1" min="1" max="3" step="1">
+            </div>
+            <div>
+                <label for="argjrgarch_o_max">Max</label>
+                <input type="number" id="argjrgarch_o_max" name="gjrgarch_o_max" value="2" min="1" max="3" step="1">
+            </div>
+            <div>
+                <label for="argjrgarch_o_step">Step</label>
+                <input type="number" id="argjrgarch_o_step" name="gjrgarch_o_step" value="1" min="1" max="2" step="1">
+            </div>
+        </div>
+        <p class="help-text-small">
+            Threshold / asymmetry order γ·ε²·I(ε&lt;0) — captures leverage effect.
+            Always kept ≥ 1 in AR-GJRGARCH.
+        </p>
+    </div>
+
+    <!-- q range -->
+    <div class="parameter-group">
+        <label>GARCH Order q (lagged variance terms)</label>
+        <div class="range-input-group">
+            <div>
+                <label for="argjrgarch_q_min">Min</label>
+                <input type="number" id="argjrgarch_q_min" name="gjrgarch_q_min" value="1" min="1" max="3" step="1">
+            </div>
+            <div>
+                <label for="argjrgarch_q_max">Max</label>
+                <input type="number" id="argjrgarch_q_max" name="gjrgarch_q_max" value="2" min="1" max="3" step="1">
+            </div>
+            <div>
+                <label for="argjrgarch_q_step">Step</label>
+                <input type="number" id="argjrgarch_q_step" name="gjrgarch_q_step" value="1" min="1" max="2" step="1">
+            </div>
+        </div>
+        <p class="help-text-small">GARCH lag order — number of lagged conditional variance terms.</p>
+    </div>
+
+    <!-- Combination estimate -->
+    <div class="combination-estimate warning" id="argjrgarch_combo_estimate">
+        <strong>⚡ Estimated Combinations: 24</strong><br>
+        Formula: AR lags × p × o × q = 3 × 2 × 2 × 2 = 24 fits
+    </div>
+</div>
+
+<!-- Manual Section -->
+<div class="manual-section" id="argjrgarch_manual_section" style="display:none;">
+    <h4>✏️ Manual Configuration</h4>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+        <div>
+            <label for="argjrgarch_ar_lags_manual">AR Lags (Mean)</label>
+            <input type="number" id="argjrgarch_ar_lags_manual" name="ar_lags"
+                   value="1" min="1" max="10" step="1">
+        </div>
+        <div>
+            <label for="argjrgarch_p_manual">ARCH Order p</label>
+            <input type="number" id="argjrgarch_p_manual" name="gjrgarch_p"
+                   value="1" min="1" max="5" step="1">
+        </div>
+        <div>
+            <label for="argjrgarch_o_manual">Threshold Order o</label>
+            <input type="number" id="argjrgarch_o_manual" name="gjrgarch_o"
+                   value="1" min="1" max="5" step="1">
+        </div>
+        <div>
+            <label for="argjrgarch_q_manual">GARCH Order q</label>
+            <input type="number" id="argjrgarch_q_manual" name="gjrgarch_q"
+                   value="1" min="1" max="5" step="1">
+        </div>
+    </div>
+</div>
+
+<!-- Shared Volatility Settings -->
+<div class="parameter-group" style="margin-top:1.5rem;">
+    <label>⚙️ Shared Volatility Settings</label>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.5rem; margin-top:1rem;">
+        <div>
+            <label for="argjrgarch_diff_order">Differencing Order</label>
+            <input type="number" id="argjrgarch_diff_order" name="diff_order"
+                   value="0" min="0" max="2" step="1"
+                   title="0 = none, 1 = first-difference"
+                   style="width:100%; padding:0.7rem; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem;">
+            <p class="help-text-small">0 = none, 1 = first-difference series before fitting.</p>
+        </div>
+        <div>
+            <label for="argjrgarch_exog_lags">Exog Lags</label>
+            <input type="number" id="argjrgarch_exog_lags" name="exog_lags"
+                   value="1" min="1" max="5" step="1"
+                   title="Lags applied to exogenous regressors"
+                   style="width:100%; padding:0.7rem; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem;">
+            <p class="help-text-small">Lags applied to exogenous regressors (multivariate only).</p>
+        </div>
+        <div>
+            <label for="argjrgarch_arch_lags">ARCH LM Test Lags</label>
+            <input type="number" id="argjrgarch_arch_lags" name="arch_lags"
+                   value="5" min="1" max="20" step="1"
+                   title="Number of lags for Engle's ARCH LM pre-test"
+                   style="width:100%; padding:0.7rem; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem;">
+            <p class="help-text-small">Number of lags for Engle's ARCH LM pre-test.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Model info note -->
+<div style="margin-top:1rem; padding:1rem; background:#f0f4ff; border-radius:10px; border-left:4px solid #667eea;">
+    <p style="margin:0; font-size:0.9rem; color:#4a5568; line-height:1.6;">
+        <strong style="color:#667eea;">ℹ️ AR-GJR-GARCH:</strong>
+        Combines an <strong>AR(k)</strong> mean equation with a <strong>GJR-GARCH(p,o,q)</strong> variance equation (Glosten, Jagannathan &amp; Runkle, 1993).
+        The threshold term <em>γ·ε²·I(ε&lt;0)</em> captures leverage — negative shocks increase volatility more than positive ones.
+        ARCH LM pre-test is run first; model is skipped if no ARCH effects are detected.
+    </p>
+</div>
+
+<script>
+(function () {
+    var chk      = document.getElementById('auto_argjrgarch');
+    var gridSec  = document.getElementById('argjrgarch_grid_section');
+    var manSec   = document.getElementById('argjrgarch_manual_section');
+    var comboDiv = document.getElementById('argjrgarch_combo_estimate');
+
+    function toggle() {
+        var auto = chk.checked;
+        gridSec.style.display = auto ? 'block' : 'none';
+        manSec.style.display  = auto ? 'none'  : 'block';
+    }
+
+    function count(mn, mx, st) {
+        if (isNaN(mn) || isNaN(mx) || isNaN(st) || st <= 0 || mx < mn) return 1;
+        return Math.floor((mx - mn) / st) + 1;
+    }
+
+    function updateCombo() {
+        var arCount = count(
+            parseInt(document.getElementById('argjrgarch_ar_lags_min').value),
+            parseInt(document.getElementById('argjrgarch_ar_lags_max').value),
+            parseInt(document.getElementById('argjrgarch_ar_lags_step').value)
+        );
+        var pCount = count(
+            parseInt(document.getElementById('argjrgarch_p_min').value),
+            parseInt(document.getElementById('argjrgarch_p_max').value),
+            parseInt(document.getElementById('argjrgarch_p_step').value)
+        );
+        var oCount = count(
+            parseInt(document.getElementById('argjrgarch_o_min').value),
+            parseInt(document.getElementById('argjrgarch_o_max').value),
+            parseInt(document.getElementById('argjrgarch_o_step').value)
+        );
+        var qCount = count(
+            parseInt(document.getElementById('argjrgarch_q_min').value),
+            parseInt(document.getElementById('argjrgarch_q_max').value),
+            parseInt(document.getElementById('argjrgarch_q_step').value)
+        );
+
+        var total = arCount * pCount * oCount * qCount;
+
+        comboDiv.innerHTML =
+            '<strong>⚡ Estimated Combinations: ' + total + '</strong><br>' +
+            'Formula: AR lags × p × o × q = ' +
+            arCount + ' × ' + pCount + ' × ' + oCount + ' × ' + qCount +
+            ' = ' + total + ' fits';
+
+        comboDiv.className = 'combination-estimate ' +
+            (total <= 16 ? 'good' : total <= 48 ? 'warning' : 'danger');
+    }
+
+    if (chk) {
+        chk.addEventListener('change', toggle);
+        toggle();
+    }
+
+    [
+        'argjrgarch_ar_lags_min', 'argjrgarch_ar_lags_max', 'argjrgarch_ar_lags_step',
+        'argjrgarch_p_min', 'argjrgarch_p_max', 'argjrgarch_p_step',
+        'argjrgarch_o_min', 'argjrgarch_o_max', 'argjrgarch_o_step',
+        'argjrgarch_q_min', 'argjrgarch_q_max', 'argjrgarch_q_step'
+    ].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateCombo);
+    });
+
+    updateCombo();
+})();
+</script>

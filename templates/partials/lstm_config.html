@@ -36,7 +36,7 @@
             <input type="number" id="lstm_lags_max" name="lstm_lags_max" value="5" min="1" max="20">
         </div>
         <div>
-            <label for="lstm_lags_step">Step</label>
+            <label for="lstm_lags_step">By</label>
             <input type="number" id="lstm_lags_step" name="lstm_lags_step" value="1" min="1" max="5">
         </div>
     </div>
@@ -72,7 +72,7 @@
                     aria-label="Hidden size maximum value">
             </div>
             <div>
-                <label for="lstm_hidden_size_step">Step</label>
+                <label for="lstm_hidden_size_step">By</label>
                 <input 
                     type="number" 
                     id="lstm_hidden_size_step"
@@ -100,7 +100,7 @@
                 <input type="number" name="lstm_num_layers_max" value="3" min="1" max="5" aria-label="Number of layers maximum value">
             </div>
             <div>
-                <label for="lstm_num_layers_step">Step</label>
+                <label for="lstm_num_layers_step">By</label>
                 <input type="number" name="lstm_num_layers_step" value="1" min="1" max="2" aria-label="Number of layers step value">
             </div>
         </div>
@@ -121,7 +121,7 @@
                 <input type="number" name="lstm_dropout_max" value="0.3" min="0.0" max="0.5" step="0.1" aria-label="Dropout maximum value">
             </div>
             <div>
-                <label>Step</label>
+                <label>By</label>
                 <input type="number" name="lstm_dropout_step" value="0.1" min="0.05" max="0.2" step="0.05" aria-label="Dropout step value">
             </div>
         </div>
@@ -142,7 +142,7 @@
                 <input type="number" name="lstm_learning_rate_max" value="0.005" min="0.0001" max="0.01" step="0.0001" aria-label="Learning rate maximum value">
             </div>
             <div>
-                <label for="lstm_learning_rate_step">Step</label>
+                <label for="lstm_learning_rate_step">By</label>
                 <input type="number" name="lstm_learning_rate_step" value="0.001" min="0.0001" max="0.005" step="0.0001" aria-label="Learning rate step value">
             </div>
         </div>
@@ -163,7 +163,7 @@
                 <input type="number" name="lstm_weight_decay_max" value="0.0005" min="0.00001" max="0.001" step="0.00001" aria-label="Weight decay maximum value">
             </div>
             <div>
-                <label for="lstm_weight_decay_step">Step</label>
+                <label for="lstm_weight_decay_step">By</label>
                 <input type="number" name="lstm_weight_decay_step" value="0.0001" min="0.00001" max="0.0005" step="0.00001" aria-label="Weight decay step value">
             </div>
         </div>
@@ -184,7 +184,7 @@
                 <input type="number" name="lstm_huber_delta_max" value="1.5" min="0.5" max="2.0" step="0.1" aria-label="Huber delta maximum value">
             </div>
             <div>
-                <label for="lstm_huber_delta_step">Step</label>
+                <label for="lstm_huber_delta_step">By</label>
                 <input type="number" name="lstm_huber_delta_step" value="0.4" min="0.1" max="1.0" step="0.1" aria-label="Huber delta step value">
             </div>
         </div>
@@ -205,7 +205,7 @@
                 <input type="number" name="lstm_patience_max" value="50" min="10" max="100" step="10" aria-label="Patience maximum value">
             </div>
             <div>
-                <label for="lstm_patience_step">Step</label>
+                <label for="lstm_patience_step">By</label>
                 <input type="number" name="lstm_patience_step" value="10" min="5" max="20" aria-label="Patience step value">
             </div>
         </div>
@@ -242,7 +242,7 @@
                     aria-label="Epochs maximum value">
             </div>
             <div>
-                <label for="lstm_epochs_step">Step</label>
+                <label for="lstm_epochs_step">By</label>
                 <input 
                     type="number" 
                     id="lstm_epochs_step"
@@ -266,35 +266,36 @@
 </div>
 
 <!-- Manual Parameters Section -->
+<!-- ✅ AFTER — id prefixed, name unchanged -->
 <div id="lstm_manual_section" class="manual-section lstm-hidden">
     <h4>Manual Hyperparameter Configuration</h4>
     
     <label for="lstm_lags">Number of Lags</label><br>
     <input type="number" id="lstm_lags" name="lstm_lags" value="3" min="1" max="20"><br><br>
 
-    <label for="hidden_size">Hidden Size</label><br>
-    <input type="number" id="hidden_size" name="hidden_size" value="8"><br><br>
+    <label for="lstm_hidden_size">Hidden Size</label><br>
+    <input type="number" id="lstm_hidden_size" name="hidden_size" value="8"><br><br>
 
-    <label for="num_layers">Number of Layers</label><br>
-    <input type="number" id="num_layers" name="num_layers" value="2"><br><br>
+    <label for="lstm_num_layers">Number of Layers</label><br>
+    <input type="number" id="lstm_num_layers" name="num_layers" value="2"><br><br>
 
-    <label for="dropout">Dropout Rate</label><br>
-    <input type="number" step="0.05" id="dropout" name="dropout" value="0.3"><br><br>
+    <label for="lstm_dropout">Dropout Rate</label><br>
+    <input type="number" step="0.05" id="lstm_dropout" name="dropout" value="0.3"><br><br>
     
-    <label for="learning_rate">Learning Rate</label><br>
-    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003"><br><br>
+    <label for="lstm_learning_rate">Learning Rate</label><br>
+    <input type="number" step="0.0001" id="lstm_learning_rate" name="learning_rate" value="0.003"><br><br>
 
-    <label for="weight_decay">Weight Decay</label><br>
-    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001"><br><br>
+    <label for="lstm_weight_decay">Weight Decay</label><br>
+    <input type="number" step="0.00001" id="lstm_weight_decay" name="weight_decay" value="0.0001"><br><br>
 
-    <label for="epochs">Number of Epochs</label><br>
-    <input type="number" id="epochs" name="epochs" value="200"><br><br>
+    <label for="lstm_epochs">Number of Epochs</label><br>
+    <input type="number" id="lstm_epochs" name="epochs" value="200"><br><br>
 
-    <label for="patience">Early Stopping Patience</label><br>
-    <input type="number" id="patience" name="patience" value="30"><br><br>
+    <label for="lstm_patience">Early Stopping Patience</label><br>
+    <input type="number" id="lstm_patience" name="patience" value="30"><br><br>
 
-    <label for="huber_delta">Huber Loss Delta</label><br>
-    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0"><br><br>
+    <label for="lstm_huber_delta">Huber Loss Delta</label><br>
+    <input type="number" step="0.1" id="lstm_huber_delta" name="huber_delta" value="1.0"><br><br>
 </div>
 
 <p class="help-text">
@@ -319,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Calculate combinations
 function calculateLSTMCombinations() {
-    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+    const calc = (min, max, step) => Math.floor((max - min) / step + 1e-9) + 1;
     
     const lags = calc(
         parseFloat(document.querySelector('[name="lstm_lags_min"]').value),

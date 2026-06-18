@@ -1,0 +1,168 @@
+<!-- ========================= -->
+<!-- AR-TGARCH PARAMS          -->
+<!-- ========================= -->
+
+<div class="auto-tune-section">
+    <label for="auto_artgarch">
+        <input type="checkbox" id="auto_artgarch" name="auto_artgarch" value="true" checked>
+        <span>🚀 Auto-Select Best AR-TGARCH / ARX-TGARCH Order (Recommended)</span>
+    </label>
+</div>
+
+<!-- Grid Search Section -->
+<div id="artgarch_grid_search_ranges" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p>Searches all (ar_lags, p, o, q) combinations and selects the best by AIC on the training set.
+       When exogenous variables are selected, mean model becomes <strong>ARX</strong> automatically.</p>
+
+    <!-- AR Lags -->
+    <div class="parameter-group">
+        <label>AR Lags — Mean Equation Range</label>
+        <div class="range-input-group">
+            <div><label for="artgarch_ar_lags_min">Minimum</label><input type="number" id="artgarch_ar_lags_min" name="ar_lags_min" value="1" min="1" max="5"></div>
+            <div><label for="artgarch_ar_lags_max">Maximum</label><input type="number" id="artgarch_ar_lags_max" name="ar_lags_max" value="3" min="1" max="5"></div>
+            <div><label for="artgarch_ar_lags_step">By</label><input type="number" id="artgarch_ar_lags_step" name="ar_lags_step" value="1" min="1"></div>
+        </div>
+        <small class="help-text-small">💡 Always ≥ 1 — this is what makes it AR-TGARCH. Example: 1 to 3 → tests [1, 2, 3]</small>
+    </div>
+
+    <!-- p -->
+    <div class="parameter-group">
+        <label>p — T-GARCH ARCH Order Range</label>
+        <div class="range-input-group">
+            <div><label for="artgarch_p_min">Minimum</label><input type="number" id="artgarch_p_min" name="tgarch_p_min" value="1" min="1" max="4"></div>
+            <div><label for="artgarch_p_max">Maximum</label><input type="number" id="artgarch_p_max" name="tgarch_p_max" value="2" min="1" max="4"></div>
+            <div><label for="artgarch_p_step">By</label><input type="number" id="artgarch_p_step" name="tgarch_p_step" value="1" min="1"></div>
+        </div>
+        <small class="help-text-small">💡 Controls short-run shock sensitivity. Example: 1 to 2 → tests [1, 2]</small>
+    </div>
+
+    <!-- o -->
+    <div class="parameter-group">
+        <label>o — Threshold / Asymmetry Order Range</label>
+        <div class="range-input-group">
+            <div><label for="artgarch_o_min">Minimum</label><input type="number" id="artgarch_o_min" name="tgarch_o_min" value="0" min="0" max="2"></div>
+            <div><label for="artgarch_o_max">Maximum</label><input type="number" id="artgarch_o_max" name="tgarch_o_max" value="1" min="0" max="2"></div>
+            <div><label for="artgarch_o_step">By</label><input type="number" id="artgarch_o_step" name="tgarch_o_step" value="1" min="1"></div>
+        </div>
+        <small class="help-text-small">💡 0 = symmetric, 1 = asymmetric (threshold effect). Key T-GARCH feature.</small>
+    </div>
+
+    <!-- q -->
+    <div class="parameter-group">
+        <label>q — T-GARCH GARCH Order Range</label>
+        <div class="range-input-group">
+            <div><label for="artgarch_q_min">Minimum</label><input type="number" id="artgarch_q_min" name="tgarch_q_min" value="1" min="1" max="4"></div>
+            <div><label for="artgarch_q_max">Maximum</label><input type="number" id="artgarch_q_max" name="tgarch_q_max" value="2" min="1" max="4"></div>
+            <div><label for="artgarch_q_step">By</label><input type="number" id="artgarch_q_step" name="tgarch_q_step" value="1" min="1"></div>
+        </div>
+        <small class="help-text-small">💡 Controls volatility persistence. Example: 1 to 2 → tests [1, 2]</small>
+    </div>
+
+    <!-- Combination Estimate -->
+    <div id="artgarch_combination_estimate" class="combination-estimate warning">
+        <strong>⚠️ Estimated Combinations:</strong>
+        <span id="artgarch_total_combinations">Calculating...</span>
+        <small style="display:block;margin-top:0.5rem;color:inherit;">
+            📊 Calculation: ar_lags × p values × o values × q values
+        </small>
+    </div>
+</div>
+
+<!-- Manual Section -->
+<div id="artgarch_manual_section" class="manual-section" style="display:none;">
+    <h4>🎛️ Manual AR-TGARCH Configuration</h4>
+
+    <label for="artgarch_ar_lags">AR Lags (Mean Equation)</label>
+    <input type="number" id="artgarch_ar_lags" name="ar_lags" value="1" min="1" max="5">
+
+    <label for="tgarch_p">p — T-GARCH ARCH Order</label>
+    <input type="number" id="tgarch_p" name="tgarch_p" value="1" min="1" max="4">
+
+    <label for="tgarch_o">o — Threshold / Asymmetry Order</label>
+    <input type="number" id="tgarch_o" name="tgarch_o" value="1" min="0" max="2">
+
+    <label for="tgarch_q">q — T-GARCH GARCH Order</label>
+    <input type="number" id="tgarch_q" name="tgarch_q" value="1" min="1" max="4">
+</div>
+
+<!-- Additional Settings -->
+<div class="manual-section" style="margin-top:1.5rem;">
+    <h4>⚙️ Additional Settings</h4>
+
+    <label for="artgarch_diff_order">Pre-Differencing Order</label>
+    <select id="artgarch_diff_order" name="diff_order">
+        <option value="0" selected>0 — No differencing (use raw series)</option>
+        <option value="1">1 — First-order differencing (if series is non-stationary)</option>
+    </select>
+    <small class="help-text-small" style="margin-bottom:1.5rem;display:block;">
+        💡 Apply only if ADF/KPSS test shows the series is non-stationary.
+    </small>
+
+    <label for="artgarch_exog_lags">Exogenous Variable Lags (ARX only)</label>
+    <input type="number" id="artgarch_exog_lags" name="exog_lags" value="1" min="1" max="5">
+    <small class="help-text-small" style="margin-bottom:1.5rem;display:block;">
+        💡 Ignored in univariate mode. When exog cols are selected, model becomes <strong>ARX-TGARCH</strong> automatically.
+    </small>
+
+    <label for="artgarch_arch_lags">ARCH LM Test Lags</label>
+    <input type="number" id="artgarch_arch_lags" name="arch_lags" value="5" min="1" max="20">
+    <small class="help-text-small" style="margin-bottom:1.5rem;display:block;">
+        💡 Number of lags for Engle's ARCH LM test. Default 5. For short series (&lt; 30 obs), consider 3.
+    </small>
+</div>
+
+<div class="help-text">
+    <strong>💡 Note:</strong>
+    True Zakoian (1994) T-GARCH — models conditional <strong>std dev σ_t</strong> (not variance σ²_t):
+    <code>σ_t = ω + α⁺·max(ε_{t-1},0) + α⁻·max(-ε_{t-1},0) + β·σ_{t-1}</code>.
+    Fundamentally different from GJR-GARCH which models σ²_t.
+</div>
+
+<script>
+document.getElementById('auto_artgarch').addEventListener('change', function() {
+    document.getElementById('artgarch_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('artgarch_manual_section').style.display     = this.checked ? 'none'  : 'block';
+});
+
+function calculateARTGARCHCombinations() {
+    const calc = (min, max, step) => Math.floor((max - min) / step + 1e-9) + 1;
+    const ar = calc(
+        parseFloat(document.getElementById('artgarch_ar_lags_min').value),
+        parseFloat(document.getElementById('artgarch_ar_lags_max').value),
+        parseFloat(document.getElementById('artgarch_ar_lags_step').value)
+    );
+    const p = calc(
+        parseFloat(document.getElementById('artgarch_p_min').value),
+        parseFloat(document.getElementById('artgarch_p_max').value),
+        parseFloat(document.getElementById('artgarch_p_step').value)
+    );
+    const o = calc(
+        parseFloat(document.getElementById('artgarch_o_min').value),
+        parseFloat(document.getElementById('artgarch_o_max').value),
+        parseFloat(document.getElementById('artgarch_o_step').value)
+    );
+    const q = calc(
+        parseFloat(document.getElementById('artgarch_q_min').value),
+        parseFloat(document.getElementById('artgarch_q_max').value),
+        parseFloat(document.getElementById('artgarch_q_step').value)
+    );
+    const total = ar * p * o * q;
+    document.getElementById('artgarch_total_combinations').textContent = total.toLocaleString() + ' combinations';
+    const el = document.getElementById('artgarch_combination_estimate');
+    el.className = 'combination-estimate';
+    if (total <= 4)  el.classList.add('good');
+    else if (total <= 12) el.classList.add('warning');
+    else el.classList.add('danger');
+}
+
+document.querySelectorAll(
+    '#artgarch_ar_lags_min, #artgarch_ar_lags_max, #artgarch_ar_lags_step,' +
+    '#artgarch_p_min, #artgarch_p_max, #artgarch_p_step,' +
+    '#artgarch_o_min, #artgarch_o_max, #artgarch_o_step,' +
+    '#artgarch_q_min, #artgarch_q_max, #artgarch_q_step'
+).forEach(el => el.addEventListener('input', calculateARTGARCHCombinations));
+
+document.addEventListener('DOMContentLoaded', calculateARTGARCHCombinations);
+calculateARTGARCHCombinations();
+</script>

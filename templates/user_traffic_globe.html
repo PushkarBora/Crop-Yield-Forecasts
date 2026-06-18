@@ -280,7 +280,21 @@
   */
 
   // For now, use sample data directly
-  initGlobe(sampleData);
+  function loadTraffic(){
+    fetch("/api/visitor-countries")
+      .then(res => res.json())
+      .then(result => {
+          if(result.data && result.data.length > 0){
+              initGlobe(result.data);
+          } else {
+              initGlobe(sampleData);
+          }
+      })
+      .catch(() => initGlobe(sampleData));
+  }
+
+  loadTraffic();
+  setInterval(loadTraffic, 60000); // refresh every 60 seconds
 
   // =====================================================
   // GLOBE INITIALIZATION

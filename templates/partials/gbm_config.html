@@ -1,0 +1,143 @@
+<div class="auto-tune-section">
+    <label for="auto_tune_gbm">
+        <input type="checkbox" id="auto_tune_gbm" name="auto_tune_gbm" value="true" checked>
+        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+    </label>
+</div>
+
+<div id="gbm_grid_search_section" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p>Define parameter ranges for exhaustive search using TimeSeriesSplit cross-validation.</p>
+
+    <div class="parameter-group">
+        <label>Number of Lags Range</label>
+        <div class="range-input-group">
+            <div><label for="gbm_lags_min">Minimum</label><input type="number" id="gbm_lags_min" name="gbm_lags_min" value="2" min="1" max="20"></div>
+            <div><label for="gbm_lags_max">Maximum</label><input type="number" id="gbm_lags_max" name="gbm_lags_max" value="5" min="1" max="20"></div>
+            <div><label for="gbm_lags_step">By</label><input type="number" id="gbm_lags_step" name="gbm_lags_step" value="1" min="1" max="5"></div>
+        </div>
+        <small class="help-text-small">💡 Number of past time steps used as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Number of Estimators Range</label>
+        <div class="range-input-group">
+            <div><label for="gbm_n_estimators_min">Minimum</label><input type="number" id="gbm_n_estimators_min" name="gbm_n_estimators_min" value="50" min="10" max="1000" step="10" class="gbm-grid-input"></div>
+            <div><label for="gbm_n_estimators_max">Maximum</label><input type="number" id="gbm_n_estimators_max" name="gbm_n_estimators_max" value="300" min="10" max="1000" step="10" class="gbm-grid-input"></div>
+            <div><label for="gbm_n_estimators_step">By</label><input type="number" id="gbm_n_estimators_step" name="gbm_n_estimators_step" value="50" min="10" max="200" class="gbm-grid-input"></div>
+        </div>
+        <small class="help-text-small">💡 Number of boosting stages. Example: 50 to 300 by 50 → tests [50, 100, 150, 200, 250, 300]</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Max Depth Range</label>
+        <div class="range-input-group">
+            <div><label for="gbm_max_depth_min">Minimum</label><input type="number" id="gbm_max_depth_min" name="gbm_max_depth_min" value="2" min="1" max="10" class="gbm-grid-input"></div>
+            <div><label for="gbm_max_depth_max">Maximum</label><input type="number" id="gbm_max_depth_max" name="gbm_max_depth_max" value="6" min="1" max="10" class="gbm-grid-input"></div>
+            <div><label for="gbm_max_depth_step">By</label><input type="number" id="gbm_max_depth_step" name="gbm_max_depth_step" value="1" min="1" max="5" class="gbm-grid-input"></div>
+        </div>
+        <small class="help-text-small">💡 Maximum depth of each tree. Example: 2 to 6 by 1 → tests [2, 3, 4, 5, 6]</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Learning Rate Range</label>
+        <div class="range-input-group">
+            <div><label for="gbm_lr_min">Minimum</label><input type="number" id="gbm_lr_min" name="gbm_lr_min" value="0.01" step="any" min="0.001" class="gbm-grid-input"></div>
+            <div><label for="gbm_lr_max">Maximum</label><input type="number" id="gbm_lr_max" name="gbm_lr_max" value="0.2" step="any" min="0.001" class="gbm-grid-input"></div>
+            <div><label for="gbm_lr_step">By</label><input type="number" id="gbm_lr_step" name="gbm_lr_step" value="0.05" step="any" min="0.001" class="gbm-grid-input"></div>
+        </div>
+        <small class="help-text-small">⚙️ Shrinks contribution of each tree. Example: 0.01 to 0.2 by 0.05 → tests [0.01, 0.06, 0.11, 0.16]</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Subsample Range</label>
+        <div class="range-input-group">
+            <div><label for="gbm_subsample_min">Minimum</label><input type="number" id="gbm_subsample_min" name="gbm_subsample_min" value="0.6" step="any" min="0.1" max="1.0" class="gbm-grid-input"></div>
+            <div><label for="gbm_subsample_max">Maximum</label><input type="number" id="gbm_subsample_max" name="gbm_subsample_max" value="1.0" step="any" min="0.1" max="1.0" class="gbm-grid-input"></div>
+            <div><label for="gbm_subsample_step">By</label><input type="number" id="gbm_subsample_step" name="gbm_subsample_step" value="0.2" step="any" min="0.1" class="gbm-grid-input"></div>
+        </div>
+        <small class="help-text-small">💡 Fraction of samples used per stage. Example: 0.6 to 1.0 by 0.2 → tests [0.6, 0.8, 1.0]</small>
+    </div>
+
+    <div class="checkbox-group">
+        <label>Max Features per Split</label>
+        <div class="checkbox-options">
+            <label><input type="checkbox" name="gbm_max_features_sqrt" value="true" checked><span>sqrt (√n_features)</span></label>
+            <label><input type="checkbox" name="gbm_max_features_log2" value="true" checked><span>log2</span></label>
+            <label><input type="checkbox" name="gbm_max_features_none" value="true"><span>None (all features)</span></label>
+        </div>
+        <small class="help-text-small">💡 Unlike XGBoost's colsample, GBM uses max_features per split. sqrt and log2 add regularization.</small>
+    </div>
+
+    <div id="gbm_combination_estimate" class="combination-estimate warning">
+        <strong>⚠️ Estimated Combinations:</strong>
+        <span id="gbm_total_combinations">Calculating...</span>
+        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+            📊 Calculation: lags × n_estimators × max_depth × learning_rate × subsample × max_features
+        </small>
+    </div>
+</div>
+
+<div id="gbm_manual_section" class="manual-section" style="display: none;">
+    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+
+    <label for="gbm_lags">Number of Lags</label>
+    <input type="number" id="gbm_lags" name="gbm_lags" value="3" min="1" max="20">
+
+    <label for="gbm_n_estimators">Number of Estimators</label>
+    <input type="number" id="gbm_n_estimators" name="gbm_n_estimators" value="100" min="10">
+
+    <label for="gbm_max_depth">Max Depth</label>
+    <input type="number" id="gbm_max_depth" name="gbm_max_depth" value="3" min="1" max="20">
+
+    <label for="gbm_learning_rate">Learning Rate</label>
+    <input type="number" step="any" id="gbm_learning_rate" name="gbm_learning_rate" value="0.1" min="0.001">
+
+    <label for="gbm_subsample">Subsample</label>
+    <input type="number" step="any" id="gbm_subsample" name="gbm_subsample" value="0.8" min="0.1" max="1.0">
+
+    <label for="gbm_max_features">Max Features per Split</label>
+    <select id="gbm_max_features" name="gbm_max_features">
+        <option value="sqrt" selected>sqrt (√n_features) — recommended</option>
+        <option value="log2">log2</option>
+        <option value="1.0">None (all features)</option>
+    </select>
+</div>
+
+<div class="help-text">
+    <strong>💡 Note:</strong> GBM uses <strong>sklearn's GradientBoostingRegressor</strong> — no extra install needed.
+    Key difference from XGBoost: uses <code>max_features</code> (per-split feature sampling) instead of <code>colsample_bytree</code>.
+    A feature importance chart is generated after training.
+</div>
+
+<script>
+document.getElementById('auto_tune_gbm').addEventListener('change', function() {
+    document.getElementById('gbm_grid_search_section').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('gbm_manual_section').style.display = this.checked ? 'none' : 'block';
+});
+
+function calculateGBMCombinations() {
+    const calc = (min, max, step) => Math.floor((max - min) / step + 1e-9) + 1;
+    const lags  = calc(parseFloat(document.getElementById('gbm_lags_min').value),         parseFloat(document.getElementById('gbm_lags_max').value),         parseFloat(document.getElementById('gbm_lags_step').value));
+    const nEst  = calc(parseFloat(document.getElementById('gbm_n_estimators_min').value),  parseFloat(document.getElementById('gbm_n_estimators_max').value),  parseFloat(document.getElementById('gbm_n_estimators_step').value));
+    const depth = calc(parseFloat(document.getElementById('gbm_max_depth_min').value),     parseFloat(document.getElementById('gbm_max_depth_max').value),     parseFloat(document.getElementById('gbm_max_depth_step').value));
+    const lr    = calc(parseFloat(document.getElementById('gbm_lr_min').value),            parseFloat(document.getElementById('gbm_lr_max').value),            parseFloat(document.getElementById('gbm_lr_step').value));
+    const subs  = calc(parseFloat(document.getElementById('gbm_subsample_min').value),     parseFloat(document.getElementById('gbm_subsample_max').value),     parseFloat(document.getElementById('gbm_subsample_step').value));
+    const mf    = document.querySelectorAll('input[name^="gbm_max_features_"]:checked').length;
+
+    const total = lags * nEst * depth * lr * subs * mf;
+    document.getElementById('gbm_total_combinations').textContent = total.toLocaleString() + ' combinations';
+
+    const el = document.getElementById('gbm_combination_estimate');
+    el.className = 'combination-estimate';
+    if (total < 100) el.classList.add('good');
+    else if (total < 1000) el.classList.add('warning');
+    else el.classList.add('danger');
+}
+
+document.querySelectorAll('.gbm-grid-input, input[name^="gbm_max_features_"], #gbm_lags_min, #gbm_lags_max, #gbm_lags_step').forEach(input => {
+    input.addEventListener('input', calculateGBMCombinations);
+    input.addEventListener('change', calculateGBMCombinations);
+});
+calculateGBMCombinations();
+</script>

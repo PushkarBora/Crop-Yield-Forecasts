@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}DATAI - Data Analysis Through AI models{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8TDL4H5D02"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-8TDL4H5D02');
+    </script>
+    
     <style>
         * {
             margin: 0;
@@ -22,13 +32,12 @@
         /* Animated Background */
         .animated-bg {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: -1;
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
             background-size: 400% 400%;
+            will-change: background-position;  /* promote to own GPU layer */
             animation: gradientShift 15s ease infinite;
         }
 
@@ -37,8 +46,12 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
 
-        /* Header Styles */
+        /* ── Header ── */
         .header {
             background: rgba(255, 255, 255, 0.95);
             -webkit-backdrop-filter: blur(10px);
@@ -84,48 +97,174 @@
             color: #718096;
         }
 
+        /* ── Nav Menu ── */
         .nav-menu {
             display: flex;
-            gap: 2rem;
+            gap: 0.25rem;
             list-style: none;
+            align-items: center;
         }
 
-        .nav-menu a {
-            color: #2d3748;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
+        /* Top-level nav items */
+        .nav-menu > li {
             position: relative;
         }
 
-        .nav-menu a:hover,
-        .nav-menu a.active {
-            color: #667eea;
+        .nav-menu > li > a,
+        .nav-menu > li > .nav-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: #2d3748;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.55rem 0.9rem;
+            border-radius: 10px;
+            transition: all 0.25s;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+            white-space: nowrap;
         }
 
-        .nav-menu a::after {
+        .nav-menu > li > a:hover,
+        .nav-menu > li > .nav-trigger:hover,
+        .nav-menu > li > a.active,
+        .nav-menu > li.open > .nav-trigger {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.08);
+        }
+
+        /* Underline accent for plain links */
+        .nav-menu > li > a::after {
             content: '';
             position: absolute;
             width: 0;
             height: 2px;
-            bottom: -5px;
+            bottom: 2px;
             left: 50%;
             background: #667eea;
             transition: all 0.3s;
             transform: translateX(-50%);
         }
-
-        .nav-menu a:hover::after,
-        .nav-menu a.active::after {
-            width: 100%;
+        .nav-menu > li > a:hover::after,
+        .nav-menu > li > a.active::after {
+            width: calc(100% - 1.8rem);
         }
 
-        /* Main Content */
+        /* Chevron icon */
+        .chevron {
+            display: inline-block;
+            font-style: normal;
+            font-size: 0.65rem;
+            transition: transform 0.3s;
+            opacity: 0.7;
+        }
+        .nav-menu > li.open > .nav-trigger .chevron {
+            transform: rotate(180deg);
+            opacity: 1;
+        }
+
+        /* ── Dropdown Panel ── */
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 260px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.14), 0 0 0 1px rgba(102,126,234,0.08);
+            padding: 0.6rem;
+            z-index: 2000;
+            animation: dropIn 0.22s cubic-bezier(0.34,1.56,0.64,1) forwards;
+        }
+
+        @keyframes dropIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.97); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0)     scale(1);    }
+        }
+
+        .nav-menu > li.open .dropdown {
+            display: block;
+        }
+
+        /* Dropdown section label */
+        .dropdown-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #a0aec0;
+            padding: 0.5rem 0.85rem 0.3rem;
+        }
+
+        /* Dropdown items */
+        .dropdown a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 0.85rem;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #2d3748;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .dropdown a:hover {
+            background: linear-gradient(135deg, rgba(102,126,234,0.09), rgba(118,75,162,0.09));
+            color: #667eea;
+            padding-left: 1.1rem;
+        }
+
+        .dropdown a .drop-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        /* Icon backgrounds per section */
+        .drop-icon.blue   { background: rgba(102,126,234,0.12); }
+        .drop-icon.purple { background: rgba(118, 75,162,0.12); }
+        .drop-icon.green  { background: rgba( 56,161,105,0.12); }
+        .drop-icon.orange { background: rgba(237,137, 54,0.12); }
+        .drop-icon.teal   { background: rgba( 56,178,172,0.12); }
+        .drop-icon.pink   { background: rgba(236, 72,153,0.12); }
+
+        .dropdown .drop-text strong {
+            display: block;
+            font-weight: 600;
+            color: #1a202c;
+            font-size: 0.9rem;
+        }
+        .dropdown .drop-text span {
+            font-size: 0.78rem;
+            color: #718096;
+        }
+
+        /* Divider inside dropdown */
+        .drop-divider {
+            height: 1px;
+            background: #f0f0f5;
+            margin: 0.4rem 0.5rem;
+        }
+
+        /* ── Main Content ── */
         .main-content {
             min-height: calc(100vh - 200px);
         }
 
-        /* Footer */
+        /* ── Footer ── */
         .footer {
             background: rgba(45, 55, 72, 0.95);
             -webkit-backdrop-filter: blur(10px);
@@ -146,7 +285,7 @@
             color: #764ba2;
         }
 
-        /* Scroll to Top Button */
+        /* ── Scroll to Top ── */
         .scroll-top {
             position: fixed;
             bottom: 30px;
@@ -165,26 +304,17 @@
             z-index: 1000;
         }
 
-        .scroll-top.visible {
-            opacity: 1;
-        }
+        .scroll-top.visible { opacity: 1; }
+        .scroll-top:hover   { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
 
-        .scroll-top:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .nav-menu {
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 1rem;
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .header-content { flex-direction: column; gap: 1rem; }
+            .nav-menu { flex-wrap: wrap; justify-content: center; gap: 0.25rem; }
+            .dropdown { left: 0; transform: none; }
+            @keyframes dropIn {
+                from { opacity: 0; transform: translateY(-8px); }
+                to   { opacity: 1; transform: translateY(0); }
             }
         }
     </style>
@@ -194,7 +324,7 @@
     <!-- Animated Background -->
     <div class="animated-bg"></div>
 
-    <!-- Header -->
+    <!-- ── Header ── -->
     <header class="header" id="header">
         <div class="header-content">
             <div class="logo-section">
@@ -203,13 +333,163 @@
                     <div class="tagline">Data Analysis Through AI models</div>
                 </div>
             </div>
+
             <nav>
-                <ul class="nav-menu">
-                    <li><a href="{{ url_for('home') }}" class="{% if request.endpoint == 'home' %}active{% endif %}">Home</a></li>
-                    <li><a href="{{ url_for('models') }}" class="{% if request.endpoint == 'models' %}active{% endif %}">Models</a></li>
-                    <li><a href="{{ url_for('home') }}#how-it-works">How It Works</a></li>
-                    <li><a href="{{ url_for('team') }}" class="{% if request.endpoint == 'team' %}active{% endif %}">Team</a></li>
-                    <li><a href="{{ url_for('home') }}#contact">Contact</a></li>
+                <ul class="nav-menu" id="navMenu">
+
+                    <!-- Home -->
+                    <li>
+                        <a href="{{ url_for('home') }}"
+                           class="{% if request.endpoint == 'home' %}active{% endif %}">
+                            Home
+                        </a>
+                    </li>
+
+                    <!-- ── DATA dropdown ── -->
+                    <li id="dataNavItem">
+                        <button class="nav-trigger {% if request.endpoint in ['upload_data', 'summary_statistics', 'statistical_tests_select', 'data_visualization_select', 'generate_descriptive', 'generate_tests', 'generate_plots_only', 'descriptive_stats', 'statistical_tests', 'data_visualization'] %}active{% endif %}"
+                                onclick="toggleDropdown('dataDropdown', 'dataNavItem')">
+                            Data <i class="chevron">▾</i>
+                        </button>
+                        <div class="dropdown" id="dataDropdown">
+                            <div class="dropdown-label">Data Pipeline</div>
+
+                            <a href="{{ url_for('upload_data') if request.endpoint != 'upload_data' else '#' }}"
+                               onclick="if(this.getAttribute('href')==='#') { window.scrollTo({top:0,behavior:'smooth'}); return false; }">
+                                <span class="drop-icon blue">📂</span>
+                                <span class="drop-text">
+                                    <strong>Import Data</strong>
+                                    <span>Upload CSV / Excel files</span>
+                                </span>
+                            </a>
+
+                            <a href="{{ url_for('summary_statistics') }}">
+                                <span class="drop-icon purple">📊</span>
+                                <span class="drop-text">
+                                    <strong>Summary Statistics</strong>
+                                    <span>Descriptive stats &amp; more</span>
+                                </span>
+                            </a>
+
+                            <div class="drop-divider"></div>
+
+                            <!-- ✅ FIXED: points to selection page, not results page -->
+                            <a href="{{ url_for('statistical_tests_select') }}">
+                                <span class="drop-icon green">🧪</span>
+                                <span class="drop-text">
+                                    <strong>Testing</strong>
+                                    <span>Stationarity, normality, trend &amp; non-linearity</span>
+                                </span>
+                            </a>
+
+                            <!-- ✅ FIXED: points to selection page, not results page -->
+                            <a href="{{ url_for('data_visualization_select') }}">
+                                <span class="drop-icon orange">📈</span>
+                                <span class="drop-text">
+                                    <strong>Data Visualization</strong>
+                                    <span>Charts, plots &amp; more</span>
+                                </span>
+                            </a>
+                        </div>
+                    </li>
+
+                    <!-- ── MODELS dropdown ── -->
+                    <li id="modelsNavItem">
+                        <button class="nav-trigger {% if request.endpoint in ['select_models', 'configure_models', 'configure_comparison', 'hyperparams'] %}active{% endif %}"
+                                onclick="toggleDropdown('modelsDropdown', 'modelsNavItem')">
+                            Models <i class="chevron">▾</i>
+                        </button>
+                        <div class="dropdown" id="modelsDropdown">
+                            <div class="dropdown-label">Forecasting Models</div>
+
+                            <a href="{{ url_for('select_models') }}?category=stochastic">
+                                <span class="drop-icon blue">📉</span>
+                                <span class="drop-text">
+                                    <strong>Stochastic / Linear</strong>
+                                    <span>ARIMA, SARIMA, ARIMAX</span>
+                                </span>
+                            </a>
+
+                            <a href="{{ url_for('select_models') }}?category=volatility">
+                                <span class="drop-icon orange">🔥</span>
+                                <span class="drop-text">
+                                    <strong>Volatility Models</strong>
+                                    <span>EGARCH, AR-EGARCH, ARX-EGARCH</span>
+                                </span>
+                            </a>
+
+                            <div class="drop-divider"></div>
+
+                            <a href="{{ url_for('select_models') }}?category=ml">
+                                <span class="drop-icon green">🤖</span>
+                                <span class="drop-text">
+                                    <strong>Machine Learning</strong>
+                                    <span>SVR, Random Forest, XGBoost</span>
+                                </span>
+                            </a>
+
+                            <a href="{{ url_for('select_models') }}?category=dl">
+                                <span class="drop-icon purple">🧠</span>
+                                <span class="drop-text">
+                                    <strong>Deep Learning</strong>
+                                    <span>LSTM, GRU, RNN, Transformer, ANN</span>
+                                </span>
+                            </a>
+
+                            <a href="{{ url_for('select_models') }}?category=wavelet">
+                                <span class="drop-icon teal">🌊</span>
+                                <span class="drop-text">
+                                    <strong>Wavelet Based Models</strong>
+                                    <span>Wave-ANN, Wave-ARIMA, Wave-LSTM</span>
+                                </span>
+                            </a>
+                        </div>
+                    </li>
+
+                    <!-- How It Works -->
+                    <li>
+                        <a href="{{ url_for('home') }}#how-it-works">How It Works</a>
+                    </li>
+
+                    <!-- Team -->
+                    <li>
+                        <a href="{{ url_for('team') }}"
+                           class="{% if request.endpoint == 'team' %}active{% endif %}">
+                            Team
+                        </a>
+                    </li>
+                    <!-- Sample Data -->
+                    <li id="sampleNavItem">
+                        <button class="nav-trigger" onclick="toggleDropdown('sampleDropdown', 'sampleNavItem')">
+                            Sample Data <i class="chevron">▾</i>
+                        </button>
+                        <div class="dropdown" id="sampleDropdown" style="min-width:300px;">
+                            <div class="dropdown-label">📦 Test Dataset</div>
+                            <div style="padding:0.75rem 0.85rem 0.4rem; font-size:0.83rem; color:#4a5568; line-height:1.6;">
+                                A monthly time-series dataset (Apr 2000 – Jan 2012, n=142) with one
+                                study variable. Use it to explore all models in DATAI.
+                            </div>
+                            <div style="padding:0 0.85rem 0.3rem; display:flex; flex-wrap:wrap; gap:0.4rem;">
+                                <span style="background:rgba(102,126,234,0.1);color:#667eea;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;">Monthly</span>
+                                <span style="background:rgba(56,161,105,0.1);color:#276749;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;">142 rows</span>
+                                <span style="background:rgba(118,75,162,0.1);color:#553c9a;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;">Univariate</span>
+                                <span style="background:rgba(237,137,54,0.1);color:#c05621;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;">CSV</span>
+                            </div>
+                            <div class="drop-divider"></div>
+                            <a href="{{ url_for('static', filename='sample_data.csv') }}" download="DATAI_Sample_Data.csv">
+                                <span class="drop-icon green">⬇️</span>
+                                <span class="drop-text">
+                                    <strong>Download Sample CSV</strong>
+                                    <span>Ready to upload — time col: t, study variable: y</span>
+                                </span>
+                            </a>
+                        </div>
+                    </li>
+                    <!-- Contact -->
+                    <li>
+                        <a href="{{ url_for('home') }}#contact">Contact</a>
+                    </li>
+
                 </ul>
             </nav>
         </div>
@@ -217,7 +497,7 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- ✅ Flash Messages -->
+        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
@@ -238,12 +518,7 @@
           {% endif %}
         {% endwith %}
 
-        <style>
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(50px); }
-            to   { opacity: 1; transform: translateX(0); }
-        }
-        </style>
+        
         
         {% block content %}{% endblock %}
     </main>
@@ -252,23 +527,42 @@
     <footer class="footer">
         <h3>DATAI - Data Analysis Through AI models</h3>
         <p style="margin: 1rem 0;">Transform your data into actionable insights with cutting-edge AI</p>
-        <p>&copy; 2025 DATAI. All rights reserved.</p>
+        <p>&copy; 2026 DATAI. All rights reserved.</p>
         <p style="margin-top: 1rem;">
             <a href="#contact">Contact Us</a> | 
-            <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a> |
+            <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a>
         </p>
         <p style="margin-top: 1rem;">ICAR-IASRI, New Delhi, India</p>
     </footer>
 
-    <!-- Scroll to Top Button -->
+    <!-- Scroll to Top -->
     <button class="scroll-top" id="scrollTop" onclick="scrollToTop()">↑</button>
 
     <script>
-        // Header scroll effect
+        // ── Dropdown toggle ──
+        function toggleDropdown(dropId, itemId) {
+            const allItems = document.querySelectorAll('.nav-menu > li');
+            const allDrops = document.querySelectorAll('.dropdown');
+
+            allItems.forEach(li => {
+                if (li.id !== itemId) li.classList.remove('open');
+            });
+
+            const item = document.getElementById(itemId);
+            item.classList.toggle('open');
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.nav-menu')) {
+                document.querySelectorAll('.nav-menu > li').forEach(li => li.classList.remove('open'));
+            }
+        });
+
+        // ── Header scroll effect ──
         window.addEventListener('scroll', function() {
             const header = document.getElementById('header');
             const scrollTop = document.getElementById('scrollTop');
-            
             if (window.scrollY > 100) {
                 header.classList.add('scrolled');
                 scrollTop.classList.add('visible');
@@ -278,29 +572,22 @@
             }
         });
 
-        // Smooth scroll to top
+        // ── Scroll to top ──
         function scrollToTop() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Smooth scroll for anchor links
+        // ── Smooth scroll for anchor links ──
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
+            anchor.addEventListener('click', function(e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
     </script>
-    <!-- Include Chat Widget -->
+
+    <!-- Chat Widget -->
     {% include 'components/chat_widget.html' %}
 
     {% block extra_js %}{% endblock %}

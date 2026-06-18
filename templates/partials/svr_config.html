@@ -37,7 +37,7 @@
             <input type="number" id="svr_lags_max" name="svr_lags_max" value="5" min="1" max="20">
         </div>
         <div>
-            <label for="svr_lags_step">Step</label>
+            <label for="svr_lags_step">By</label>
             <input type="number" id="svr_lags_step" name="svr_lags_step" value="1" min="1" max="5">
         </div>
     </div>
@@ -61,7 +61,7 @@
             </label>
             <label>
                 <input type="checkbox" name="svr_kernel_sigmoid" value="sigmoid" checked aria-label="Include Sigmoid kernel">
-                Sigmoid
+                <span>Sigmoid <small style="color:#e53e3e;">(⚠️ not recommended for regression)</small></span>
             </label>
         </div>
     </div>
@@ -95,7 +95,7 @@
                     class="svr-grid-input">
             </div>
             <div>
-                <label for="svr_C_step">Step</label>
+                <label for="svr_C_step">By</label>
                 <input 
                     type="number" 
                     id="svr_C_step" 
@@ -140,7 +140,7 @@
                     class="svr-grid-input">
             </div>
             <div>
-                <label for="svr_epsilon_step">Step</label>
+                <label for="svr_epsilon_step">By</label>
                 <input 
                     type="number" 
                     id="svr_epsilon_step" 
@@ -185,7 +185,7 @@
                     class="svr-grid-input">
             </div>
             <div>
-                <label for="svr_gamma_step">Step</label>
+                <label for="svr_gamma_step">By</label>
                 <input 
                     type="number" 
                     id="svr_gamma_step" 
@@ -281,7 +281,7 @@ document.getElementById('auto_tune_svr').addEventListener('change', function() {
 
 // Calculate estimated combinations
 function calculateSVRCombinations() {
-    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+    const calc = (min, max, step) => Math.floor((max - min) / step + 1e-9) + 1;
     
     const lags_min = parseFloat(document.getElementById('svr_lags_min').value);
     const lags_max = parseFloat(document.getElementById('svr_lags_max').value);
@@ -308,7 +308,7 @@ function calculateSVRCombinations() {
     const epsilon_count = calc(epsilon_min, epsilon_max, epsilon_step);
     const gamma_count = calc(gamma_min, gamma_max, gamma_step) + 2; // +2 for 'scale' and 'auto'
     
-    const total = lags* C_count * epsilon_count * gamma_count;
+    const total = lags* kernels * C_count * epsilon_count * gamma_count;
     
     document.getElementById('svr_total_combinations').textContent = total.toLocaleString() + ' combinations';
     

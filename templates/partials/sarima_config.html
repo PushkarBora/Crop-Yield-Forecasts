@@ -1,0 +1,131 @@
+<div class="auto-tune-section">
+    <label for="auto_sarima">
+        <input type="checkbox" id="auto_sarima" name="auto_sarima" value="true" checked>
+        <span>🚀 Auto-Select Best SARIMA / SARIMAX Order (Recommended)</span>
+    </label>
+</div>
+
+<div id="sarima_grid_search_ranges" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p>Searches p,d,q ∈ {0..max} and P,D,Q ∈ {0..max} with fixed s. Selects best by AIC.
+       Exogenous variables uploaded → <strong>SARIMAX</strong> automatically.</p>
+
+    <div class="parameter-group">
+        <label>Non-Seasonal Orders (p, d, q) — Max Values</label>
+        <div class="range-input-group">
+            <div>
+                <label for="cmp_sarima_p">p max</label>
+                <input type="number" id="cmp_sarima_p" name="sarima_p" value="2" min="0" max="5"
+                       title="SARIMA AR order maximum (p)">
+            </div>
+            <div>
+                <label for="cmp_sarima_d">d max</label>
+                <input type="number" id="cmp_sarima_d" name="sarima_d" value="1" min="0" max="2"
+                       title="SARIMA differencing order maximum (d)">
+            </div>
+            <div>
+                <label for="cmp_sarima_q">q max</label>
+                <input type="number" id="cmp_sarima_q" name="sarima_q" value="2" min="0" max="5"
+                       title="SARIMA MA order maximum (q)">
+            </div>
+        </div>
+        <small class="help-text-small">💡 Grid searches 0 to max for each order.</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Seasonal Orders (P, D, Q) — Max Values</label>
+        <div class="range-input-group">
+            <div>
+                <label for="cmp_sarima_P">P max</label>
+                <input type="number" id="cmp_sarima_P" name="sarima_P" value="1" min="0" max="2"
+                       title="SARIMA seasonal AR order maximum (P)">
+            </div>
+            <div>
+                <label for="cmp_sarima_D">D max</label>
+                <input type="number" id="cmp_sarima_D" name="sarima_D" value="1" min="0" max="1"
+                       title="SARIMA seasonal differencing maximum (D)">
+            </div>
+            <div>
+                <label for="cmp_sarima_Q">Q max</label>
+                <input type="number" id="cmp_sarima_Q" name="sarima_Q" value="1" min="0" max="2"
+                       title="SARIMA seasonal MA order maximum (Q)">
+            </div>
+        </div>
+        <small class="help-text-small">💡 Keep seasonal orders small (0–1) to avoid long training times.</small>
+    </div>
+
+    <div class="parameter-group">
+        <label for="cmp_sarima_s">Seasonal Period (s)</label>
+        <select id="cmp_sarima_s" name="sarima_s" title="Seasonal period s"
+                style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;">
+            <option value="1">1 — No seasonality (reduces to ARIMA)</option>
+            <option value="4">4 — Quarterly data</option>
+            <option value="7">7 — Weekly (daily data)</option>
+            <option value="12" selected>12 — Monthly data</option>
+            <option value="24">24 — Hourly data</option>
+            <option value="52">52 — Weekly annual cycle</option>
+        </select>
+        <small class="help-text-small">💡 Must match your data's periodicity.</small>
+    </div>
+
+    <div class="combination-estimate warning">
+        <strong>⚠️ Estimated Combinations:</strong>
+        <span id="sarima_total_combinations">Calculating...</span>
+        <small style="display:block;margin-top:0.5rem;color:inherit;">
+            📊 (p+1)×(d+1)×(q+1)×(P+1)×(D+1)×(Q+1)
+        </small>
+    </div>
+</div>
+
+<div id="sarima_manual_section" class="manual-section" style="display:none;">
+    <h4>🎛️ Manual SARIMA Configuration</h4>
+    <label>AR Order (p)</label>
+    <input type="number" name="sarima_p" value="1" min="0" max="5">
+    <label>Differencing (d)</label>
+    <input type="number" name="sarima_d" value="1" min="0" max="2">
+    <label>MA Order (q)</label>
+    <input type="number" name="sarima_q" value="0" min="0" max="5">
+    <label>Seasonal AR (P)</label>
+    <input type="number" name="sarima_P" value="1" min="0" max="2">
+    <label>Seasonal Differencing (D)</label>
+    <input type="number" name="sarima_D" value="1" min="0" max="1">
+    <label>Seasonal MA (Q)</label>
+    <input type="number" name="sarima_Q" value="0" min="0" max="2">
+    <label>Seasonal Period (s)</label>
+    <select name="sarima_s" style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+        <option value="1">1 — No seasonality</option>
+        <option value="4">4 — Quarterly</option>
+        <option value="12" selected>12 — Monthly</option>
+    </select>
+</div>
+
+<div class="help-text">
+    <strong>💡 Note:</strong> Univariate → <strong>SARIMA</strong>. With exogenous variables → <strong>SARIMAX</strong>.
+    Rolling one-step-ahead forecast on the test set, same as ARIMA.
+</div>
+
+<script>
+(function() {
+    const cb = document.getElementById('auto_sarima');
+    if (!cb) return;
+    cb.addEventListener('change', function() {
+        document.getElementById('sarima_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+        document.getElementById('sarima_manual_section').style.display     = this.checked ? 'none'  : 'block';
+    });
+
+    function calcSARIMA() {
+        const els = document.querySelectorAll('[name="sarima_p"],[name="sarima_d"],[name="sarima_q"],[name="sarima_P"],[name="sarima_D"],[name="sarima_Q"]');
+        let total = 1;
+        els.forEach(e => { total *= (parseInt(e.value) || 0) + 1; });
+        const span = document.getElementById('sarima_total_combinations');
+        if (span) span.textContent = total.toLocaleString() + ' combinations';
+    }
+
+    document.querySelectorAll('[name^="sarima_"]').forEach(e => {
+        e.addEventListener('input', calcSARIMA);
+        e.addEventListener('change', calcSARIMA);
+    });
+    document.addEventListener('DOMContentLoaded', calcSARIMA);
+    calcSARIMA();
+})();
+</script>

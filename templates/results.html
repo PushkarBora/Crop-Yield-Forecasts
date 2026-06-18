@@ -55,12 +55,8 @@
     }
 
     @keyframes pulse {
-        0%, 100% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.05);
-        }
+        0%, 100% { transform: scale(1); }
+        50%       { transform: scale(1.05); }
     }
 
     .page-header .subtitle {
@@ -121,11 +117,13 @@
     }
 
     /* Section Icons */
-    .content-card.config h3::before { content: '⚙️'; }
-    .content-card.metrics h3::before { content: '📊'; }
-    .content-card.training h3::before { content: '🎯'; }
-    .content-card.testing h3::before { content: '✅'; }
-    .content-card.forecast h3::before { content: '🔮'; }
+    .content-card.config h3::before          { content: '⚙️'; }
+    .content-card.param-estimates h3::before { content: '📋'; }
+    .content-card.info-criteria h3::before   { content: '📐'; }
+    .content-card.metrics h3::before         { content: '📊'; }
+    .content-card.training h3::before        { content: '🎯'; }
+    .content-card.testing h3::before         { content: '✅'; }
+    .content-card.forecast h3::before        { content: '🔮'; }
 
     /* Metrics Grid */
     .metrics-grid {
@@ -166,13 +164,9 @@
         margin-bottom: 0.3rem;
     }
 
-    .metric-card.training .metric-value {
-        color: #667eea;
-    }
-
-    .metric-card.testing .metric-value {
-        color: #28a745;
-    }
+    .metric-card.training .metric-value { color: #667eea; }
+    .metric-card.testing  .metric-value { color: #28a745; }
+    .metric-card.ic       .metric-value { color: #6c63ff; font-size: 1.6rem; }
 
     .metric-card .metric-sublabel {
         font-size: 0.85rem;
@@ -209,22 +203,36 @@
         color: #2d3748;
     }
 
-    tr:last-child td {
-        border-bottom: none;
-    }
-
-    tr:hover {
-        background: #f7fafc;
-    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background: #f7fafc; }
 
     /* Config Table */
-    .config-table th {
-        width: 40%;
+    .config-table th { width: 40%; }
+    .config-table td:first-child { font-weight: 600; color: #4a5568; }
+
+    /* Parameter Estimates Table — monospace feel */
+    .param-table th,
+    .param-table td {
+        text-align: right;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.95rem;
+    }
+    .param-table th:first-child,
+    .param-table td:first-child {
+        text-align: left;
+        font-weight: 700;
+        color: #2d3748;
     }
 
-    .config-table td:first-child {
-        font-weight: 600;
-        color: #4a5568;
+    /* significance stars */
+    .sig-star { color: #e53e3e; font-weight: 700; }
+
+    /* Information Criteria grid — narrower cards */
+    .ic-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1.2rem;
+        margin-top: 0.5rem;
     }
 
     /* Plot Images */
@@ -260,11 +268,7 @@
         margin-bottom: 1rem;
     }
 
-    .future-box p {
-        color: #4a5568;
-        margin-bottom: 1.5rem;
-        font-size: 1rem;
-    }
+    .future-box p     { color: #4a5568; margin-bottom: 1.5rem; font-size: 1rem; }
 
     .future-box label {
         display: block;
@@ -293,9 +297,7 @@
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .future-box textarea::placeholder {
-        color: #a0aec0;
-    }
+    .future-box textarea::placeholder { color: #a0aec0; }
 
     .forecast-btn {
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
@@ -318,9 +320,7 @@
         box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
     }
 
-    .forecast-btn:active {
-        transform: translateY(-1px);
-    }
+    .forecast-btn:active { transform: translateY(-1px); }
 
     /* No Data Message */
     .no-data {
@@ -379,26 +379,13 @@
 
     /* Responsive */
     @media (max-width: 768px) {
-        .page-header h1 {
-            font-size: 2rem;
-        }
+        .page-header h1 { font-size: 2rem; }
+        .content-card   { padding: 1.5rem; }
+        .metrics-grid   { grid-template-columns: 1fr; }
+        .ic-grid        { grid-template-columns: repeat(2, 1fr); }
 
-        .content-card {
-            padding: 1.5rem;
-        }
-
-        .metrics-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .action-buttons {
-            flex-direction: column;
-        }
-
-        .action-btn {
-            width: 100%;
-            justify-content: center;
-        }
+        .action-buttons { flex-direction: column; }
+        .action-btn     { width: 100%; justify-content: center; }
     }
 
     /* Dataset Badges */
@@ -432,12 +419,8 @@
 
     /* Loading Animation */
     @keyframes shimmer {
-        0% {
-            background-position: -1000px 0;
-        }
-        100% {
-            background-position: 1000px 0;
-        }
+        0%   { background-position: -1000px 0; }
+        100% { background-position:  1000px 0; }
     }
 </style>
 {% endblock %}
@@ -445,86 +428,282 @@
 {% block content %}
 <div class="results-page">
     <div class="results-container">
-        <!-- Page Header -->
+
+        <!-- ═══════════════════════════════ PAGE HEADER ═════════════════════════════ -->
         <div class="page-header">
             <h1>📊 Model Performance Results</h1>
             <div class="model-badge">{{ results.model_name }}</div>
             <p class="subtitle">Comprehensive analysis of training, testing, and forecasting performance</p>
         </div>
 
-        <!-- Model Configuration -->
+        <!-- ═══════════════════════════════ ARCH LM TEST ════════════════════════════ -->
+        <!-- ═══════════════════════════════ ARCH LM TEST ════════════════════════════ -->
+        {% if results.arch_lm_stat %}
+
+            {% if results.arch_significant %}
+            {# ── Significant: small green banner only ── #}
+            <div style="background:#d4edda; border-left:5px solid #28a745; border-radius:12px;
+                        padding:1rem 1.5rem; margin-bottom:1.5rem; display:flex;
+                        align-items:center; gap:0.75rem;">
+                <span style="font-size:1.4rem;">✅</span>
+                <div>
+                    <strong style="color:#155724; font-size:1rem;">ARCH LM Test: Significant</strong>
+                    <p style="margin:0; color:#155724; font-size:0.9rem;">
+                        ARCH effects detected.
+                        {{ results.model_name }} is appropriate for this series.
+                    </p>
+                </div>
+            </div>
+
+            {% else %}
+            {# ── Not Significant: red banner + stop rendering rest of page ── #}
+            <div style="background:#f8d7da; border-left:5px solid #dc3545; border-radius:12px;
+                        padding:1.5rem; margin-bottom:1.5rem;">
+                <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+                    <span style="font-size:1.4rem;">❌</span>
+                    <strong style="color:#721c24; font-size:1.1rem;">ARCH LM Test: Not Significant</strong>
+                </div>
+                <p style="margin:0; color:#721c24; font-size:0.95rem; line-height:1.6;">
+                    {{ results.arch_not_significant_message or
+                        "ARCH effects were not detected (p ≥ 0.05). This GARCH-family model
+                        was not fitted because the series does not exhibit volatility clustering." }}
+                </p>
+                <div style="margin-top:1.2rem;">
+                    <a href="{{ url_for('select_models') }}"
+                        style="background:linear-gradient(135deg,#dc3545,#c82333); color:white;
+                                padding:0.7rem 1.8rem; border-radius:50px; text-decoration:none;
+                                font-weight:600; font-size:0.95rem;">
+                        🔄 Try Another Model
+                    </a>
+                </div>
+            </div>
+            {# Stop rendering — no metrics/tables/forecast for failed ARCH test #}
+            {% set stop_render = true %}
+            {% endif %}
+
+        {% endif %}
+
+        <!-- ═══════════════════════════ MODEL CONFIGURATION ═════════════════════════ -->
         {% if results.model_config is defined %}
         <div class="content-card config">
             <h3>Model Configuration</h3>
-            
+
             {% if results.auto_tuned is defined and results.auto_tuned %}
-            <p class="auto-tuned">
-                ✅ Hyperparameters Auto-Tuned (Optimized via Cross-Validation)
-            </p>
+            <p class="auto-tuned">✅ Hyperparameters Auto-Tuned (Optimized via Cross-Validation)</p>
             {% else %}
-            <p class="manual-config">
-                🔧 Manual Hyperparameters Configuration
-            </p>
+            <p class="manual-config">🔧 Manual Hyperparameters Configuration</p>
             {% endif %}
 
             <div class="table-container">
                 <table class="config-table">
                     <thead>
-                        <tr>
-                            <th>Parameter</th>
-                            <th>Value</th>
-                        </tr>
+                        <tr><th>Parameter</th><th>Value</th> {% if results.model_key == "tbats" %}<th>What it means</th>{% endif %} </tr>
                     </thead>
                     <tbody>
+                    {% if results.model_key == "tbats" %}
+
+                        {# ── TBATS-specific: descriptions + λ merge ── #}
+                        {% set descriptions = {
+                            "Seasonal Periods":  "The repeating cycle length (e.g. 7 = weekly, 12 = monthly). None = no seasonal pattern found.",
+                            "Box-Cox Transform": "Stabilises variance. λ≈0 means log-transform; λ=1 means no transform.",
+                            "Trend":             "Whether the model detected an upward or downward direction over time.",
+                            "Damped Trend":      "If Yes, the trend gradually flattens in future forecasts instead of continuing indefinitely.",
+                            "ARMA Errors":       "If Yes, residuals had autocorrelation that was modelled. No means residuals were pure noise."
+                        } %}
+
+                        {% set bc_lambda = namespace(val=None) %}
+                        {% if results.param_estimates_table is defined and results.param_estimates_table is not none %}
+                            {% for _, row in results.param_estimates_table.iterrows() %}
+                                {% if "Box-Cox" in row["Parameter"] %}
+                                    {% set bc_lambda.val = row["Coef"] %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
                         {% for param, value in results.model_config.items() %}
                         <tr>
-                            <td>{{ param.replace('_', ' ').title() }}</td>
-                            <td>{{ value }}</td>
+                            <td>{{ param }}</td>
+                            <td>
+                                {% if param == "Box-Cox Transform" and value == "True" and bc_lambda.val is not none %}
+                                    <span style="color:#28a745;font-weight:600;">✓ Yes</span>
+                                    &nbsp;<span style="background:#edf2f7;border-radius:6px;padding:0.2rem 0.6rem;
+                                                        font-family:monospace;font-size:0.9rem;color:#4a5568;">
+                                        λ = {{ "%.4f" | format(bc_lambda.val) }}
+                                    </span>
+                                {% elif value == "True" %}
+                                    <span style="color:#28a745;font-weight:600;">✓ Yes</span>
+                                {% elif value == "False" %}
+                                    <span style="color:#718096;">✗ No</span>
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
+                            <td style="color:#718096;font-size:0.9rem;line-height:1.5;">
+                                {{ descriptions.get(param, "—") }}
+                            </td>
                         </tr>
                         {% endfor %}
+
+                    {% else %}
+
+                        {# ── All other models: original simple loop, untouched ── #}
+                        {% for param, value in results.model_config.items() %}
+                        <tr><td>{{ param }}</td><td>{{ value }}</td></tr>
+                        {% endfor %}
+
+                    {% endif %}
                     </tbody>
                 </table>
             </div>
         </div>
         {% endif %}
 
-        <!-- Accuracy Metrics -->
+        <!-- ══════════════════════════ PARAMETER ESTIMATES ══════════════════════════
+             Shown only for ARIMA (when param_estimates_table is present)
+        ════════════════════════════════════════════════════════════════════════════ -->
+        {% if results.param_estimates_table is defined and results.param_estimates_table is not none %}
+<div class="content-card param-estimates">
+    <h3>Parameter Estimates</h3>
+
+    {% if results.model_key == "tbats" or results.model_key == "rw" or results.model_key == "ets" %}
+    {# ── TBATS / Random Walk: simple Parameter / Value table ── #}
+    <p style="color:#718096; margin-bottom:1rem; font-size:0.95rem;">
+        Fitted parameter values for <strong>{{ results.model_name }}</strong>.
+        {% if results.model_key == "rw" %}
+        No estimated coefficients — Random Walk is a closed-form benchmark model.
+        {% endif %}
+    </p>
+    <div class="table-container">
+        <table class="param-table">
+            <thead>
+                <tr><th>Parameter</th><th>Coefficient</th></tr>
+            </thead>
+            <tbody>
+                {% for _, row in results.param_estimates_table.iterrows() %}
+                <tr>
+                    <td>{{ row["Parameter"] }}</td>
+                    <td>
+                        {% set cell_val = row.get("Coef", row.get("Value", "—")) %}
+                        {% if cell_val is number %}
+                            {{ "%.6f" | format(cell_val) }}
+                        {% else %}
+                            {{ cell_val }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    {# ── ARIMA / other models: full stats table ── #}
+    <p style="color:#718096; margin-bottom:1rem; font-size:0.95rem;">
+        Maximum-likelihood estimates for <strong>{{ results.model_name }}</strong>.
+        <span class="sig-star">*</span>&nbsp;p&nbsp;&lt;&nbsp;0.05
+        <span class="sig-star">**</span>&nbsp;p&nbsp;&lt;&nbsp;0.01
+        <span class="sig-star">***</span>&nbsp;p&nbsp;&lt;&nbsp;0.001
+    </p>
+    <div class="table-container">
+        <table class="param-table">
+            <thead>
+                <tr>
+                    <th>Parameter</th><th>Coefficient</th>
+                    <th>Standard Error</th><th>Test Statistic</th><th>p-Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for _, row in results.param_estimates_table.iterrows() %}
+                <tr>
+                    <td>{{ row["Parameter"] }}</td>
+                    <td>{{ "%.4f" | format(row["Coef"]) }}</td>
+                    <td>{{ "%.4f" | format(row["Std Err"]) if row["Std Err"] is number else row["Std Err"] }}</td>
+                    <td>{{ "%.4f" | format(row["z"]) if row["z"] is number else row["z"] }}</td>
+                    <td>
+                        {{ "%.4f" | format(row["P>|z|"]) if row["P>|z|"] is number else row["P>|z|"] }}
+                        {% if row["P>|z|"] is number %}
+                            {% if row["P>|z|"] < 0.001 %}<span class="sig-star">***</span>
+                            {% elif row["P>|z|"] < 0.01 %}<span class="sig-star">**</span>
+                            {% elif row["P>|z|"] < 0.05 %}<span class="sig-star">*</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+                       
+
+        <!-- ═══════════════════════════ INFORMATION CRITERIA ════════════════════════
+             Shown only for ARIMA (when info_criteria dict is present and non-empty)
+        ════════════════════════════════════════════════════════════════════════════ -->
+        {% if results.info_criteria is defined and results.info_criteria %}
+        <div class="content-card info-criteria">
+            <h3>Information Criteria</h3>
+            <p style="color:#718096; margin-bottom:1.2rem; font-size:0.95rem;">
+                Goodness-of-fit statistics for model selection — <strong>lower values indicate a better fit</strong>.
+                AICc corrects AIC for small sample sizes; HQIC is a consistent alternative to BIC.
+            </p>
+
+            <div class="ic-grid">
+                {% for name, value in results.info_criteria.items() %}
+                <div class="metric-card ic">
+                    <div class="metric-label">{{ name }}</div>
+                    <div class="metric-value">{{ "%.4f" | format(value) }}</div>
+                    <div class="metric-sublabel">
+                        {% if name == "AIC" %}Akaike Information Criterion
+                        {% elif name == "AICc" %}AIC (bias-corrected)
+                        {% elif name == "BIC" %}Bayesian Information Criterion
+                        {% elif name == "HQIC" %}Hannan–Quinn Information Criterion
+                        {% elif name == "Log-Likelihood" %}Log-Likelihood
+                        {% else %}{{ name }}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ════════════════════════════ ACCURACY METRICS ═══════════════════════════ -->
+        {% if results.rmse_train is not none and results.rmse_train %}
         <div class="content-card metrics">
             <h3>Accuracy Metrics</h3>
-            
+
             <div class="metrics-grid">
-                <!-- Training Metrics -->
+                <!-- Training -->
                 <div class="metric-card training">
                     <div class="metric-label">Training RMSE</div>
                     <div class="metric-value">{{ "%.2f"|format(results.rmse_train) }}</div>
                     <div class="metric-sublabel">Root Mean Square Error</div>
                 </div>
-                
                 <div class="metric-card training">
                     <div class="metric-label">Training MAE</div>
                     <div class="metric-value">{{ "%.4f"|format(results.mae_train) }}</div>
                     <div class="metric-sublabel">Mean Absolute Error</div>
                 </div>
-                
                 <div class="metric-card training">
                     <div class="metric-label">Training MAPE</div>
                     <div class="metric-value">{{ "%.2f"|format(results.mape_train) }}%</div>
                     <div class="metric-sublabel">Mean Absolute % Error</div>
                 </div>
-                
-                <!-- Testing Metrics -->
+
+                <!-- Testing -->
                 <div class="metric-card testing">
                     <div class="metric-label">Testing RMSE</div>
                     <div class="metric-value">{{ "%.2f"|format(results.rmse_test) }}</div>
                     <div class="metric-sublabel">Root Mean Square Error</div>
                 </div>
-                
                 <div class="metric-card testing">
                     <div class="metric-label">Testing MAE</div>
                     <div class="metric-value">{{ "%.4f"|format(results.mae_test) }}</div>
                     <div class="metric-sublabel">Mean Absolute Error</div>
                 </div>
-                
                 <div class="metric-card testing">
                     <div class="metric-label">Testing MAPE</div>
                     <div class="metric-value">{{ "%.2f"|format(results.mape_test) }}%</div>
@@ -533,44 +712,44 @@
             </div>
         </div>
 
-        <!-- Training Results -->
+        <!-- ═══════════════════════════ TRAINING RESULTS ════════════════════════════ -->
         <div class="content-card training">
             <h3>Training Performance</h3>
             <div class="dataset-badge train">📚 Training Dataset</div>
-            
+
             <div class="table-container">
                 {{ results.train_table.to_html(index=False, classes='data-table') | safe }}
             </div>
 
             <div class="plot-container">
                 <img
-                    src="{{ url_for('static', filename=results.model_key ~ '_train.png') }}"
+                    src="{{ url_for('static', filename=results.model_key ~ '_train.png') }}?v={{ ts }}"
                     alt="{{ results.model_name }} Training Performance"
                     title="{{ results.model_name }} Training Performance"
                 >
             </div>
         </div>
 
-        <!-- Testing Results -->
+        <!-- ════════════════════════════ TESTING RESULTS ════════════════════════════ -->
         <div class="content-card testing">
             <h3>Testing Performance</h3>
             <div class="dataset-badge test">✅ Testing Dataset</div>
-            
+
             <div class="table-container">
                 {{ results.test_table.to_html(index=False, classes='data-table') | safe }}
             </div>
         </div>
 
-        <!-- Future Climate Inputs -->
+        <!-- ══════════════════════════ FUTURE FORECAST INPUT ════════════════════════ -->
         {% if show_future_inputs %}
         <div class="content-card forecast">
             <h3>Future Forecast</h3>
-            
+
             <div class="future-box">
                 {% if is_univariate %}
                 <h3>📊 Generate Forecast</h3>
                 <p>
-                    This model was trained on univariate data and will forecast the next 
+                    This model was trained on univariate data and will forecast the next
                     <strong>{{ results.horizon }}</strong> periods based on historical patterns only.
                 </p>
                 {% else %}
@@ -580,117 +759,113 @@
                     (space-separated) to generate predictions.
                 </p>
                 {% endif %}
-                
+
                 <form method="POST" action="/predict">
-                    <!-- Hidden fields to preserve state -->
-                    <input type="hidden" name="model" value="{{ results.model_key }}">
-                    <input type="hidden" name="horizon" value="{{ results.horizon }}">
+                    <input type="hidden" name="model"     value="{{ results.model_key }}">
+                    <input type="hidden" name="horizon"   value="{{ results.horizon }}">
                     <input type="hidden" name="frequency" value="{{ results.frequency }}">
-                
+
                     {% if is_arima %}
-                        {# ARIMA uses special trigger #}
                         <input type="hidden" name="arima_forecast_trigger" value="true">
+                    {% elif is_wavelet_ann %}
+                        <input type="hidden" name="wavelet_ann_forecast_trigger" value="true">
                     {% elif is_univariate %}
-                        {# Other univariate models use this trigger #}
                         <input type="hidden" name="univariate_forecast_trigger" value="true">
                     {% endif %}
-                
+
                     {% if not is_univariate %}
-<!-- Auto-fill button -->
-<button type="button" onclick="autoFillExog()" 
-    style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;
-           border:none;padding:0.8rem 2rem;font-size:1rem;font-weight:600;
-           border-radius:50px;cursor:pointer;margin-bottom:1.5rem;
-           box-shadow:0 4px 15px rgba(102,126,234,0.4);">
-    🤖 Auto-fill with ARIMA
-</button>
-<div id="autofill_status" style="margin-bottom:1rem;font-size:0.9rem;color:#667eea;font-style:italic;"></div>
-
-
-    {% for col in exog_cols %}
-<label>📊 {{ col }}</label>
-<textarea name="future_exog_{{ col }}" id="textarea_{{ col }}" rows="2"
-    placeholder="Enter {{ results.horizon }} value(s) space-separated, e.g. 1.0 2.0"
-    required></textarea>
-{% endfor %}
-{% endif %}
-
-
-<script>
-async function autoFillExog() {
-    const btn    = event.target;
-    const status = document.getElementById('autofill_status');
-
-    btn.disabled    = true;
-    btn.textContent = '⏳ Forecasting...';
-    status.textContent = 'Running ARIMA on historical data...';
-
-    try {
-        const res = await fetch('/autofill_exog', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({})
-        });
-
-        const data = await res.json();
-
-        if (data.status !== 'ok') {
-            status.textContent = '❌ Error: ' + (data.error || 'Unknown error');
-            return;
-        }
-
-        // Fill each textarea
-        let filled = 0;
-        for (const [col, values] of Object.entries(data.forecasts)) {
-            const ta = document.getElementById('textarea_' + col);
-            if (ta) {
-                ta.value = values.join(' ');
-                ta.style.borderColor = '#28a745';
-                filled++;
-            }
-        }
-
-        status.textContent = `✅ Auto-filled ${filled} column(s) using ARIMA forecast!`;
-        btn.textContent    = '🤖 Auto-fill with ARIMA';
-        btn.disabled       = false;
-
-    } catch (err) {
-        status.textContent = '❌ Request failed: ' + err.message;
-        btn.textContent    = '🤖 Auto-fill with ARIMA';
-        btn.disabled       = false;
-    }
-}
-</script>
-                        
-                
-                    <button type="submit" class="forecast-btn">
-                        🔮 Generate Forecast
+                    <!-- Auto-fill button -->
+                    <button type="button" onclick="autoFillExog()"
+                        style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;
+                               border:none;padding:0.8rem 2rem;font-size:1rem;font-weight:600;
+                               border-radius:50px;cursor:pointer;margin-bottom:1.5rem;
+                               box-shadow:0 4px 15px rgba(102,126,234,0.4);">
+                        🤖 Auto-fill with ARIMA
                     </button>
+                    <div id="autofill_status" style="margin-bottom:1rem;font-size:0.9rem;color:#667eea;font-style:italic;"></div>
+
+                    {% for col in exog_cols %}
+                    <label>📊 {{ col }}</label>
+                    <textarea name="future_exog_{{ col }}" id="textarea_{{ col }}" rows="2"
+                        placeholder="Enter {{ results.horizon }} value(s) space-separated, e.g. 1.0 2.0"
+                        required></textarea>
+                    {% endfor %}
+                    {% endif %}
+
+                    <script>
+                    async function autoFillExog() {
+                        const btn    = event.target;
+                        const status = document.getElementById('autofill_status');
+                        btn.disabled    = true;
+                        btn.textContent = '⏳ Forecasting...';
+                        status.textContent = 'Running ARIMA on historical data...';
+                        try {
+                            const res  = await fetch('/autofill_exog', {
+                                method : 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body   : JSON.stringify({})
+                            });
+                            const data = await res.json();
+                            if (data.status !== 'ok') {
+                                status.textContent = '❌ Error: ' + (data.error || 'Unknown error');
+                                return;
+                            }
+                            let filled = 0;
+                            for (const [col, values] of Object.entries(data.forecasts)) {
+                                const ta = document.getElementById('textarea_' + col);
+                                if (ta) { ta.value = values.join(' '); ta.style.borderColor = '#28a745'; filled++; }
+                            }
+                            status.textContent = `✅ Auto-filled ${filled} column(s) using ARIMA forecast!`;
+                            btn.textContent    = '🤖 Auto-fill with ARIMA';
+                            btn.disabled       = false;
+                        } catch (err) {
+                            status.textContent = '❌ Request failed: ' + err.message;
+                            btn.textContent    = '🤖 Auto-fill with ARIMA';
+                            btn.disabled       = false;
+                        }
+                    }
+                    </script>
+
+                    <button type="submit" class="forecast-btn">🔮 Generate Forecast</button>
                 </form>
             </div>
         </div>
         {% endif %}
 
-        <!-- Forecast Results -->
+        <!-- ══════════════════════════ FORECAST RESULTS ═════════════════════════════ -->
         {% if results.forecast_table is defined and results.forecast_table is not none %}
         <div class="content-card forecast">
             <h3>Forecast Results (Future Predictions)</h3>
-            
             <div class="table-container">
                 {{ results.forecast_table.to_html(index=False, classes='data-table') | safe }}
             </div>
         </div>
         {% endif %}
+        {% endif %} {# end rmse_train block #}
 
-        <!-- Action Buttons -->
+        <!-- ═══════════════════════════ ACTION BUTTONS ══════════════════════════════ -->
         <div class="action-buttons">
-            <a href="{{ url_for('models') }}" class="action-btn primary">
+            <a href="{{ url_for('download_results', model_key=results.model_key, table_type='all') }}"
+               class="action-btn primary" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                ⬇ Download Excel
+            </a>
+            <a href="{{ url_for('print_results', model_key=results.model_key) }}"
+               target="_blank" class="action-btn secondary">
+                🖨 Print / Save PDF
+            </a>
+            <a href="{{ url_for('residual_diagnostics', model_key=results.model_key) }}"
+                class="action-btn primary"
+                style="background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%);">
+                🔍 Residual Diagnostics
+            </a>
+            <a href="{{ url_for('select_models') }}" class="action-btn primary">
                 🔄 Run Another Model
             </a>
             <a href="{{ url_for('home') }}" class="action-btn secondary">
                 🏠 Back to Home
             </a>
         </div>
+
     </div>
 </div>
 {% endblock %}

@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Forecast Results - {{ model_name }} - DATAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .forecast-results-page {
+        min-height: 100vh;
+        padding: 2rem 0 4rem;
+    }
+
+    .forecast-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-header h1 {
+        font-size: 3rem;
+        color: white;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .model-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.6rem 2rem;
+        border-radius: 50px;
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .page-header .subtitle {
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.9);
+    }
+
+    /* Forecast Card */
+    .forecast-card {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        animation: fadeInUp 0.8s ease 0.2s backwards;
+        border-top: 4px solid #667eea;
+    }
+
+    .forecast-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .forecast-card-icon {
+        width: 55px;
+        height: 55px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        color: white;
+    }
+
+    .forecast-card-title h3 {
+        font-size: 1.8rem;
+        color: #2d3748;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .forecast-card-title .model-type {
+        font-size: 0.9rem;
+        color: #718096;
+        margin-top: 0.3rem;
+    }
+
+    /* Table */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 12px;
+    }
+
+    .forecast-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .forecast-table thead tr {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .forecast-table th {
+        padding: 1rem;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: left;
+    }
+
+    .forecast-table td {
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #2d3748;
+        font-size: 0.95rem;
+    }
+
+    .forecast-table tbody tr:nth-child(even) { background: #f7faff; }
+    .forecast-table tbody tr:hover { background: #eef0ff; }
+    .forecast-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Summary Stats */
+    .forecast-stats {
+        margin-top: 2rem;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(102,126,234,0.07) 0%, rgba(118,75,162,0.07) 100%);
+        border-radius: 12px;
+        border: 1px solid rgba(102,126,234,0.2);
+    }
+
+    .stat-item .stat-label {
+        font-size: 0.85rem;
+        color: #718096;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-item .stat-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        text-align: center;
+        margin-top: 3rem;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .action-btn.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 6px 20px rgba(102,126,234,0.3);
+    }
+
+    .action-btn.primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(102,126,234,0.4);
+    }
+
+    .action-btn.secondary {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+
+    .action-btn.secondary:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-3px);
+    }
+
+    .action-btn.success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        box-shadow: 0 6px 20px rgba(40,167,69,0.3);
+    }
+
+    .action-btn.success:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(40,167,69,0.4);
+    }
+
+    @media (max-width: 768px) {
+        .page-header h1  { font-size: 2rem; }
+        .forecast-card   { padding: 1.5rem; }
+        .forecast-stats  { grid-template-columns: 1fr; }
+        .action-buttons  { flex-direction: column; }
+        .action-btn      { justify-content: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="forecast-results-page">
+    <div class="forecast-container">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🔮 Forecast Results</h1>
+            <div class="model-badge">{{ model_name }}</div>
+            <p class="subtitle">
+                Future predictions for the next <strong>{{ horizon }}</strong> period(s)
+            </p>
+        </div>
+
+        <!-- Forecast Table Card -->
+        <div class="forecast-card">
+            <div class="forecast-card-header">
+                <div class="forecast-card-icon">
+                    {% if model_key == 'lstm' %}🧠
+                    {% elif model_key == 'gru' %}⚡
+                    {% elif model_key == 'rnn' %}🔄
+                    {% elif model_key == 'transformer' %}🔮
+                    {% elif model_key == 'ann' %}🌐
+                    {% elif model_key == 'wavelet_ann' %}🌊🌐
+                    {% elif model_key == 'wavelet_lstm' %}🌊🧠
+                    {% elif model_key == 'wavelet_transformer' %}🌊🔮
+                    {% elif model_key == 'svr' %}📊
+                    {% elif model_key == 'rf' %}🌲
+                    {% elif model_key == 'xgb' %}🌿
+                    {% elif model_key == 'gbm' %}🌳
+                    {% elif model_key == 'knn' %}🎯
+                    {% elif model_key == 'cnn' %}🧊
+                    {% elif model_key == 'stacked_lstm' %}🔁
+                    {% elif model_key == 'bd_lstm' %}↔️
+                    {% elif model_key == 'conv_lstm' %}🌀
+                    {% elif model_key == 'deep_lstm' %}🔱
+                    {% elif model_key == 'arima' %}📉
+                    {% elif model_key == 'sarima' %}🌊
+                    {% elif model_key == 'tbats' %}📡
+                    {% elif model_key == 'rw' %}🎲
+                    {% elif model_key in ['aregarch','argarch','armagarch','artgarch','argjrgarch'] %}📈
+                    {% else %}🤖
+                    {% endif %}
+                </div>
+                <div class="forecast-card-title">
+                    <h3>{{ model_name }} — Future Predictions</h3>
+                    <div class="model-type">
+                        {% if model_key in ['lstm','gru','rnn','transformer','cnn','stacked_lstm','bd_lstm','conv_lstm','deep_lstm', 'wavelet_lstm', 'wavelet_transformer'] %}Deep Learning Model
+                        {% elif model_key in ['ann','svr','rf','xgb','gbm','knn','wavelet_ann'] %}Machine Learning Model
+                        {% elif model_key in ['arima','sarima','tbats','rw'] %}Statistical Model
+                        {% elif model_key in ['aregarch','argarch','armagarch','artgarch','argjrgarch'] %}Volatility Model
+                        {% else %}AI Model
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <table class="forecast-table">
+                    <thead>
+                        <tr>
+                            {% for col in forecast_table.columns %}
+                            <th>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for _, row in forecast_table.iterrows() %}
+                        <tr>
+                            {% for col in forecast_table.columns %}
+                            <td>
+                                {% set val = row[col] %}
+                                {% if col == 'Period' %}
+                                    {% if val is number %}
+                                        {{ val | int if val == val | int else val }}
+                                    {% else %}
+                                        {{ val }}
+                                    {% endif %}
+                                {% elif val is number %}
+                                    {{ "%.3f" | format(val) }}
+                                {% else %}
+                                    {{ val }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Summary Stats (only if Forecast column exists and multiple rows) -->
+            {% if 'Forecast' in forecast_table.columns and forecast_table|length > 1 %}
+            <div class="forecast-stats">
+                <div class="stat-item">
+                    <div class="stat-label">📊 Average</div>
+                    <div class="stat-value">{{ "%.3f" | format(forecast_table['Forecast'].mean()) }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">📉 Minimum</div>
+                    <div class="stat-value">{{ "%.3f" | format(forecast_table['Forecast'].min()) }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">📈 Maximum</div>
+                    <div class="stat-value">{{ "%.3f" | format(forecast_table['Forecast'].max()) }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Action Buttons -->
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="javascript:history.back()" class="action-btn secondary"
+                style="background: rgba(255,255,255,0.15); color: white; border: 2px solid rgba(255,255,255,0.4);">
+                ← Back to Results
+            </a>
+            <a href="{{ url_for('download_results', model_key=model_key, table_type='forecast') }}"
+               class="action-btn success">
+                ⬇ Download Excel
+            </a>
+            <a href="{{ url_for('print_results', model_key=model_key) }}"
+               target="_blank" class="action-btn secondary">
+                🖨 Print / Save PDF
+            </a>
+            <a href="{{ url_for('residual_diagnostics', model_key=model_key) }}"
+               class="action-btn primary"
+               style="background:linear-gradient(135deg,#e53e3e,#fc8181);">
+                🔍 Residual Diagnostics
+            </a>
+            <a href="{{ url_for('select_models') }}" class="action-btn primary">
+                🔄 Run Another Model
+            </a>
+            <a href="{{ url_for('home') }}" class="action-btn secondary">
+                🏠 Home
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

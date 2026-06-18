@@ -3,6 +3,12 @@
 {% block title %}DATAI - Crop Yield Forecasting System{% endblock %}
 
 {% block extra_css %}
+
+<!-- ✅ AFTER — use <link> tag instead, placed before the <style> block -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+
 <style>
     /* Hero Section */
     .hero {
@@ -405,18 +411,306 @@
         opacity: 1;
         transform: translateY(0);
     }
+
+    
+
+/* ── Wrapper ──────────────────────────────────────────────── */
+.datai-logo-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  animation: logoEntrance 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes logoEntrance {
+  0%   { opacity:0; transform:scale(0.5) translateY(-40px) rotate(-8deg); }
+  60%  { opacity:1; transform:scale(1.06) translateY(4px)  rotate(1deg);  }
+  100% { opacity:1; transform:scale(1)   translateY(0)     rotate(0deg);  }
+}
+
+/* ── Halo rings ───────────────────────────────────────────── */
+.logo-halo {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  width: 298px; height: 298px;
+  border: 1.5px solid rgba(0, 200, 255, 0.32);
+  animation: haloBreath 3s ease-in-out infinite;
+  box-shadow: 0 0 18px rgba(0,180,255,0.22), 0 0 38px rgba(0,120,220,0.1);
+}
+.logo-halo-2 {
+  width: 332px; height: 332px;
+  border-color: rgba(0,150,220,0.18);
+  animation: haloBreath 3.5s ease-in-out infinite .8s;
+}
+.logo-halo-3 {
+  width: 368px; height: 368px;
+  border: 1px dashed rgba(0,120,200,0.1);
+  animation: spinCW 30s linear infinite;
+}
+@keyframes haloBreath {
+  0%,100% { transform:scale(1);    opacity:.7; }
+  50%      { transform:scale(1.05); opacity:1;  }
+}
+
+/* ── ★ THE KEY FIX — dark rich interior ──────────────────── */
+.logo-img-container {
+  position: relative;
+  width: 265px;
+  height: 265px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.23,1,0.32,1);
+
+  /* Deep-space layered background — shows when image has transparency */
+  background:
+    /* Subtle cyan lens flare at eye position */
+    radial-gradient(ellipse 45% 38% at 42% 40%,
+      rgba(0, 80, 120, 0.75) 0%,
+      transparent 65%),
+    /* Bottom dark anchor */
+    radial-gradient(ellipse 100% 55% at 50% 115%,
+      rgba(0, 5, 18, 0.98) 0%,
+      transparent 65%),
+    /* Core deep-space black */
+    radial-gradient(ellipse 130% 130% at 50% 50%,
+      #04111e 0%,
+      #020a14 40%,
+      #000408 100%);
+
+  /* Outer electric glow border */
+  box-shadow:
+    0 0 0  2px rgba(0,200,255,0.55),
+    0 0 0  5px rgba(0,100,180,0.22),
+    0 0 22px   rgba(0,180,255,0.5),
+    0 0 55px   rgba(0,120,220,0.3),
+    0 0 95px   rgba(0, 70,180,0.15),
+    inset 0 0 40px rgba(0,0,0,1);   /* hard inner vignette */
+}
+.logo-img-container:hover {
+  transform: scale(1.065);
+  box-shadow:
+    0 0 0  2px rgba(0,240,255,0.9),
+    0 0 0  8px rgba(0,130,210,0.4),
+    0 0 35px   rgba(0,220,255,0.85),
+    0 0 75px   rgba(0,165,255,0.55),
+    0 0 130px  rgba(0, 90,205,0.3),
+    inset 0 0 40px rgba(0,0,0,1);
+}
+
+/* Cyan inner rim light */
+.logo-img-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  z-index: 15;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0  2px rgba(0,200,255,0.3),
+    inset 0 0 22px rgba(0,180,255,0.18),
+    inset 0 0 50px rgba(0, 80,160,0.12);
+  transition: box-shadow 0.4s;
+}
+.logo-img-container:hover::before {
+  box-shadow:
+    inset 0 0 0  2px rgba(0,245,255,0.6),
+    inset 0 0 30px rgba(0,215,255,0.38),
+    inset 0 0 65px rgba(0,120,215,0.25);
+}
+
+/* Very subtle tech-grid texture overlay */
+.logo-img-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image:
+    linear-gradient(rgba(0,200,255,1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,255,1) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ── Image ────────────────────────────────────────────────── */
+.logo-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+  position: relative;
+  z-index: 3;
+  /* Boost vibrancy & contrast so hawk really pops */
+  filter: contrast(1.18) saturate(1.35) brightness(1.12);
+  transition: filter 0.4s;
+}
+.logo-img-container:hover .logo-img {
+  filter: contrast(1.25) saturate(1.55) brightness(1.2);
+}
+
+/* ── Scan line sweep ──────────────────────────────────────── */
+.logo-scan {
+  position: absolute;
+  left:0; right:0; top:0;
+  height: 55px;
+  z-index: 8;
+  border-radius: 50%;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0,220,255,0.12) 45%,
+    rgba(0,220,255,0.26) 50%,
+    rgba(0,220,255,0.12) 55%,
+    transparent 100%
+  );
+  animation: scanDown 4.5s ease-in-out infinite;
+}
+@keyframes scanDown {
+  0%   { top:-55px; opacity:0;  }
+  8%   {            opacity:1;  }
+  90%  {            opacity:.9; }
+  100% { top:265px; opacity:0;  }
+}
+
+/* ── Eye glow (positioned over hawk eye) ─────────────────── */
+.eye-glow-dot {
+  position: absolute;
+  /* hawk eye ~42% left, 38% top of 265px ≈ x=111, y=101 */
+  left: 108px; top: 98px;
+  width: 32px; height: 23px;
+  border-radius: 50%;
+  z-index: 9;
+  pointer-events: none;
+  background: radial-gradient(ellipse,
+    rgba(0,235,255,0.7)  0%,
+    rgba(0,185,255,0.28) 50%,
+    transparent 75%
+  );
+  filter: blur(1.8px);
+  animation: eyeGlow 2.8s ease-in-out infinite;
+}
+@keyframes eyeGlow {
+  0%,100% { opacity:.5; transform:scale(1);   }
+  50%      { opacity:1;  transform:scale(1.3); }
+}
+
+/* ── Eyelid blink ─────────────────────────────────────────── */
+.eye-blink-lid {
+  position: absolute;
+  left: 116px; top: 80px;
+  width: 15px; height: 20;
+  background: linear-gradient(to bottom, #030c16 65%, rgba(3,12,22,.45) 100%);
+  border-radius: 0 0 22px 22px;
+  pointer-events: none;
+  z-index: 11;
+  transform-origin: top center;
+  animation: blinkLid 6s ease-in-out infinite;
+}
+@keyframes blinkLid {
+  0%,34%,40%,70%,76%,100% { height:0;    opacity:0; }
+  37%                      { height:23px; opacity:1; }
+  73%                      { height:23px; opacity:1; }
+}
+
+/* ── Floating data particles ──────────────────────────────── */
+.particle {
+  position: absolute;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 9;
+  background: #00c8ff;
+  box-shadow: 0 0 5px #00c8ff, 0 0 12px rgba(0,200,255,.7);
+}
+.p1{width:5px;height:5px;left:180px;top:88px; animation:pFloat1 3.2s ease-in-out infinite       }
+.p2{width:4px;height:4px;left:197px;top:107px;animation:pFloat2 2.8s ease-in-out infinite  .5s;background:#00aadd}
+.p3{width:6px;height:6px;left:188px;top:76px; animation:pFloat3 3.6s ease-in-out infinite 1.0s}
+.p4{width:3px;height:3px;left:203px;top:121px;animation:pFloat4 2.5s ease-in-out infinite  .2s;background:#7de8ff}
+.p5{width:4px;height:4px;left:174px;top:99px; animation:pFloat5 3.0s ease-in-out infinite  .8s}
+.p6{width:5px;height:5px;left:193px;top:85px; animation:pFloat6 4.0s ease-in-out infinite 1.3s;background:#00aadd}
+.p7{width:3px;height:3px;left:207px;top:93px; animation:pFloat7 2.6s ease-in-out infinite  .4s}
+.p8{width:4px;height:4px;left:183px;top:115px;animation:pFloat8 3.4s ease-in-out infinite 1.6s;background:#7de8ff}
+@keyframes pFloat1{0%{opacity:0;transform:translate(0,0)scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(36px,-26px)scale(.2)}}
+@keyframes pFloat2{0%{opacity:0;transform:translate(0,0)scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(46px,-16px)scale(.2)}}
+@keyframes pFloat3{0%{opacity:0;transform:translate(0,0)scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(41px,-36px)scale(.2)}}
+@keyframes pFloat4{0%{opacity:0;transform:translate(0,0)scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(51px,-9px) scale(.2)}}
+@keyframes pFloat5{0%{opacity:0;transform:translate(0,0)scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(29px,-31px)scale(.2)}}
+@keyframes pFloat6{0%{opacity:0;transform:translate(0,0)scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(56px,-21px)scale(.2)}}
+@keyframes pFloat7{0%{opacity:0;transform:translate(0,0)scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(43px,-41px)scale(.2)}}
+@keyframes pFloat8{0%{opacity:0;transform:translate(0,0)scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(31px,-11px)scale(.2)}}
+
+/* ── Corner accents ───────────────────────────────────────── */
+.corner-tl,.corner-tr{
+  position:absolute;width:28px;height:28px;
+  pointer-events:none;opacity:0;
+  animation:cornerAppear 1.6s ease forwards;
+}
+.corner-tl{top:8px;left:38px;border-top:2px solid rgba(0,200,255,.7);border-left:2px solid rgba(0,200,255,.7);animation-delay:.8s}
+.corner-tr{top:8px;right:38px;border-top:2px solid rgba(0,200,255,.7);border-right:2px solid rgba(0,200,255,.7);animation-delay:1s}
+@keyframes cornerAppear{to{opacity:.7}}
+
+/* ── Orbital rings overlay ────────────────────────────────── */
+.ring-outer{position:absolute;width:275px;height:275px;border-radius:50%;border:1.5px dashed rgba(0,200,255,.18);pointer-events:none;z-index:12;animation:spinCW  22s linear infinite}
+.ring-inner{position:absolute;width:254px;height:254px;border-radius:50%;border:1px   dashed rgba(0,160,220,.12);pointer-events:none;z-index:12;animation:spinCCW 15s linear infinite}
+@keyframes spinCW {to{transform:rotate( 360deg)}}
+@keyframes spinCCW{to{transform:rotate(-360deg)}}
+
+/* ── Hero title ───────────────────────────────────────────── */
+.hero-title{font-size:3.5rem;margin-bottom:1rem;animation:fadeInUp 1s ease .3s backwards}
+.hero-brand{
+  font-family:'Orbitron',monospace;
+  background:linear-gradient(135deg,#c8dff0,#00c8ff,#a0d8ef);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 10px rgba(0,200,255,.5));
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
 <section class="hero">
-    <h1>Welcome to DATAI</h1>
-    <p>Your comprehensive platform for crop yield forecasting and data analysis using cutting-edge AI models. Transform your agricultural data into actionable insights with deep learning, machine learning, and statistical time series models.</p>
-    <div class="cta-buttons">
+    <!-- ── DATAI LOGO WITH ANIMATIONS ─────────────────────── -->
+  <div class="datai-logo-wrap">
+
+    <!-- Ambient halo rings (behind image) -->
+    <div class="logo-halo"></div>
+    <div class="logo-halo logo-halo-2"></div>
+    <div class="logo-halo logo-halo-3"></div>
+
+    <!-- ★ IMAGE CONTAINER — dark dramatic interior -->
+    <div class="logo-img-container">
+
+      <!-- Real DATAI hawk image -->
+      <img src="{{ url_for('static', filename='images/datai_logo.png') }}"
+           alt="DATAI Hawk Logo" class="logo-img" />
+
+      <!-- Overlay layers (all z-indexed above the image) -->
+      <div class="logo-scan"></div>
+      <div class="eye-glow-dot"></div>
+      <div class="eye-blink-lid"></div>
+
+      <div class="particle p1"></div><div class="particle p2"></div>
+      <div class="particle p3"></div><div class="particle p4"></div>
+      <div class="particle p5"></div><div class="particle p6"></div>
+      <div class="particle p7"></div><div class="particle p8"></div>
+
+      <div class="corner-tl"></div>
+      <div class="corner-tr"></div>
+      <div class="ring-outer"></div>
+      <div class="ring-inner"></div>
+    </div>
+  </div>
+    
+    <h1 class="hero-title">Welcome to <span class="hero-brand">DATAI</span></h1>
+  <p>Your comprehensive platform for crop yield forecasting and data analysis using cutting-edge AI models. Transform your agricultural data into actionable insights with deep learning, machine learning, and statistical time series models.</p>
+  <div class="cta-buttons">
     <a href="{{ url_for('user_traffic') }}" class="btn btn-primary">🌍 View Global Traffic</a>
     <a href="#how-it-works" class="btn btn-secondary">Learn How It Works</a>
-</div>
+  </div>
 </section>
 
 <!-- Main Content -->

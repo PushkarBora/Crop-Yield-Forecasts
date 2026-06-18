@@ -1,0 +1,197 @@
+<div class="auto-tune-section">
+    <label for="auto_tune_cnn">
+        <input type="checkbox" id="auto_tune_cnn" name="auto_tune_cnn" value="true" checked>
+        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+    </label>
+</div>
+
+<div id="cnn_grid_search_ranges" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p>Define parameter ranges for exhaustive search. The system will test all combinations to find the optimal configuration.</p>
+
+    <div class="parameter-group">
+        <label>Number of Lags Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_lags_min">Minimum</label><input type="number" id="cnn_lags_min" name="cnn_lags_min" value="2" min="1" max="20"></div>
+            <div><label for="cnn_lags_max">Maximum</label><input type="number" id="cnn_lags_max" name="cnn_lags_max" value="5" min="1" max="20"></div>
+            <div><label for="cnn_lags_step">By</label><input type="number" id="cnn_lags_step" name="cnn_lags_step" value="1" min="1" max="5"></div>
+        </div>
+        <small class="help-text-small">💡 Sequence length (window size). Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Base Filters Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_num_filters_min">Minimum</label><input type="number" id="cnn_num_filters_min" name="cnn_num_filters_min" value="8" min="4" max="64" step="4"></div>
+            <div><label for="cnn_num_filters_max">Maximum</label><input type="number" id="cnn_num_filters_max" name="cnn_num_filters_max" value="32" min="4" max="64" step="4"></div>
+            <div><label for="cnn_num_filters_step">By</label><input type="number" id="cnn_num_filters_step" name="cnn_num_filters_step" value="8" min="2" max="16"></div>
+        </div>
+        <small class="help-text-small">💡 Base Conv1d filter count — doubles each layer. Example: 8 to 32 by 8 → tests [8, 16, 24, 32]</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Kernel Size Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_kernel_size_min">Minimum</label><input type="number" id="cnn_kernel_size_min" name="cnn_kernel_size_min" value="3" min="1" max="9" step="2"></div>
+            <div><label for="cnn_kernel_size_max">Maximum</label><input type="number" id="cnn_kernel_size_max" name="cnn_kernel_size_max" value="7" min="1" max="9" step="2"></div>
+            <div><label for="cnn_kernel_size_step">By</label><input type="number" id="cnn_kernel_size_step" name="cnn_kernel_size_step" value="2" min="1" max="4"></div>
+        </div>
+        <small class="help-text-small">💡 Conv1d kernel width. Keep odd-numbered for symmetric padding. Example: 3 to 7 by 2 → tests [3, 5, 7]</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Number of Conv Layers Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_num_layers_min">Minimum</label><input type="number" id="cnn_num_layers_min" name="cnn_num_layers_min" value="1" min="1" max="5"></div>
+            <div><label for="cnn_num_layers_max">Maximum</label><input type="number" id="cnn_num_layers_max" name="cnn_num_layers_max" value="3" min="1" max="5"></div>
+            <div><label for="cnn_num_layers_step">By</label><input type="number" id="cnn_num_layers_step" name="cnn_num_layers_step" value="1" min="1" max="2"></div>
+        </div>
+        <small class="help-text-small">💡 Depth of the convolutional tower. Example: 1 to 3 by 1 → tests [1, 2, 3]</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Dropout Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_dropout_min">Minimum</label><input type="number" id="cnn_dropout_min" name="cnn_dropout_min" value="0.0" min="0.0" max="0.5" step="0.1"></div>
+            <div><label for="cnn_dropout_max">Maximum</label><input type="number" id="cnn_dropout_max" name="cnn_dropout_max" value="0.3" min="0.0" max="0.5" step="0.1"></div>
+            <div><label for="cnn_dropout_step">By</label><input type="number" id="cnn_dropout_step" name="cnn_dropout_step" value="0.1" min="0.05" max="0.2" step="0.05"></div>
+        </div>
+        <small class="help-text-small">💡 Applied after each conv block and in the FC head (also used for MC sampling). Example: 0.0 to 0.3 by 0.1</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Learning Rate Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_learning_rate_min">Minimum</label><input type="number" id="cnn_learning_rate_min" name="cnn_learning_rate_min" value="0.0005" min="0.0001" max="0.01" step="0.0001"></div>
+            <div><label for="cnn_learning_rate_max">Maximum</label><input type="number" id="cnn_learning_rate_max" name="cnn_learning_rate_max" value="0.005" min="0.0001" max="0.01" step="0.0001"></div>
+            <div><label for="cnn_learning_rate_step">By</label><input type="number" id="cnn_learning_rate_step" name="cnn_learning_rate_step" value="0.001" min="0.0001" max="0.005" step="0.0001"></div>
+        </div>
+        <small class="help-text-small">⚙️ Adam optimizer step size</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Weight Decay Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_weight_decay_min">Minimum</label><input type="number" id="cnn_weight_decay_min" name="cnn_weight_decay_min" value="0.00001" min="0.00001" max="0.001" step="0.00001"></div>
+            <div><label for="cnn_weight_decay_max">Maximum</label><input type="number" id="cnn_weight_decay_max" name="cnn_weight_decay_max" value="0.0005" min="0.00001" max="0.001" step="0.00001"></div>
+            <div><label for="cnn_weight_decay_step">By</label><input type="number" id="cnn_weight_decay_step" name="cnn_weight_decay_step" value="0.0001" min="0.00001" max="0.0005" step="0.00001"></div>
+        </div>
+        <small class="help-text-small">📊 L2 regularization strength</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Huber Delta Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_huber_delta_min">Minimum</label><input type="number" id="cnn_huber_delta_min" name="cnn_huber_delta_min" value="0.7" min="0.5" max="2.0" step="0.1"></div>
+            <div><label for="cnn_huber_delta_max">Maximum</label><input type="number" id="cnn_huber_delta_max" name="cnn_huber_delta_max" value="1.5" min="0.5" max="2.0" step="0.1"></div>
+            <div><label for="cnn_huber_delta_step">By</label><input type="number" id="cnn_huber_delta_step" name="cnn_huber_delta_step" value="0.4" min="0.1" max="1.0" step="0.1"></div>
+        </div>
+        <small class="help-text-small">🎯 Loss function robustness parameter</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Early Stopping Patience Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_patience_min">Minimum</label><input type="number" id="cnn_patience_min" name="cnn_patience_min" value="20" min="10" max="100" step="10"></div>
+            <div><label for="cnn_patience_max">Maximum</label><input type="number" id="cnn_patience_max" name="cnn_patience_max" value="50" min="10" max="100" step="10"></div>
+            <div><label for="cnn_patience_step">By</label><input type="number" id="cnn_patience_step" name="cnn_patience_step" value="10" min="5" max="20"></div>
+        </div>
+        <small class="help-text-small">⏱️ Epochs to wait before early stopping</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Number of Epochs Range</label>
+        <div class="range-input-group">
+            <div><label for="cnn_epochs_min">Minimum</label><input type="number" id="cnn_epochs_min" name="cnn_epochs_min" value="100" min="50" max="500" step="50"></div>
+            <div><label for="cnn_epochs_max">Maximum</label><input type="number" id="cnn_epochs_max" name="cnn_epochs_max" value="300" min="50" max="500" step="50"></div>
+            <div><label for="cnn_epochs_step">By</label><input type="number" id="cnn_epochs_step" name="cnn_epochs_step" value="100" min="50" max="200"></div>
+        </div>
+        <small class="help-text-small">🔄 Maximum training epochs</small>
+    </div>
+
+    <div id="cnn_combination_estimate" class="combination-estimate warning">
+        <strong>⚠️ Estimated Combinations:</strong>
+        <span id="cnn_total_combinations">Calculating...</span>
+        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+            💡 Tip: Fewer combinations = faster training. Adjust ranges to balance speed vs thoroughness.
+        </small>
+    </div>
+</div>
+
+<div id="cnn_manual_section" class="manual-section" style="display: none;">
+    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+
+    <label for="cnn_lags">Number of Lags</label>
+    <input type="number" id="cnn_lags" name="cnn_lags" value="3" min="1" max="20">
+
+    <label for="num_filters">Base Filters</label>
+    <input type="number" id="num_filters" name="num_filters" value="16" min="4">
+
+    <label for="kernel_size">Kernel Size</label>
+    <input type="number" id="kernel_size" name="kernel_size" value="3" min="1" step="2">
+
+    <label for="num_layers">Number of Conv Layers</label>
+    <input type="number" id="num_layers" name="num_layers" value="2" min="1">
+
+    <label for="cnn_dropout">Dropout Rate</label>
+    <input type="number" step="0.05" id="cnn_dropout" name="cnn_dropout" value="0.3" min="0" max="0.9">
+
+    <label for="learning_rate">Learning Rate</label>
+    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003">
+
+    <label for="weight_decay">Weight Decay</label>
+    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001">
+
+    <label for="epochs">Number of Epochs</label>
+    <input type="number" id="epochs" name="epochs" value="200">
+
+    <label for="patience">Early Stopping Patience</label>
+    <input type="number" id="patience" name="patience" value="30">
+
+    <label for="huber_delta">Huber Loss Delta</label>
+    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0">
+</div>
+
+<div class="help-text">
+    <strong>💡 Note:</strong> If "Auto-Tune" is checked, grid search will test all combinations. Filters double each layer (e.g. 16→32→64), so keep base filters small.
+</div>
+
+<script>
+document.getElementById('auto_tune_cnn').addEventListener('change', function() {
+    document.getElementById('cnn_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('cnn_manual_section').style.display = this.checked ? 'none' : 'block';
+});
+
+document.getElementById('cnn_grid_search_ranges').style.display =
+    document.getElementById('auto_tune_cnn').checked ? 'block' : 'none';
+document.getElementById('cnn_manual_section').style.display =
+    document.getElementById('auto_tune_cnn').checked ? 'none' : 'block';
+
+function calculateCNNCombinations() {
+    const calc = (min, max, step) => Math.floor((max - min) / step + 1e-9) + 1;
+    const lags  = calc(parseFloat(document.getElementById('cnn_lags_min').value),         parseFloat(document.getElementById('cnn_lags_max').value),         parseFloat(document.getElementById('cnn_lags_step').value));
+    const filt  = calc(parseFloat(document.getElementById('cnn_num_filters_min').value),  parseFloat(document.getElementById('cnn_num_filters_max').value),  parseFloat(document.getElementById('cnn_num_filters_step').value));
+    const kern  = calc(parseFloat(document.getElementById('cnn_kernel_size_min').value),  parseFloat(document.getElementById('cnn_kernel_size_max').value),  parseFloat(document.getElementById('cnn_kernel_size_step').value));
+    const lyrs  = calc(parseFloat(document.getElementById('cnn_num_layers_min').value),   parseFloat(document.getElementById('cnn_num_layers_max').value),   parseFloat(document.getElementById('cnn_num_layers_step').value));
+    const drop  = calc(parseFloat(document.getElementById('cnn_dropout_min').value),      parseFloat(document.getElementById('cnn_dropout_max').value),      parseFloat(document.getElementById('cnn_dropout_step').value));
+    const lr    = calc(parseFloat(document.getElementById('cnn_learning_rate_min').value),parseFloat(document.getElementById('cnn_learning_rate_max').value),parseFloat(document.getElementById('cnn_learning_rate_step').value));
+    const wd    = calc(parseFloat(document.getElementById('cnn_weight_decay_min').value), parseFloat(document.getElementById('cnn_weight_decay_max').value), parseFloat(document.getElementById('cnn_weight_decay_step').value));
+    const hd    = calc(parseFloat(document.getElementById('cnn_huber_delta_min').value),  parseFloat(document.getElementById('cnn_huber_delta_max').value),  parseFloat(document.getElementById('cnn_huber_delta_step').value));
+    const pat   = calc(parseFloat(document.getElementById('cnn_patience_min').value),     parseFloat(document.getElementById('cnn_patience_max').value),     parseFloat(document.getElementById('cnn_patience_step').value));
+    const ep    = calc(parseFloat(document.getElementById('cnn_epochs_min').value),       parseFloat(document.getElementById('cnn_epochs_max').value),       parseFloat(document.getElementById('cnn_epochs_step').value));
+
+    const total = lags * filt * kern * lyrs * drop * lr * wd * hd * pat * ep;
+    document.getElementById('cnn_total_combinations').textContent = total.toLocaleString() + ' combinations';
+
+    const el = document.getElementById('cnn_combination_estimate');
+    el.className = 'combination-estimate';
+    if (total < 100) el.classList.add('good');
+    else if (total < 1000) el.classList.add('warning');
+    else el.classList.add('danger');
+}
+
+document.querySelectorAll('[id^="cnn_"]').forEach(input => {
+    input.addEventListener('input', calculateCNNCombinations);
+});
+calculateCNNCombinations();
+</script>

@@ -38,7 +38,7 @@
             <input type="number" id="rf_lags_max" name="rf_lags_max" value="5" min="1" max="20">
         </div>
         <div>
-            <label for="rf_lags_step">Step</label>
+            <label for="rf_lags_step">By</label>
             <input type="number" id="rf_lags_step" name="rf_lags_step" value="1" min="1" max="5">
         </div>
     </div>
@@ -69,7 +69,7 @@
                     type="number" 
                     id="rf_n_estimators_max"
                     name="rf_n_estimators_max" 
-                    value="500" 
+                    value="300" 
                     min="10" 
                     max="1000" 
                     step="10"
@@ -77,7 +77,7 @@
                     class="rf-grid-input">
             </div>
             <div>
-                <label for="rf_n_estimators_step">Step</label>
+                <label for="rf_n_estimators_step">By</label>
                 <input 
                     type="number" 
                     id="rf_n_estimators_step"
@@ -115,14 +115,14 @@
                     type="number" 
                     id="rf_max_depth_max"
                     name="rf_max_depth_max" 
-                    value="10" 
+                    value="6" 
                     min="1" 
                     max="20"
                     aria-label="Max depth maximum value"
                     class="rf-grid-input">
             </div>
             <div>
-                <label for="rf_max_depth_step">Step</label>
+                <label for="rf_max_depth_step">By</label>
                 <input 
                     type="number" 
                     id="rf_max_depth_step"
@@ -165,14 +165,14 @@
                     type="number" 
                     id="rf_min_samples_split_max"
                     name="rf_min_samples_split_max" 
-                    value="10" 
+                    value="6" 
                     min="2" 
                     max="20"
                     aria-label="Min samples split maximum value"
                     class="rf-grid-input">
             </div>
             <div>
-                <label for="rf_min_samples_split_step">Step</label>
+                <label for="rf_min_samples_split_step">By</label>
                 <input 
                     type="number" 
                     id="rf_min_samples_split_step"
@@ -210,14 +210,14 @@
                     type="number" 
                     id="rf_min_samples_leaf_max"
                     name="rf_min_samples_leaf_max" 
-                    value="4" 
+                    value="2" 
                     min="1" 
                     max="10"
                     aria-label="Min samples leaf maximum value"
                     class="rf-grid-input">
             </div>
             <div>
-                <label for="rf_min_samples_leaf_step">Step</label>
+                <label for="rf_min_samples_leaf_step">By</label>
                 <input 
                     type="number" 
                     id="rf_min_samples_leaf_step"
@@ -328,7 +328,7 @@ document.getElementById('auto_tune_rf').addEventListener('change', function() {
 
 // Calculate estimated combinations
 function calculateRFCombinations() {
-    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+    const calc = (min, max, step) => Math.floor((max - min) / step + 1e-9) + 1;
     
     const lags = calc(
         parseFloat(document.getElementById('rf_lags_min').value),

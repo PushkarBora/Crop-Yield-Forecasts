@@ -1,0 +1,63 @@
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables (security risk if copied)
+.env
+.env.*
+
+# Flask runtime files
+instance/
+flask_session/
+
+# Git (no need in container)
+.git/
+.gitignore
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# ML Model files (large binaries)
+*.pt
+*.pth
+*.h5
+*.pkl
+*.joblib
+
+# Data files (should be uploaded at runtime)
+*.csv
+*.xlsx
+*.xls
+
+# Temporary/runtime directories
+tmp/
+temp/
+training_progress/
+
+# Jupyter
+*.ipynb
+.ipynb_checkpoints/
+
+# Docs
+README.md
+*.md

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Comparison – Results</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Times New Roman", serif;
+      font-size: 12pt;
+      color: #111;
+      background: #fff;
+      padding: 30px 40px;
+    }
+    h1  { font-size: 18pt; margin-bottom: 4px; }
+    h2  { font-size: 14pt; margin: 22px 0 6px; border-bottom: 1.5px solid #1F4E79;
+          padding-bottom: 3px; color: #1F4E79; }
+    h3  { font-size: 12pt; margin: 14px 0 4px; color: #2c5f8a; }
+    p   { margin: 3px 0; font-size: 11pt; }
+
+    /* ── Summary metrics strip ── */
+    .metrics { display: flex; gap: 20px; flex-wrap: wrap; margin: 12px 0 20px; }
+    .metric-box {
+      border: 1px solid #ccc; border-radius: 6px;
+      padding: 8px 14px; min-width: 115px; text-align: center;
+    }
+    .metric-box .label { font-size: 8.5pt; color: #555; text-transform: uppercase; letter-spacing: .4px; }
+    .metric-box .value { font-size: 13pt; font-weight: bold; color: #1F4E79; margin-top: 3px; }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10pt; }
+    th {
+      background: #1F4E79; color: #fff;
+      padding: 6px 8px; text-align: center; font-size: 9.5pt;
+    }
+    td { padding: 5px 8px; text-align: center; border: 1px solid #ddd; }
+    tr:nth-child(even) td { background: #EBF3FA; }
+    .winner-row td { background: #d4edda !important; font-weight: bold; }
+
+    /* ── Model section divider ── */
+    .model-block {
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px dashed #ccc;
+      page-break-inside: avoid;
+    }
+    .model-block:last-child { border-bottom: none; }
+
+    .winner-tag {
+      display: inline-block;
+      background: #28a745; color: white;
+      font-size: 9pt; font-weight: bold;
+      padding: 2px 10px; border-radius: 10px;
+      margin-left: 10px; vertical-align: middle;
+    }
+    .auto-tag {
+      display: inline-block;
+      background: #1F4E79; color: white;
+      font-size: 8.5pt; padding: 2px 8px;
+      border-radius: 10px; margin-left: 8px; vertical-align: middle;
+    }
+    .manual-tag {
+      display: inline-block;
+      background: #888; color: white;
+      font-size: 8.5pt; padding: 2px 8px;
+      border-radius: 10px; margin-left: 8px; vertical-align: middle;
+    }
+
+    /* ── Buttons (screen only) ── */
+    .btn-bar { display: flex; gap: 12px; margin-bottom: 24px; }
+    .btn {
+      padding: 9px 22px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 11pt; font-weight: bold;
+      text-decoration: none; display: inline-block;
+    }
+    .btn-print { background: #1F4E79; color: #fff; }
+    .btn-dl    { background: #27ae60; color: #fff; }
+    .btn-close { background: #e0e0e0; color: #333; }
+
+    /* ── Print overrides ── */
+    @media print {
+      .btn-bar { display: none !important; }
+      body { padding: 10px 15px; }
+      h2, h3 { page-break-after: avoid; }
+      table   { page-break-inside: auto; }
+      tr      { page-break-inside: avoid; }
+      .model-block { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Action buttons (hidden when printing) -->
+<div class="btn-bar">
+  <button class="btn btn-print" onclick="window.print()">🖨 Print / Save as PDF</button>
+  <a class="btn btn-dl" href="{{ url_for('download_comparison_excel') }}">⬇ Download Excel</a>
+  <button class="btn btn-close" onclick="window.close()">✕ Close</button>
+</div>
+
+<!-- Report Header -->
+<h1>Crop Yield Forecasting — Model Comparison Report</h1>
+<p>
+  <strong>Frequency:</strong> {{ frequency | capitalize }} &nbsp;|&nbsp;
+  <strong>Horizon:</strong> {{ horizon }} period(s) &nbsp;|&nbsp;
+  <strong>Models compared:</strong> {{ models | length }} &nbsp;|&nbsp;
+  <strong>Generated:</strong> {{ timestamp }}
+</p>
+
+<!-- ── Summary Ranking Table ── -->
+<h2>Overall Performance Summary</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Rank</th>
+      <th style="text-align:left">Model</th>
+      <th>Auto-Tuned</th>
+      <th>Test RMSE ★</th>
+      <th>Test MAE</th>
+      <th>Test MAPE (%)</th>
+      <th>Train RMSE</th>
+      <th>Train MAE</th>
+      <th>Train MAPE (%)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for model in models %}
+    <tr {% if loop.index == 1 %}class="winner-row"{% endif %}>
+      <td>
+        {% if loop.index == 1 %}🥇
+        {% elif loop.index == 2 %}🥈
+        {% elif loop.index == 3 %}🥉
+        {% else %}{{ loop.index }}{% endif %}
+      </td>
+      <td style="text-align:left; font-weight:600">{{ model.name }}</td>
+      <td>{{ "Yes" if model.auto_tuned else "No" }}</td>
+      <td><strong>{{ "%.4f" | format(model.rmse_test) }}</strong></td>
+      <td>{{ "%.4f" | format(model.mae_test) }}</td>
+      <td>{{ "%.2f" | format(model.mape_test) }}%</td>
+      <td>{{ "%.4f" | format(model.rmse_train) }}</td>
+      <td>{{ "%.4f" | format(model.mae_train) }}</td>
+      <td>{{ "%.2f" | format(model.mape_train) }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- ── Per-Model Detailed Sections ── -->
+<h2 style="margin-top: 30px;">Detailed Results by Model</h2>
+
+{% for model in models %}
+<div class="model-block">
+
+  <!-- Model heading -->
+  <h3>
+    {% if loop.index == 1 %}🏆{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}.{% endif %}
+    {{ model.name }}
+    {% if loop.index == 1 %}<span class="winner-tag">Best Model</span>{% endif %}
+    {% if model.auto_tuned %}
+      <span class="auto-tag">Auto-Tuned</span>
+    {% else %}
+      <span class="manual-tag">Manual</span>
+    {% endif %}
+  </h3>
+
+  <!-- Metrics strip -->
+  <div class="metrics">
+    <div class="metric-box">
+      <div class="label">RMSE – Train</div>
+      <div class="value">{{ "%.4f" | format(model.rmse_train) }}</div>
+    </div>
+    <div class="metric-box">
+      <div class="label">MAE – Train</div>
+      <div class="value">{{ "%.4f" | format(model.mae_train) }}</div>
+    </div>
+    <div class="metric-box">
+      <div class="label">MAPE – Train</div>
+      <div class="value">{{ "%.2f" | format(model.mape_train) }}%</div>
+    </div>
+    <div class="metric-box">
+      <div class="label">RMSE – Test</div>
+      <div class="value">{{ "%.4f" | format(model.rmse_test) }}</div>
+    </div>
+    <div class="metric-box">
+      <div class="label">MAE – Test</div>
+      <div class="value">{{ "%.4f" | format(model.mae_test) }}</div>
+    </div>
+    <div class="metric-box">
+      <div class="label">MAPE – Test</div>
+      <div class="value">{{ "%.2f" | format(model.mape_test) }}%</div>
+    </div>
+  </div>
+
+  <!-- Model config -->
+  {% if model.model_config %}
+  <p><strong>Configuration:</strong></p>
+  <table style="width:auto; min-width:300px; margin-bottom:10px;">
+    <tr><th style="text-align:left">Parameter</th><th>Value</th></tr>
+    {% for k, v in model.model_config.items() %}
+    <tr><td style="text-align:left">{{ k }}</td><td>{{ v }}</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  <!-- Training table -->
+  <p><strong>Training Predictions:</strong></p>
+  <table>
+    <thead>
+      <tr>{% for col in model.train_table.columns %}<th>{{ col }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+      {% for row in model.train_table.itertuples(index=False) %}
+      <tr>{% for val in row %}<td>{{ val }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Test table -->
+  <p style="margin-top:10px"><strong>Test Predictions:</strong></p>
+  <table>
+    <thead>
+      <tr>{% for col in model.test_table.columns %}<th>{{ col }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+      {% for row in model.test_table.itertuples(index=False) %}
+      <tr>{% for val in row %}<td>{{ val }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Forecast table (if available) -->
+  {% if model.key in forecasts %}
+  <p style="margin-top:10px"><strong>Forecast:</strong></p>
+  <table>
+    <thead>
+      <tr>{% for col in forecasts[model.key].columns %}<th>{{ col }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+      {% for row in forecasts[model.key].itertuples(index=False) %}
+      <tr>{% for val in row %}<td>{{ val }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+</div>
+{% endfor %}
+
+</body>
+</html>

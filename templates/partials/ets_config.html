@@ -1,0 +1,83 @@
+<div class="auto-tune-section">
+    <label for="auto_ets_cmp">
+        <input type="checkbox" id="auto_ets_cmp" name="auto_ets" value="true" checked
+               style="width:22px;height:22px;margin-right:0.8rem;accent-color:#667eea;">
+        <span>🚀 Auto-Select Best ETS Configuration (Recommended)</span>
+    </label>
+</div>
+
+<div id="cmp_ets_grid_ranges" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p>ETS tries 10 common Error–Trend–Seasonality configurations and selects the best by AIC.</p>
+
+    <div class="parameter-group">
+        <label for="cmp_ets_seasonal_periods">Seasonal Period (s)</label>
+        <select id="cmp_ets_seasonal_periods" name="ets_seasonal_periods"
+                title="ETS seasonal period"
+                style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:0.5rem;">
+            <option value="1">1 — No seasonality</option>
+            <option value="4">4 — Quarterly</option>
+            <option value="7">7 — Weekly (daily data)</option>
+            <option value="12" selected>12 — Monthly (annual cycle)</option>
+            <option value="24">24 — Hourly (daily cycle)</option>
+            <option value="52">52 — Weekly (annual cycle)</option>
+        </select>
+        <small class="help-text-small">💡 Used by seasonal configurations. Auto mode also tests non-seasonal configs.</small>
+    </div>
+</div>
+
+<div id="cmp_ets_manual_section" class="manual-section" style="display:none;">
+    <h4>🎛️ Manual ETS Configuration</h4>
+
+    <label>Error Component</label>
+    <select name="ets_error" title="ETS error component"
+            style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+        <option value="add" selected>Additive (A) — recommended for most series</option>
+        <option value="mul">Multiplicative (M) — for series with growing variation</option>
+    </select>
+
+    <label>Trend Component</label>
+    <select name="ets_trend" title="ETS trend component"
+            style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+        <option value="none">None (N) — no trend</option>
+        <option value="add" selected>Additive (A) — linear trend</option>
+        <option value="mul">Multiplicative (M) — exponential trend</option>
+        <option value="add_damped">Additive Damped (Ad) — trend flattens out</option>
+        <option value="mul_damped">Multiplicative Damped (Md)</option>
+    </select>
+
+    <label>Seasonal Component</label>
+    <select name="ets_seasonal" title="ETS seasonal component"
+            style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+        <option value="none">None (N) — no seasonality</option>
+        <option value="add" selected>Additive (A) — constant seasonal effect</option>
+        <option value="mul">Multiplicative (M) — proportional seasonal effect</option>
+    </select>
+
+    <label for="cmp_ets_sp_manual">Seasonal Period (s)</label>
+    <select id="cmp_ets_sp_manual" name="ets_seasonal_periods" title="ETS seasonal period (manual)"
+            style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+        <option value="1">1 — No seasonality</option>
+        <option value="4">4 — Quarterly</option>
+        <option value="12" selected>12 — Monthly</option>
+        <option value="52">52 — Weekly annual</option>
+    </select>
+</div>
+
+<div class="help-text">
+    <strong>💡 Note:</strong> ETS is always <strong>univariate</strong> — no exogenous variable support.
+    Auto mode tests 10 configurations: SES, Holt's Linear, Damped Holt, Holt-Winters Additive/Multiplicative, and more.
+</div>
+
+<script>
+(function() {
+    const cb  = document.getElementById('auto_ets_cmp');
+    if (!cb) return;
+    function syncEts() {
+        document.getElementById('cmp_ets_grid_ranges').style.display  = cb.checked ? 'block' : 'none';
+        document.getElementById('cmp_ets_manual_section').style.display = cb.checked ? 'none'  : 'block';
+    }
+    cb.addEventListener('change', syncEts);
+    syncEts();
+})();
+</script>

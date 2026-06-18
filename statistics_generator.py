@@ -444,13 +444,31 @@ def white_test(series, lag=1):
 # ============================================================
 # PLOTS
 # ============================================================
-
+def _cleanup_old_plots(directory="static/stats_plots", max_age_seconds=3600):
+    """Delete plot files older than max_age_seconds"""
+    import time
+    try:
+        if not os.path.exists(directory):
+            return
+        now = time.time()
+        for fname in os.listdir(directory):
+            fpath = os.path.join(directory, fname)
+            if os.path.isfile(fpath):
+                if now - os.path.getmtime(fpath) > max_age_seconds:
+                    os.remove(fpath)
+    except Exception:
+        pass  # Never crash due to cleanup failure
 def generate_plots(data: pd.DataFrame, plot_types: list,
                    time_col=None, target_col=None, exog_cols=None) -> dict:
 
+    _cleanup_old_plots()
     os.makedirs("static/stats_plots", exist_ok=True)
     plot_files = {}
     exog_cols  = exog_cols or []
+
+    # ── ADD THIS: unique timestamp per call ──────────────────────────────────
+    import time
+    ts = int(time.time())
 
     # ── Resolve columns ───────────────────────────────────────────────────────
     time_col   = _resolve_time_col(data, time_col)
@@ -467,10 +485,10 @@ def generate_plots(data: pd.DataFrame, plot_types: list,
     COLORS = [PURPLE, GREEN, ORANGE, "#e74c3c", "#f39c12", "#8e44ad"]
 
     def save(fig, name):
-        path = f"static/stats_plots/{name}.png"
+        path = f"static/stats_plots/{name}_{ts}.png"
         fig.savefig(path, bbox_inches="tight", dpi=120)
         plt.close(fig)
-        return f"stats_plots/{name}.png"
+        return f"stats_plots/{name}_{ts}.png"
 
     # ── Boxplot ───────────────────────────────────────────────────────────────
     if "boxplot" in plot_types:

@@ -1,0 +1,49 @@
+<div class="auto-tune-section">
+    <label>
+        <input type="checkbox" id="auto_rw" checked disabled
+               style="width:22px;height:22px;margin-right:0.8rem;accent-color:#667eea;">
+        <span>📊 Random Walk — No hyperparameter search (closed-form benchmark)</span>
+    </label>
+</div>
+
+<div class="manual-section">
+    <h4>🎛️ Random Walk Configuration</h4>
+
+    <label>Variant</label>
+    <select name="rw_variant" id="cmp_rw_variant" title="Random Walk variant selection"
+            style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+        <option value="pure">Pure Random Walk — ŷ_{t+1} = y_t</option>
+        <option value="drift">Random Walk with Drift — ŷ_{t+1} = y_t + μ</option>
+        <option value="seasonal">Seasonal Naïve — ŷ_{t+h} = y_{t+h-s}</option>
+    </select>
+
+    <div id="cmp_rw_seasonal_opts" style="display:none;">
+        <label>Seasonal Period (s)</label>
+        <select name="rw_seasonal_period" title="Seasonal period for Random Walk"
+                style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+            <option value="4">4 — Quarterly</option>
+            <option value="12" selected>12 — Monthly</option>
+            <option value="52">52 — Weekly annual</option>
+        </select>
+    </div>
+</div>
+
+<input type="hidden" name="rw_drift"    id="cmp_rw_drift_h"    value="false">
+<input type="hidden" name="rw_seasonal" id="cmp_rw_seasonal_h" value="false">
+
+<div class="help-text">
+    <strong>💡 Note:</strong> Univariate only. Used as a <strong>benchmark</strong> — compare other models against this baseline.
+</div>
+
+<script>
+(function() {
+    const sel = document.getElementById('cmp_rw_variant');
+    if (!sel) return;
+    sel.addEventListener('change', function() {
+        document.getElementById('cmp_rw_drift_h').value    = (this.value === 'drift')    ? 'true' : 'false';
+        document.getElementById('cmp_rw_seasonal_h').value = (this.value === 'seasonal') ? 'true' : 'false';
+        document.getElementById('cmp_rw_seasonal_opts').style.display =
+            (this.value === 'seasonal') ? 'block' : 'none';
+    });
+})();
+</script>

@@ -1,0 +1,40 @@
+<!-- TBATS Comparison Config Partial -->
+<div class="auto-tune-section">
+    <label for="cmp_auto_tbats">
+        <input type="checkbox" id="cmp_auto_tbats" name="auto_tbats" value="true" checked>
+        <span>🚀 Auto-Select Best TBATS Configuration (Recommended)</span>
+    </label>
+</div>
+
+<div id="cmp_tbats_grid_search_ranges" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p>TBATS auto-selects seasonal periods, Box-Cox, trend, damping, and ARMA errors by AIC.</p>
+
+    <div class="parameter-group">
+        <label for="cmp_tbats_seasonal_periods">Seasonal Period(s)</label>
+        <select id="cmp_tbats_seasonal_periods" name="tbats_seasonal_periods"
+                title="Seasonal period for TBATS"
+                style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;">
+            <option value="1">1 — No seasonality</option>
+            <option value="4">4 — Quarterly</option>
+            <option value="7">7 — Weekly</option>
+            <option value="12" selected>12 — Monthly</option>
+            <option value="24">24 — Hourly</option>
+            <option value="52">52 — Weekly annual</option>
+        </select>
+        <small class="help-text-small">
+            💡 Auto mode also tests no-seasonality and picks the best by AIC.
+        </small>
+    </div>
+</div>
+
+<div class="help-text">
+    <strong>💡 Note:</strong> TBATS is always <strong>univariate</strong> — no exogenous variable support.
+    Multi-step forecast used on test set.
+</div>
+
+<script>
+document.getElementById('cmp_auto_tbats').addEventListener('change', function() {
+    document.getElementById('cmp_tbats_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+});
+</script>

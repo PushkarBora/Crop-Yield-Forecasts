@@ -58,6 +58,78 @@ def _forecast_only_arima(params, horizon):
 
 
 # ============================================================
+# HELPER — build parameter-estimates DataFrame from fitted model
+# ============================================================
+def _param_estimates_df(fit):
+    """
+    Returns a tidy DataFrame matching the statsmodels summary block:
+      Parameter | Coef | Std Err | z | P>|z| | [0.025 | 0.975]
+    """
+    ci = fit.conf_int()
+    df = pd.DataFrame({
+        "Parameter": fit.param_names,
+        "Coef"     : np.round(fit.params,  4),
+        "Std Err"  : np.round(fit.bse,     4),
+        "z"        : np.round(fit.tvalues, 4),
+        "P>|z|"    : np.round(fit.pvalues, 4),
+        "[0.025"   : np.round(ci.iloc[:, 0], 4),
+        "0.975]"   : np.round(ci.iloc[:, 1], 4),
+    })
+    return df
+
+
+# ============================================================
+# HELPER — collect information criteria from fitted model
+# ============================================================
+def _info_criteria(fit):
+    """
+    Returns a dict of available information criteria.
+    AICC is computed manually if not directly exposed.
+    """
+    criteria = {}
+
+    # AIC
+    try:
+        criteria["AIC"] = round(float(fit.aic), 4)
+    except Exception:
+        pass
+
+    # AICC  (statsmodels exposes .aicc on some result classes)
+    try:
+        criteria["AICc"] = round(float(fit.aicc), 4)
+    except Exception:
+        # Manual AICC = AIC + 2k(k+1)/(n-k-1)
+        try:
+            k = len(fit.params)
+            n = int(fit.nobs)
+            aic = float(fit.aic)
+            if n - k - 1 > 0:
+                criteria["AICc"] = round(aic + 2 * k * (k + 1) / (n - k - 1), 4)
+        except Exception:
+            pass
+
+    # BIC
+    try:
+        criteria["BIC"] = round(float(fit.bic), 4)
+    except Exception:
+        pass
+
+    # HQIC
+    try:
+        criteria["HQIC"] = round(float(fit.hqic), 4)
+    except Exception:
+        pass
+
+    # Log-likelihood
+    try:
+        criteria["Log-Likelihood"] = round(float(fit.llf), 4)
+    except Exception:
+        pass
+
+    return criteria
+
+
+# ============================================================
 # MAIN ENTRY POINT
 # ============================================================
 def run_arima(
@@ -214,6 +286,10 @@ def run_arima(
     log(f"   Train — RMSE: {rmse_tr:.3f}, MAE: {mae_tr:.3f}, MAPE: {mape_tr:.2f}%")
     log(f"   Test  — RMSE: {rmse_te:.3f}, MAE: {mae_te:.3f}, MAPE: {mape_te:.2f}%")
 
+    # ── Parameter estimates & information criteria ───────────────────
+    param_estimates_table = _param_estimates_df(arima_fit)
+    info_criteria         = _info_criteria(arima_fit)
+
     # ── Future time labels (same cycle logic as LSTM) ─────────────────
     last_t = df[time_col].iloc[-1]
     try:
@@ -272,7 +348,6 @@ def run_arima(
     ax.plot(test_x, pred_te,   color="darkorange", label="Predicted (Test)",
             linestyle="--", marker="o", ms=4, alpha=0.8)
 
-
     # Vertical train/test split line — same as LSTM
     ax.axvline(x=len(train_act) - 1, color="black", linestyle=":",
                linewidth=2, label="Train/Test Split")
@@ -296,9 +371,9 @@ def run_arima(
     })
 
     test_table = pd.DataFrame({
-    time_col   : test_times.values,
-    "Actual"   : np.round(actual_te, 3),
-    "Predicted": np.round(pred_te,   3),
+        time_col   : test_times.values,
+        "Actual"   : np.round(actual_te, 3),
+        "Predicted": np.round(pred_te,   3),
     })
 
     return {
@@ -316,6 +391,11 @@ def run_arima(
         "order"         : f"ARIMA({p},{d},{q})",
         "auto_arima"    : use_auto_arima,
 
+        # ── NEW: parameter estimates & information criteria ──────────
+        "param_estimates_table": param_estimates_table,
+        "info_criteria"        : info_criteria,
+        # ─────────────────────────────────────────────────────────────
+
         "rmse_train"    : round(rmse_tr, 3),
         "mae_train"      : round(mae_tr,   3),
         "mape_train"    : round(mape_tr,  2),
@@ -323,6 +403,7 @@ def run_arima(
         "rmse_test"     : round(rmse_te, 3),
         "mae_test"       : round(mae_te,   3),
         "mape_test"     : round(mape_te,  2),
+        "residuals"   : (train_act - train_pred).tolist(),   # ← ADD THIS
 
         "train_table"   : train_table,
         "test_table"    : test_table,

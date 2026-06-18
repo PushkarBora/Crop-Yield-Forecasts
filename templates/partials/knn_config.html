@@ -1,0 +1,182 @@
+<!-- ══════════════════════════════════════════════════════
+     KNN partial — included by hyperparams_comparison.html
+     All JS wrapped in IIFE to prevent variable collisions.
+══════════════════════════════════════════════════════ -->
+
+<div class="auto-tune-section">
+    <label for="auto_tune_knn">
+        <input type="checkbox" id="auto_tune_knn" name="auto_tune_knn" value="true" checked>
+        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+    </label>
+</div>
+
+<div id="knn_grid_search_section" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p>Define parameter ranges for exhaustive search using TimeSeriesSplit cross-validation.</p>
+
+    <!-- Lags -->
+    <div class="parameter-group">
+        <label>Number of Lags Range</label>
+        <div class="range-input-group">
+            <div><label for="knn_lags_min">Minimum</label><input type="number" id="knn_lags_min" name="knn_lags_min" value="2" min="1" max="20"></div>
+            <div><label for="knn_lags_max">Maximum</label><input type="number" id="knn_lags_max" name="knn_lags_max" value="5" min="1" max="20"></div>
+            <div><label for="knn_lags_step">By</label><input type="number" id="knn_lags_step" name="knn_lags_step" value="1" min="1" max="5"></div>
+        </div>
+        <small class="help-text-small">💡 Number of past time steps used as input features. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+    </div>
+
+    <!-- k -->
+    <div class="parameter-group">
+        <label>k (Number of Neighbours) Range</label>
+        <div class="range-input-group">
+            <div><label for="knn_k_min">Minimum</label><input type="number" id="knn_k_min" name="knn_k_min" value="1" min="1" max="50" class="knn-grid-input"></div>
+            <div><label for="knn_k_max">Maximum</label><input type="number" id="knn_k_max" name="knn_k_max" value="10" min="1" max="50" class="knn-grid-input"></div>
+            <div><label for="knn_k_step">By</label><input type="number" id="knn_k_step" name="knn_k_step" value="1" min="1" max="10" class="knn-grid-input"></div>
+        </div>
+        <small class="help-text-small">💡 Example: 1 to 10 by 1 → tests [1,2,...,10]. k is auto-capped to n_train_samples−1.</small>
+    </div>
+
+    <!-- Weights -->
+    <div class="checkbox-group">
+        <label>Weight Function</label>
+        <div class="checkbox-options">
+            <label><input type="checkbox" name="knn_weights_uniform"  value="true" checked><span>uniform — all neighbours equally weighted</span></label>
+            <label><input type="checkbox" name="knn_weights_distance" value="true" checked><span>distance — closer neighbours weighted more</span></label>
+        </div>
+        <small class="help-text-small">💡 "distance" weighting usually improves accuracy on time series.</small>
+    </div>
+
+    <!-- Metric -->
+    <div class="checkbox-group">
+        <label>Distance Metric</label>
+        <div class="checkbox-options">
+            <label><input type="checkbox" name="knn_metric_euclidean" value="true" checked><span>Euclidean (L2)</span></label>
+            <label><input type="checkbox" name="knn_metric_manhattan" value="true" checked><span>Manhattan (L1)</span></label>
+            <label><input type="checkbox" name="knn_metric_minkowski" value="true"><span>Minkowski (Lp) — tests p range below</span></label>
+        </div>
+        <small class="help-text-small">💡 Euclidean and Manhattan are the most common. Minkowski generalises both.</small>
+    </div>
+
+    <!-- Minkowski p (hidden by default) -->
+    <div class="parameter-group" id="knn_p_group" style="display:none;">
+        <label>Minkowski p Range <span style="font-size:0.8rem;color:#718096;">(only when Minkowski is selected)</span></label>
+        <div class="range-input-group">
+            <div><label for="knn_p_min">Minimum</label><input type="number" id="knn_p_min" name="knn_p_min" value="1" min="1" max="5" class="knn-grid-input"></div>
+            <div><label for="knn_p_max">Maximum</label><input type="number" id="knn_p_max" name="knn_p_max" value="3" min="1" max="5" class="knn-grid-input"></div>
+            <div><label for="knn_p_step">By</label><input type="number" id="knn_p_step" name="knn_p_step" value="1" min="1" max="2" class="knn-grid-input"></div>
+        </div>
+        <small class="help-text-small">💡 p=1 → Manhattan, p=2 → Euclidean, p=3 → cubic norm.</small>
+    </div>
+
+    <!-- Combination estimate -->
+    <div id="knn_combination_estimate" class="combination-estimate warning">
+        <strong>⚠️ Estimated Combinations:</strong>
+        <span id="knn_total_combinations">Calculating...</span>
+        <small style="display:block;margin-top:0.5rem;color:inherit;">
+            📊 Calculation: lags × k_values × weights × metrics (+ p_values when Minkowski selected)
+        </small>
+    </div>
+</div>
+
+<!-- Manual section -->
+<div id="knn_manual_section" class="manual-section" style="display:none;">
+    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+
+    <label for="knn_lags">Number of Lags</label>
+    <input type="number" id="knn_lags" name="knn_lags" value="3" min="1" max="20">
+
+    <label for="knn_n_neighbors">k (Number of Neighbours)</label>
+    <input type="number" id="knn_n_neighbors" name="knn_n_neighbors" value="5" min="1" max="50">
+
+    <label for="knn_weights">Weight Function</label>
+    <select id="knn_weights" name="knn_weights">
+        <option value="uniform">uniform — all neighbours equally weighted</option>
+        <option value="distance" selected>distance — closer neighbours weighted more</option>
+    </select>
+
+    <label for="knn_metric">Distance Metric</label>
+    <select id="knn_metric" name="knn_metric">
+        <option value="euclidean" selected>Euclidean (L2)</option>
+        <option value="manhattan">Manhattan (L1)</option>
+        <option value="minkowski">Minkowski (Lp)</option>
+    </select>
+
+    <label for="knn_p">Minkowski p <span style="font-size:0.82rem;color:#718096;">(ignored unless metric=Minkowski)</span></label>
+    <input type="number" id="knn_p" name="knn_p" value="2" min="1" max="5">
+</div>
+
+<div class="help-text">
+    <strong>💡 Note:</strong> KNN uses <strong>sklearn's KNeighborsRegressor</strong> — no extra install needed.
+    k is automatically capped to <code>n_train_samples − 1</code> to avoid errors on small datasets.
+    A k-vs-RMSE diagnostic chart is generated after training.
+</div>
+
+<script>
+(function () {
+    /* IIFE: prevents variable name collisions with other partials */
+
+    var autoKnn = document.getElementById('auto_tune_knn');
+    if (autoKnn) {
+        autoKnn.addEventListener('change', function () {
+            document.getElementById('knn_grid_search_section').style.display =
+                this.checked ? 'block' : 'none';
+            document.getElementById('knn_manual_section').style.display =
+                this.checked ? 'none' : 'block';
+        });
+    }
+
+    var minkEl = document.querySelector('input[name="knn_metric_minkowski"]');
+    if (minkEl) {
+        minkEl.addEventListener('change', function () {
+            var pg = document.getElementById('knn_p_group');
+            if (pg) pg.style.display = this.checked ? 'block' : 'none';
+            calcKNN();
+        });
+    }
+
+    function calcKNN() {
+        function calcRange(minId, maxId, stepId) {
+            var lo   = parseFloat(document.getElementById(minId).value)  || 0;
+            var hi   = parseFloat(document.getElementById(maxId).value)  || 0;
+            var step = parseFloat(document.getElementById(stepId).value) || 1;
+            return Math.floor((hi - lo) / step + 1e-9) + 1;
+        }
+
+        var lags    = calcRange('knn_lags_min', 'knn_lags_max', 'knn_lags_step');
+        var k       = calcRange('knn_k_min',    'knn_k_max',    'knn_k_step');
+        var weights = document.querySelectorAll('input[name^="knn_weights_"]:checked').length || 1;
+
+        var useMinkowski = (minkEl && minkEl.checked);
+        var pCount = useMinkowski
+            ? calcRange('knn_p_min', 'knn_p_max', 'knn_p_step')
+            : 0;
+
+        var euclidean = document.querySelector('input[name="knn_metric_euclidean"]').checked ? 1 : 0;
+        var manhattan = document.querySelector('input[name="knn_metric_manhattan"]').checked ? 1 : 0;
+        var minkowski = useMinkowski ? pCount : 0;
+
+        var total = lags * k * weights * (euclidean + manhattan + minkowski);
+
+        var el = document.getElementById('knn_total_combinations');
+        if (el) el.textContent = (total || 0).toLocaleString() + ' combinations';
+
+        var box = document.getElementById('knn_combination_estimate');
+        if (box) {
+            box.className = 'combination-estimate';
+            if (total < 100)       box.classList.add('good');
+            else if (total < 1000) box.classList.add('warning');
+            else                   box.classList.add('danger');
+        }
+    }
+
+    document.querySelectorAll(
+        '.knn-grid-input, input[name^="knn_weights_"], input[name^="knn_metric_"], ' +
+        '#knn_lags_min, #knn_lags_max, #knn_lags_step'
+    ).forEach(function (el) {
+        el.addEventListener('input',  calcKNN);
+        el.addEventListener('change', calcKNN);
+    });
+
+    calcKNN();
+})();
+</script>

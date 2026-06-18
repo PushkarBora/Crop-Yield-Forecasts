@@ -34,7 +34,7 @@
             <input type="number" id="rnn_lags_max" name="rnn_lags_max" value="5" min="1" max="20">
         </div>
         <div>
-            <label for="rnn_lags_step">Step</label>
+            <label for="rnn_lags_step">By</label>
             <input type="number" id="rnn_lags_step" name="rnn_lags_step" value="1" min="1" max="5">
         </div>
     </div>
@@ -54,7 +54,7 @@
                 <input type="number" id="rnn_hidden_size_max" name="rnn_hidden_size_max" value="16" min="1" aria-label="Hidden size maximum">
             </div>
             <div>
-                <label for="rnn_hidden_size_step">Step</label>
+                <label for="rnn_hidden_size_step">By</label>
                 <input type="number" id="rnn_hidden_size_step" name="rnn_hidden_size_step" value="4" min="1" aria-label="Hidden size step">
             </div>
         </div>
@@ -75,7 +75,7 @@
                 <input type="number" id="rnn_num_layers_max" name="rnn_num_layers_max" value="3" min="1" aria-label="Layers maximum">
             </div>
             <div>
-                <label for="rnn_num_layers_step">Step</label>
+                <label for="rnn_num_layers_step">By</label>
                 <input type="number" id="rnn_num_layers_step" name="rnn_num_layers_step" value="1" min="1" aria-label="Layers step">
             </div>
         </div>
@@ -96,7 +96,7 @@
                 <input type="number" step="0.05" id="rnn_dropout_rnn_max" name="rnn_dropout_rnn_max" value="0.2" min="0" max="0.9" aria-label="RNN dropout maximum">
             </div>
             <div>
-                <label for="rnn_dropout_rnn_step">Step</label>
+                <label for="rnn_dropout_rnn_step">By</label>
                 <input type="number" step="0.05" id="rnn_dropout_rnn_step" name="rnn_dropout_rnn_step" value="0.1" min="0.05" max="0.5" aria-label="RNN dropout step">
             </div>
         </div>
@@ -117,7 +117,7 @@
                 <input type="number" step="0.05" id="rnn_dropout_fc_max" name="rnn_dropout_fc_max" value="0.3" min="0" max="0.9" aria-label="FC dropout maximum">
             </div>
             <div>
-                <label for="rnn_dropout_fc_step">Step</label>
+                <label for="rnn_dropout_fc_step">By</label>
                 <input type="number" step="0.05" id="rnn_dropout_fc_step" name="rnn_dropout_fc_step" value="0.1" min="0.05" max="0.5" aria-label="FC dropout step">
             </div>
         </div>
@@ -138,7 +138,7 @@
                 <input type="number" step="0.0001" id="rnn_learning_rate_max" name="rnn_learning_rate_max" value="0.005" aria-label="Learning rate maximum">
             </div>
             <div>
-                <label for="rnn_learning_rate_step">Step</label>
+                <label for="rnn_learning_rate_step">By</label>
                 <input type="number" step="0.0001" id="rnn_learning_rate_step" name="rnn_learning_rate_step" value="0.001" aria-label="Learning rate step">
             </div>
         </div>
@@ -159,7 +159,7 @@
                 <input type="number" step="0.00001" id="rnn_weight_decay_max" name="rnn_weight_decay_max" value="0.0005" aria-label="Weight decay maximum">
             </div>
             <div>
-                <label for="rnn_weight_decay_step">Step</label>
+                <label for="rnn_weight_decay_step">By</label>
                 <input type="number" step="0.00001" id="rnn_weight_decay_step" name="rnn_weight_decay_step" value="0.0001" aria-label="Weight decay step">
             </div>
         </div>
@@ -180,7 +180,7 @@
                 <input type="number" step="0.1" id="rnn_huber_delta_max" name="rnn_huber_delta_max" value="1.5" aria-label="Huber delta maximum">
             </div>
             <div>
-                <label for="rnn_huber_delta_step">Step</label>
+                <label for="rnn_huber_delta_step">By</label>
                 <input type="number" step="0.1" id="rnn_huber_delta_step" name="rnn_huber_delta_step" value="0.4" aria-label="Huber delta step">
             </div>
         </div>
@@ -201,7 +201,7 @@
                 <input type="number" id="rnn_epochs_max" name="rnn_epochs_max" value="300" min="50" aria-label="Epochs maximum">
             </div>
             <div>
-                <label for="rnn_epochs_step">Step</label>
+                <label for="rnn_epochs_step">By</label>
                 <input type="number" id="rnn_epochs_step" name="rnn_epochs_step" value="100" min="50" aria-label="Epochs step">
             </div>
         </div>
@@ -222,7 +222,7 @@
                 <input type="number" id="rnn_patience_max" name="rnn_patience_max" value="50" min="5" aria-label="Patience maximum">
             </div>
             <div>
-                <label for="rnn_patience_step">Step</label>
+                <label for="rnn_patience_step">By</label>
                 <input type="number" id="rnn_patience_step" name="rnn_patience_step" value="10" min="5" aria-label="Patience step">
             </div>
         </div>
@@ -238,17 +238,18 @@
     </div>
 </div>
 
+<!-- ✅ AFTER -->
 <div id="rnn_manual_section" class="manual-section rnn-hidden">
     <h4>Manual Hyperparameter Configuration</h4>
     
-        <label for="rnn_lags">Number of Lags</label><br>
+    <label for="rnn_lags">Number of Lags</label><br>
     <input type="number" id="rnn_lags" name="rnn_lags" value="3" min="1"><br><br>
 
-    <label for="hidden_size">Hidden Size</label><br>
-    <input type="number" id="hidden_size" name="hidden_size" value="8" min="1"><br><br>
+    <label for="rnn_hidden_size">Hidden Size</label><br>
+    <input type="number" id="rnn_hidden_size" name="hidden_size" value="8" min="1"><br><br>
 
-    <label for="num_layers">Number of Layers</label><br>
-    <input type="number" id="num_layers" name="num_layers" value="2" min="1"><br><br>
+    <label for="rnn_num_layers">Number of Layers</label><br>
+    <input type="number" id="rnn_num_layers" name="num_layers" value="2" min="1"><br><br>
 
     <label for="dropout_rnn">RNN Dropout</label><br>
     <input type="number" step="0.05" id="dropout_rnn" name="dropout_rnn" value="0.2" min="0" max="0.9"><br><br>
@@ -260,23 +261,22 @@
     <select id="nonlinearity" name="nonlinearity">
         <option value="tanh" selected>tanh (recommended)</option>
         <option value="relu">ReLU</option>
-    </select>
-    <br><br>
+    </select><br><br>
     
-    <label for="learning_rate">Learning Rate</label><br>
-    <input type="number" step="0.0001" id="learning_rate" name="learning_rate" value="0.003"><br><br>
+    <label for="rnn_learning_rate">Learning Rate</label><br>
+    <input type="number" step="0.0001" id="rnn_learning_rate" name="learning_rate" value="0.003"><br><br>
 
-    <label for="weight_decay">Weight Decay</label><br>
-    <input type="number" step="0.00001" id="weight_decay" name="weight_decay" value="0.0001"><br><br>
+    <label for="rnn_weight_decay">Weight Decay</label><br>
+    <input type="number" step="0.00001" id="rnn_weight_decay" name="weight_decay" value="0.0001"><br><br>
 
-    <label for="epochs">Number of Epochs</label><br>
-    <input type="number" id="epochs" name="epochs" value="200"><br><br>
+    <label for="rnn_epochs">Number of Epochs</label><br>
+    <input type="number" id="rnn_epochs" name="epochs" value="200"><br><br>
 
-    <label for="patience">Early Stopping Patience</label><br>
-    <input type="number" id="patience" name="patience" value="30"><br><br>
+    <label for="rnn_patience">Early Stopping Patience</label><br>
+    <input type="number" id="rnn_patience" name="patience" value="30"><br><br>
 
-    <label for="huber_delta">Huber Loss Delta</label><br>
-    <input type="number" step="0.1" id="huber_delta" name="huber_delta" value="1.0"><br><br>
+    <label for="rnn_huber_delta">Huber Loss Delta</label><br>
+    <input type="number" step="0.1" id="rnn_huber_delta" name="huber_delta" value="1.0"><br><br>
 </div>
 
 <p class="help-text">
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function calculateRNNCombinations() {
-    const calc = (min, max, step) => Math.floor((max - min) / step) + 1;
+    const calc = (min, max, step) => Math.floor((max - min) / step + 1e-9) + 1;
     
     const lags = calc(
         parseFloat(document.getElementById('rnn_lags_min').value),

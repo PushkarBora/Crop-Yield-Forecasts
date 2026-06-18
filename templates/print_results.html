@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ meta.model_name }} – Results</title>
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Times New Roman", serif;
+      font-size: 12pt;
+      color: #111;
+      background: #fff;
+      padding: 30px 40px;
+    }
+    h1  { font-size: 18pt; margin-bottom: 4px; }
+    h2  { font-size: 13pt; margin: 18px 0 6px; border-bottom: 1.5px solid #1F4E79; padding-bottom: 3px; color: #1F4E79; }
+    p   { margin: 3px 0; font-size: 11pt; }
+
+    /* ── Metrics grid ── */
+    .metrics { display: flex; gap: 30px; flex-wrap: wrap; margin: 12px 0 20px; }
+    .metric-box {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px 18px;
+      min-width: 130px;
+      text-align: center;
+    }
+    .metric-box .label { font-size: 9pt; color: #555; text-transform: uppercase; letter-spacing: .5px; }
+    .metric-box .value { font-size: 15pt; font-weight: bold; color: #1F4E79; margin-top: 4px; }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10.5pt; }
+    th {
+      background: #1F4E79;
+      color: #fff;
+      padding: 6px 10px;
+      text-align: center;
+      font-size: 10pt;
+    }
+    td { padding: 5px 10px; text-align: center; border: 1px solid #ddd; }
+    tr:nth-child(even) td { background: #EBF3FA; }
+
+    /* ── Buttons (screen only) ── */
+    .btn-bar {
+      display: flex; gap: 12px; margin-bottom: 24px;
+    }
+    .btn {
+      padding: 9px 22px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 11pt; font-weight: bold;
+    }
+    .btn-print  { background: #1F4E79; color: #fff; }
+    .btn-close  { background: #e0e0e0; color: #333; }
+
+    /* ── Print overrides ── */
+    @media print {
+      .btn-bar { display: none !important; }
+      body { padding: 10px 15px; }
+      h2 { page-break-after: avoid; }
+      table { page-break-inside: auto; }
+      tr    { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Action buttons (hidden when printing) -->
+<div class="btn-bar">
+  <button class="btn btn-print" onclick="window.print()">🖨 Print / Save as PDF</button>
+  <button class="btn btn-close" onclick="window.close()">✕ Close</button>
+  <a class="btn" style="background:#27ae60;color:#fff;text-decoration:none"
+     href="{{ url_for('download_results', model_key=model_key, table_type='all') }}">
+    ⬇ Download Excel
+  </a>
+</div>
+
+<!-- Header -->
+<h1>Crop Yield Forecasting — {{ meta.model_name }}</h1>
+<p><strong>Frequency:</strong> {{ meta.frequency | capitalize }} &nbsp;|&nbsp;
+   <strong>Horizon:</strong> {{ meta.horizon }} period(s) &nbsp;|&nbsp;
+   <strong>Auto-Tuned:</strong> {{ "Yes" if meta.auto_tuned else "No" }} &nbsp;|&nbsp;
+   <strong>Generated:</strong> {{ timestamp }}</p>
+
+<!-- Performance metrics -->
+<h2>Model Performance</h2>
+<div class="metrics">
+  <div class="metric-box">
+    <div class="label">RMSE – Train</div>
+    <div class="value">{{ "%.4f" | format(meta.rmse_train) }}</div>
+  </div>
+  <div class="metric-box">
+    <div class="label">MAE – Train</div>
+    <div class="value">{{ "%.4f" | format(meta.mae_train) }}</div>
+  </div>
+  <div class="metric-box">
+    <div class="label">MAPE – Train</div>
+    <div class="value">{{ "%.2f" | format(meta.mape_train) }}%</div>
+  </div>
+  <div class="metric-box">
+    <div class="label">RMSE – Test</div>
+    <div class="value">{{ "%.4f" | format(meta.rmse_test) }}</div>
+  </div>
+  <div class="metric-box">
+    <div class="label">MAE – Test</div>
+    <div class="value">{{ "%.4f" | format(meta.mae_test) }}</div>
+  </div>
+  <div class="metric-box">
+    <div class="label">MAPE – Test</div>
+    <div class="value">{{ "%.2f" | format(meta.mape_test) }}%</div>
+  </div>
+</div>
+
+<!-- Model Config -->
+{% if meta.model_config %}
+<h2>Model Configuration</h2>
+<table style="width:auto; min-width:320px;">
+  <tr><th>Parameter</th><th>Value</th></tr>
+  {% for k, v in meta.model_config.items() %}
+  <tr><td style="text-align:left">{{ k }}</td><td>{{ v }}</td></tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+<!-- Train table -->
+<h2>Training Predictions</h2>
+<table>
+  <thead>
+    <tr>{% for col in train_table.columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+    {% for row in train_table.itertuples(index=False) %}
+    <tr>{% for val in row %}<td>{{ val }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Test table -->
+<h2>Test Predictions</h2>
+<table>
+  <thead>
+    <tr>{% for col in test_table.columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+    {% for row in test_table.itertuples(index=False) %}
+    <tr>{% for val in row %}<td>{{ val }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Forecast table (if available) -->
+{% if forecast_table is not none %}
+<h2>Forecast</h2>
+<table>
+  <thead>
+    <tr>{% for col in forecast_table.columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+    {% for row in forecast_table.itertuples(index=False) %}
+    <tr>{% for val in row %}<td>{{ val }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,344 @@
+
+
+<div class="auto-tune-section">
+    <label for="auto_tune_stacked_lstm">
+        <input type="checkbox" id="auto_tune_stacked_lstm"
+               name="auto_tune_stacked_lstm" value="true" checked
+               title="Enable auto-tuning for Stacked LSTM">
+        <span>🚀 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+    </label>
+</div>
+
+<!-- ── Grid Search Section ── -->
+<div id="slstm_grid_search_ranges" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p>Define parameter ranges for exhaustive search.</p>
+
+    <!-- Lags -->
+    <div class="parameter-group">
+        <label>Number of Lags Range</label>
+        <div class="range-input-group">
+            <div>
+                <label>Minimum</label>
+                <input type="number" name="slstm_lags_min" value="2" min="1" max="20"
+                       title="Minimum number of lags" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>Maximum</label>
+                <input type="number" name="slstm_lags_max" value="5" min="1" max="20"
+                       title="Maximum number of lags" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>By</label>
+                <input type="number" name="slstm_lags_step" value="1" min="1" max="5"
+                       title="Lags step size" class="slstm-calc-input">
+            </div>
+        </div>
+        <small class="help-text-small">💡 Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+    </div>
+
+    <!-- Hidden Size -->
+    <div class="parameter-group">
+        <label>Hidden Size Range (per LSTM cell)</label>
+        <div class="range-input-group">
+            <div>
+                <label>Minimum</label>
+                <input type="number" name="slstm_hidden_size_min" value="4" min="4" max="128" step="4"
+                       title="Minimum hidden size per LSTM cell" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>Maximum</label>
+                <input type="number" name="slstm_hidden_size_max" value="16" min="4" max="128" step="4"
+                       title="Maximum hidden size per LSTM cell" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>By</label>
+                <input type="number" name="slstm_hidden_size_step" value="4" min="1" max="32"
+                       title="Hidden size step" class="slstm-calc-input">
+            </div>
+        </div>
+        <small class="help-text-small">💡 Hidden units per cell — same across all stacked layers. Example: 4 to 16 by 4 → tests [4, 8, 12, 16]</small>
+    </div>
+
+    <!-- Num Stacked Layers -->
+    <div class="parameter-group">
+        <label>Number of Stacked Layers Range</label>
+        <div class="range-input-group">
+            <div>
+                <label>Minimum</label>
+                <input type="number" name="slstm_num_stacked_layers_min" value="2" min="2" max="8"
+                       title="Minimum number of stacked LSTM layers" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>Maximum</label>
+                <input type="number" name="slstm_num_stacked_layers_max" value="5" min="2" max="8"
+                       title="Maximum number of stacked LSTM layers" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>By</label>
+                <input type="number" name="slstm_num_stacked_layers_step" value="1" min="1" max="3"
+                       title="Stacked layers step size" class="slstm-calc-input">
+            </div>
+        </div>
+        <small class="help-text-small">💡 Depth of the stack — each layer has its own hidden state + LayerNorm. Example: 2 to 5 by 1 → tests [2, 3, 4, 5]</small>
+    </div>
+
+    <!-- Dropout -->
+    <div class="parameter-group">
+        <label>Dropout Range (Inter-layer + FC Head)</label>
+        <div class="range-input-group">
+            <div>
+                <label>Minimum</label>
+                <input type="number" name="slstm_dropout_min" value="0.0" min="0.0" max="0.5" step="0.1"
+                       title="Minimum dropout rate" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>Maximum</label>
+                <input type="number" name="slstm_dropout_max" value="0.3" min="0.0" max="0.5" step="0.1"
+                       title="Maximum dropout rate" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>By</label>
+                <input type="number" name="slstm_dropout_step" value="0.1" min="0.05" max="0.2" step="0.05"
+                       title="Dropout step size" class="slstm-calc-input">
+            </div>
+        </div>
+        <small class="help-text-small">💡 MC-Dropout compatible — stays active during forecast for uncertainty intervals.</small>
+    </div>
+
+    <!-- Learning Rate -->
+    <div class="parameter-group">
+        <label>Learning Rate Range</label>
+        <div class="range-input-group">
+            <div>
+                <label>Minimum</label>
+                <input type="number" name="slstm_learning_rate_min" value="0.0005" min="0.0001" max="0.01" step="0.0001"
+                       title="Minimum learning rate" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>Maximum</label>
+                <input type="number" name="slstm_learning_rate_max" value="0.005" min="0.0001" max="0.01" step="0.0001"
+                       title="Maximum learning rate" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>By</label>
+                <input type="number" name="slstm_learning_rate_step" value="0.001" min="0.0001" max="0.005" step="0.0001"
+                       title="Learning rate step size" class="slstm-calc-input">
+            </div>
+        </div>
+        <small class="help-text-small">⚙️ Adam optimizer step size</small>
+    </div>
+
+    <!-- Weight Decay -->
+    <div class="parameter-group">
+        <label>Weight Decay Range</label>
+        <div class="range-input-group">
+            <div>
+                <label>Minimum</label>
+                <input type="number" name="slstm_weight_decay_min" value="0.00001" min="0.00001" max="0.001" step="0.00001"
+                       title="Minimum weight decay" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>Maximum</label>
+                <input type="number" name="slstm_weight_decay_max" value="0.0005" min="0.00001" max="0.001" step="0.00001"
+                       title="Maximum weight decay" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>By</label>
+                <input type="number" name="slstm_weight_decay_step" value="0.0001" min="0.00001" max="0.0005" step="0.00001"
+                       title="Weight decay step size" class="slstm-calc-input">
+            </div>
+        </div>
+        <small class="help-text-small">📊 L2 regularization strength</small>
+    </div>
+
+    <!-- Huber Delta -->
+    <div class="parameter-group">
+        <label>Huber Delta Range</label>
+        <div class="range-input-group">
+            <div>
+                <label>Minimum</label>
+                <input type="number" name="slstm_huber_delta_min" value="0.7" min="0.5" max="2.0" step="0.1"
+                       title="Minimum Huber loss delta" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>Maximum</label>
+                <input type="number" name="slstm_huber_delta_max" value="1.5" min="0.5" max="2.0" step="0.1"
+                       title="Maximum Huber loss delta" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>By</label>
+                <input type="number" name="slstm_huber_delta_step" value="0.4" min="0.1" max="1.0" step="0.1"
+                       title="Huber delta step size" class="slstm-calc-input">
+            </div>
+        </div>
+        <small class="help-text-small">🎯 Loss function robustness parameter</small>
+    </div>
+
+    <!-- Patience -->
+    <div class="parameter-group">
+        <label>Early Stopping Patience Range</label>
+        <div class="range-input-group">
+            <div>
+                <label>Minimum</label>
+                <input type="number" name="slstm_patience_min" value="20" min="10" max="100" step="10"
+                       title="Minimum early stopping patience" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>Maximum</label>
+                <input type="number" name="slstm_patience_max" value="50" min="10" max="100" step="10"
+                       title="Maximum early stopping patience" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>By</label>
+                <input type="number" name="slstm_patience_step" value="10" min="5" max="20"
+                       title="Patience step size" class="slstm-calc-input">
+            </div>
+        </div>
+        <small class="help-text-small">⏱️ Epochs to wait before early stopping</small>
+    </div>
+
+    <!-- Epochs -->
+    <div class="parameter-group">
+        <label>Number of Epochs Range</label>
+        <div class="range-input-group">
+            <div>
+                <label>Minimum</label>
+                <input type="number" name="slstm_epochs_min" value="100" min="50" max="500" step="50"
+                       title="Minimum number of epochs" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>Maximum</label>
+                <input type="number" name="slstm_epochs_max" value="300" min="50" max="500" step="50"
+                       title="Maximum number of epochs" class="slstm-calc-input">
+            </div>
+            <div>
+                <label>By</label>
+                <input type="number" name="slstm_epochs_step" value="100" min="50" max="200"
+                       title="Epochs step size" class="slstm-calc-input">
+            </div>
+        </div>
+        <small class="help-text-small">🔄 Maximum training epochs</small>
+    </div>
+
+    <!-- ── Combination Estimate ── -->
+    <div id="slstm_combination_estimate" class="combination-estimate warning">
+        <strong>⚠️ Estimated Combinations:</strong>
+        <span id="slstm_total_combinations">Calculating...</span>
+        <small style="display: block; margin-top: 0.5rem; color: inherit;">
+            💡 Outer lags loop × inner hyperparameter grid. Keep lags range small (2–5) and inner params narrow for fast training.
+        </small>
+    </div>
+</div>
+
+<!-- ── Manual Section ── -->
+<div id="slstm_manual_section" class="manual-section" style="display: none;">
+    <h4>🎛️ Manual Hyperparameter Configuration</h4>
+
+    <label>Number of Lags</label>
+    <input type="number" name="slstm_lags" value="3" min="1" max="20"
+           title="Number of lag time steps">
+
+    <label>Hidden Size (per LSTM cell)</label>
+    <input type="number" name="slstm_hidden_size" value="8" min="4"
+           title="Hidden units per LSTM cell">
+
+    <label>Number of Stacked Layers</label>
+    <input type="number" name="slstm_num_stacked_layers" value="3" min="2" max="8"
+           title="Number of stacked LSTM layers">
+
+    <label>Dropout Rate</label>
+    <input type="number" step="0.05" name="slstm_dropout" value="0.3" min="0" max="0.9"
+           title="Dropout rate for inter-layer and FC head">
+
+    <label>Learning Rate</label>
+    <input type="number" step="0.0001" name="slstm_learning_rate" value="0.003"
+           title="Adam optimizer learning rate">
+
+    <label>Weight Decay</label>
+    <input type="number" step="0.00001" name="slstm_weight_decay" value="0.0001"
+           title="L2 regularization weight decay">
+
+    <label>Number of Epochs</label>
+    <input type="number" name="slstm_epochs" value="200"
+           title="Maximum training epochs">
+
+    <label>Early Stopping Patience</label>
+    <input type="number" name="slstm_patience" value="30"
+           title="Epochs to wait before early stopping">
+
+    <label>Huber Loss Delta</label>
+    <input type="number" step="0.1" name="slstm_huber_delta" value="1.0"
+           title="Huber loss delta parameter">
+</div>
+
+<div class="help-text">
+    <strong>💡 Note:</strong> Each stacked LSTM cell is an independent single-layer nn.LSTM with its own
+    hidden/cell state. LayerNorm after every cell stabilizes deep stacks. Dropout between layers is
+    MC-Dropout compatible — it stays active during forecast for 80% and 95% prediction intervals.
+</div>
+
+<script>
+(function () {
+    /* ── Toggle grid / manual sections ─────────────────────────── */
+    const cb = document.getElementById('auto_tune_stacked_lstm');
+    if (!cb) return;
+
+    function toggle() {
+        document.getElementById('slstm_grid_search_ranges').style.display = cb.checked ? 'block' : 'none';
+        document.getElementById('slstm_manual_section').style.display     = cb.checked ? 'none'  : 'block';
+    }
+    cb.addEventListener('change', toggle);
+    toggle();
+
+    /* ── Combination calculator ─────────────────────────────────── */
+    // Uses name-based querySelector so no id clashes with other partials
+    function getVal(name) {
+        const el = document.querySelector('[name="' + name + '"]');
+        return el ? parseFloat(el.value) || 0 : 0;
+    }
+
+    function calcSteps(min, max, step) {
+        if (step <= 0) return 1;
+        return Math.floor((max - min) / step + 1e-9) + 1;
+    }
+
+    function calculateSLSTMCombinations() {
+        const lags  = calcSteps(getVal('slstm_lags_min'),                getVal('slstm_lags_max'),                getVal('slstm_lags_step'));
+        const hs    = calcSteps(getVal('slstm_hidden_size_min'),          getVal('slstm_hidden_size_max'),          getVal('slstm_hidden_size_step'));
+        const nl    = calcSteps(getVal('slstm_num_stacked_layers_min'),   getVal('slstm_num_stacked_layers_max'),   getVal('slstm_num_stacked_layers_step'));
+        const drop  = calcSteps(getVal('slstm_dropout_min'),              getVal('slstm_dropout_max'),              getVal('slstm_dropout_step'));
+        const lr    = calcSteps(getVal('slstm_learning_rate_min'),        getVal('slstm_learning_rate_max'),        getVal('slstm_learning_rate_step'));
+        const wd    = calcSteps(getVal('slstm_weight_decay_min'),         getVal('slstm_weight_decay_max'),         getVal('slstm_weight_decay_step'));
+        const hd    = calcSteps(getVal('slstm_huber_delta_min'),          getVal('slstm_huber_delta_max'),          getVal('slstm_huber_delta_step'));
+        const pat   = calcSteps(getVal('slstm_patience_min'),             getVal('slstm_patience_max'),             getVal('slstm_patience_step'));
+        const ep    = calcSteps(getVal('slstm_epochs_min'),               getVal('slstm_epochs_max'),               getVal('slstm_epochs_step'));
+
+        const inner = hs * nl * drop * lr * wd * hd * pat * ep;
+        const total = lags * inner;
+
+        const span = document.getElementById('slstm_total_combinations');
+        if (span) {
+            span.textContent =
+                total.toLocaleString() + ' combinations (' +
+                lags + ' lags × ' + inner.toLocaleString() + ' inner)';
+        }
+
+        const el = document.getElementById('slstm_combination_estimate');
+        if (el) {
+            el.className = 'combination-estimate';
+            if      (total < 100)  el.classList.add('good');
+            else if (total < 1000) el.classList.add('warning');
+            else                   el.classList.add('danger');
+        }
+    }
+
+    // Attach listeners to every calc-input in this partial
+    document.querySelectorAll('.slstm-calc-input').forEach(function (input) {
+        input.addEventListener('input', calculateSLSTMCombinations);
+    });
+
+    // Run once on load
+    calculateSLSTMCombinations();
+})();
+</script>

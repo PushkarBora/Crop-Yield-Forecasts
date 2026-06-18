@@ -24,14 +24,8 @@
     }
 
     @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(30px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 
     .page-header h1 {
@@ -84,9 +78,7 @@
         font-size: 1.1rem;
     }
 
-    .best-model-stats strong {
-        font-weight: 800;
-    }
+    .best-model-stats strong { font-weight: 800; }
 
     /* Content Card */
     .content-card {
@@ -123,9 +115,7 @@
         color: #2d3748;
     }
 
-    .info-banner strong {
-        font-weight: 700;
-    }
+    .info-banner strong { font-weight: 700; }
 
     /* Comparison Table */
     .comparison-table {
@@ -152,13 +142,8 @@
         letter-spacing: 0.5px;
     }
 
-    .comparison-table th.center {
-        text-align: center;
-    }
-
-    .comparison-table th.highlight {
-        background: rgba(255, 243, 205, 0.3);
-    }
+    .comparison-table th.center { text-align: center; }
+    .comparison-table th.highlight { background: rgba(255, 243, 205, 0.3); }
 
     .comparison-table td {
         padding: 1rem;
@@ -166,30 +151,16 @@
         color: #2d3748;
     }
 
-    .comparison-table tbody tr {
-        transition: all 0.3s;
-    }
-
-    .comparison-table tbody tr:hover {
-        background: #f7fafc;
-        transform: scale(1.01);
-    }
+    .comparison-table tbody tr { transition: all 0.3s; }
+    .comparison-table tbody tr:hover { background: #f7fafc; transform: scale(1.01); }
 
     .comparison-table tbody tr.winner {
         background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(32, 201, 151, 0.1) 100%);
         font-weight: 600;
     }
 
-    .comparison-table .rank-cell {
-        text-align: center;
-        font-size: 1.8rem;
-    }
-
-    .comparison-table .model-name {
-        font-weight: 700;
-        color: #667eea;
-        font-size: 1.05rem;
-    }
+    .comparison-table .rank-cell { text-align: center; font-size: 1.8rem; }
+    .comparison-table .model-name { font-weight: 700; color: #667eea; font-size: 1.05rem; }
 
     .comparison-table .auto-tuned-badge {
         display: inline-block;
@@ -199,26 +170,10 @@
         font-weight: 600;
     }
 
-    .comparison-table .auto-tuned-badge.yes {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #28a745;
-    }
-
-    .comparison-table .auto-tuned-badge.no {
-        background: #f8f9fa;
-        color: #6c757d;
-        border: 1px solid #dee2e6;
-    }
-
-    .comparison-table .metric-value {
-        font-weight: 600;
-        font-size: 1rem;
-    }
-
-    .comparison-table .highlight-col {
-        background: rgba(255, 243, 205, 0.2);
-    }
+    .comparison-table .auto-tuned-badge.yes { background: #d4edda; color: #155724; border: 1px solid #28a745; }
+    .comparison-table .auto-tuned-badge.no  { background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; }
+    .comparison-table .metric-value { font-weight: 600; font-size: 1rem; }
+    .comparison-table .highlight-col { background: rgba(255, 243, 205, 0.2); }
 
     /* Plots Grid */
     .plots-grid {
@@ -242,11 +197,7 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
 
-    .plot-card.winner {
-        border-color: #28a745;
-        border-width: 3px;
-        box-shadow: 0 6px 25px rgba(40, 167, 69, 0.2);
-    }
+    .plot-card.winner { border-color: #28a745; border-width: 3px; box-shadow: 0 6px 25px rgba(40, 167, 69, 0.2); }
 
     .plot-card h3 {
         margin: 0 0 1rem 0;
@@ -258,9 +209,7 @@
         gap: 0.5rem;
     }
 
-    .plot-card.winner h3 {
-        color: #28a745;
-    }
+    .plot-card.winner h3 { color: #28a745; }
 
     .plot-card img {
         width: 100%;
@@ -276,6 +225,77 @@
         padding: 0.8rem;
         background: #f7fafc;
         border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    /* ── Residual Diagnostics Button ── */
+    .diag-btn {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 14px rgba(229, 62, 62, 0.3);
+        margin-top: 0.5rem;
+        letter-spacing: 0.3px;
+    }
+
+    .diag-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(229, 62, 62, 0.4);
+        color: white;
+    }
+
+    /* ── Residual Diagnostics Summary Grid ── */
+    .diag-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.2rem;
+        margin-top: 1rem;
+    }
+
+    .diag-summary-card {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.4rem 1.6rem;
+        transition: box-shadow 0.2s;
+    }
+
+    .diag-summary-card:hover { box-shadow: 0 4px 16px rgba(102,126,234,0.12); }
+
+    .diag-summary-card .dsm-name {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #2d3748;
+        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .diag-summary-card .dsm-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .dsm-chip {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.8rem;
+        color: #4a5568;
     }
 
     /* Forecast Section */
@@ -296,18 +316,9 @@
         text-align: center;
     }
 
-    .forecast-header h2 {
-        margin: 0 0 0.5rem 0;
-        font-size: 2rem;
-    }
+    .forecast-header h2 { margin: 0 0 0.5rem 0; font-size: 2rem; }
+    .forecast-header p  { margin: 0; opacity: 0.95; font-size: 1.1rem; }
 
-    .forecast-header p {
-        margin: 0;
-        opacity: 0.95;
-        font-size: 1.1rem;
-    }
-
-    /* Forecast Form */
     .forecast-form-container {
         background: white;
         padding: 2rem;
@@ -315,19 +326,9 @@
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
 
-    .forecast-form-container h3 {
-        color: #667eea;
-        margin-top: 0;
-        margin-bottom: 1rem;
-        font-size: 1.5rem;
-    }
+    .forecast-form-container h3 { color: #667eea; margin-top: 0; margin-bottom: 1rem; font-size: 1.5rem; }
+    .forecast-form-container p  { color: #4a5568; margin-bottom: 1.5rem; }
 
-    .forecast-form-container p {
-        color: #4a5568;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Forecast Table */
     .forecast-table {
         width: 100%;
         border-collapse: collapse;
@@ -341,20 +342,9 @@
         color: white;
     }
 
-    .forecast-table th {
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-    }
-
-    .forecast-table td {
-        padding: 0.8rem 1rem;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .forecast-table tbody tr:nth-child(even) {
-        background: #f9fafb;
-    }
+    .forecast-table th { padding: 1rem; text-align: left; font-weight: 600; }
+    .forecast-table td { padding: 0.8rem 1rem; border-bottom: 1px solid #e2e8f0; }
+    .forecast-table tbody tr:nth-child(even) { background: #f9fafb; }
 
     .forecast-table input {
         width: 100%;
@@ -371,103 +361,20 @@
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    /* Quick Fill Section */
-    .quick-fill {
-        background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
-        border-left: 4px solid #ffc107;
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin: 1.5rem 0;
-    }
-
-    .quick-fill strong {
-        color: #856404;
-        font-size: 1.05rem;
-    }
-
-    .quick-fill-buttons {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .quick-fill-btn {
-        padding: 0.7rem 1.5rem;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 0.95rem;
-        transition: all 0.3s;
-        color: white;
-    }
-
-    .quick-fill-btn.success {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-    }
-
-    .quick-fill-btn.info {
-        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
-    }
-
-    .quick-fill-btn.danger {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
-    }
-
-    .quick-fill-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-    }
-
-    /* Submit Button */
-    .forecast-submit {
-        text-align: center;
-        margin-top: 2rem;
-    }
-
-    .forecast-submit-btn {
-        padding: 1.2rem 3rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 50px;
-        font-size: 1.2rem;
-        font-weight: 700;
-        cursor: pointer;
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-        transition: all 0.3s;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .forecast-submit-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
-    }
-
-    /* ARIMA Section */
     .arima-section {
-        text-align: center;
-        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        padding: 2.5rem;
         margin-top: 2rem;
-        border-top: 2px solid #e2e8f0;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.15);
+        border: 2px solid #667eea;
     }
 
-    .arima-section p {
-        color: #4a5568;
-        margin-bottom: 1.5rem;
-        font-size: 1.05rem;
-    }
+    .arima-section h3 { color: #667eea; font-size: 1.8rem; margin: 0 0 1rem 0; font-weight: 700; text-align: center; }
+    .arima-section p  { color: #2d3748; margin-bottom: 1.5rem; font-size: 1.1rem; text-align: center; line-height: 1.6; }
+    .arima-section p strong { color: #667eea; font-weight: 700; }
 
-    /* Hyperparameters Section */
-    .hyperparams-toggle {
-        text-align: center;
-        margin: 3rem 0;
-    }
+    .hyperparams-toggle { text-align: center; margin: 3rem 0; }
 
     .toggle-btn {
         padding: 1.2rem 3rem;
@@ -482,33 +389,13 @@
         transition: all 0.3s;
     }
 
-    .toggle-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
-    }
+    .toggle-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4); }
 
-    .hyperparams-content {
-        display: none;
-        margin-top: 2rem;
-    }
+    .hyperparams-content { display: none; margin-top: 2rem; }
+    .hyperparams-content.show { display: block; animation: fadeInUp 0.5s ease; }
+    .hyperparams-content h2 { text-align: center; color: #667eea; font-size: 2rem; margin-bottom: 2rem; }
 
-    .hyperparams-content.show {
-        display: block;
-        animation: fadeInUp 0.5s ease;
-    }
-
-    .hyperparams-content h2 {
-        text-align: center;
-        color: #667eea;
-        font-size: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .hyperparams-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 2rem;
-    }
+    .hyperparams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; }
 
     .hyperparam-card {
         background: white;
@@ -518,11 +405,7 @@
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
 
-    .hyperparam-card.winner {
-        border-color: #28a745;
-        border-width: 3px;
-        box-shadow: 0 6px 25px rgba(40, 167, 69, 0.2);
-    }
+    .hyperparam-card.winner { border-color: #28a745; border-width: 3px; box-shadow: 0 6px 25px rgba(40, 167, 69, 0.2); }
 
     .hyperparam-card h3 {
         margin: 0 0 1.5rem 0;
@@ -535,58 +418,101 @@
         justify-content: space-between;
     }
 
-    .hyperparam-card.winner h3 {
-        border-bottom-color: #28a745;
-        color: #28a745;
-    }
+    .hyperparam-card.winner h3 { border-bottom-color: #28a745; color: #28a745; }
 
-    .hyperparam-badge {
-        padding: 0.4rem 1rem;
+    .hyperparam-badge { padding: 0.4rem 1rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
+    .hyperparam-badge.auto   { background: #28a745; color: white; }
+    .hyperparam-badge.manual { background: #6c757d; color: white; }
+
+    .hyperparam-grid-inner { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+
+    .hyperparam-item { background: #f7fafc; padding: 0.8rem; border-radius: 8px; }
+    .hyperparam-item strong { color: #667eea; font-size: 0.9rem; display: block; margin-bottom: 0.3rem; }
+    .hyperparam-item span   { color: #2d3748; font-size: 0.95rem; }
+
+    .no-config { grid-column: 1 / -1; text-align: center; padding: 2rem; color: #a0aec0; font-style: italic; }
+
+    /* ── Parameter Estimates Toggle ── */
+    .param-est-content { display: none; margin-top: 2rem; }
+    .param-est-content.show { display: block; animation: fadeInUp 0.5s ease; }
+    .param-est-content h2 { text-align: center; color: #667eea; font-size: 2rem; margin-bottom: 2rem; }
+
+    .param-est-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 2rem; }
+
+    .param-est-card {
+        background: white;
+        border: 2px solid #667eea;
         border-radius: 15px;
-        font-size: 0.75rem;
-        font-weight: 600;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
 
-    .hyperparam-badge.auto {
-        background: #28a745;
-        color: white;
-    }
+    .param-est-card.winner { border-color: #28a745; border-width: 3px; box-shadow: 0 6px 25px rgba(40,167,69,0.2); }
 
-    .hyperparam-badge.manual {
-        background: #6c757d;
-        color: white;
-    }
-
-    .hyperparam-grid-inner {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
-
-    .hyperparam-item {
-        background: #f7fafc;
-        padding: 0.8rem;
-        border-radius: 8px;
-    }
-
-    .hyperparam-item strong {
+    .param-est-card h3 {
+        margin: 0 0 0.5rem 0;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #667eea;
         color: #667eea;
-        font-size: 0.9rem;
-        display: block;
-        margin-bottom: 0.3rem;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
 
-    .hyperparam-item span {
+    .param-est-card.winner h3 { border-bottom-color: #28a745; color: #28a745; }
+
+    .param-est-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        font-size: 0.88rem;
+        font-family: 'Courier New', Courier, monospace;
+    }
+
+    .param-est-table th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.65rem 0.9rem;
+        text-align: right;
+        font-weight: 700;
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .param-est-table th:first-child { text-align: left; }
+
+    .param-est-table td {
+        padding: 0.6rem 0.9rem;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: right;
         color: #2d3748;
-        font-size: 0.95rem;
     }
 
-    .no-config {
-        grid-column: 1 / -1;
+    .param-est-table td:first-child { text-align: left; font-weight: 700; }
+    .param-est-table tr:nth-child(even) { background: #f7fafc; }
+    .param-est-table tr:last-child td { border-bottom: none; }
+
+    .pe-sig-star { color: #e53e3e; font-weight: 700; }
+
+    .param-est-note {
+        margin-top: 0.8rem;
+        font-size: 0.78rem;
+        color: #a0aec0;
+        font-family: sans-serif;
+    }
+
+    .no-param-est {
         text-align: center;
         padding: 2rem;
         color: #a0aec0;
         font-style: italic;
+        font-family: sans-serif;
+    }
+
+    @media (max-width: 768px) {
+        .param-est-grid { grid-template-columns: 1fr; }
     }
 
     /* Action Buttons */
@@ -612,67 +538,49 @@
         gap: 0.5rem;
     }
 
-    .action-btn.primary {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    }
+    .action-btn.primary   { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); }
+    .action-btn.success   { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    .action-btn.secondary { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
+    .action-btn:hover     { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
 
-    .action-btn.success {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    }
-
-    .action-btn.secondary {
-        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    }
-
-    .action-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-
-    /* Responsive */
     @media (max-width: 768px) {
-        .page-header h1 {
-            font-size: 2rem;
-        }
-
-        .content-card {
-            padding: 1.5rem;
-        }
-
-        .plots-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .hyperparams-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .action-buttons {
-            flex-direction: column;
-        }
-
-        .action-btn {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .best-model-stats {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
+        .page-header h1          { font-size: 2rem; }
+        .content-card            { padding: 1.5rem; }
+        .plots-grid              { grid-template-columns: 1fr; }
+        .hyperparams-grid        { grid-template-columns: 1fr; }
+        .action-buttons          { flex-direction: column; }
+        .action-btn              { width: 100%; justify-content: center; }
+        .best-model-stats        { flex-direction: column; gap: 0.5rem; }
+        .diag-summary-grid       { grid-template-columns: 1fr; }
     }
 
-    /* Scrollable container for table */
-    .table-scroll {
-        overflow-x: auto;
-        border-radius: 12px;
+    .table-scroll { overflow-x: auto; border-radius: 12px; }
+
+    .forecast-submit { text-align: center; margin-top: 2rem; }
+
+    .forecast-submit-btn {
+        padding: 1.2rem 3rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
+
+    .forecast-submit-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="comparison-page">
     <div class="comparison-container">
+
         <!-- Page Header -->
         <div class="page-header">
             {% if models|length == 1 %}
@@ -706,7 +614,6 @@
 
         <div id="hyperparamsSection" class="hyperparams-content">
             <h2>🔧 Model Hyperparameter Configuration</h2>
-
             <div class="hyperparams-grid">
                 {% for model in models %}
                 <div class="hyperparam-card {% if loop.index == 1 %}winner{% endif %}">
@@ -718,12 +625,11 @@
                         <span class="hyperparam-badge manual">MANUAL</span>
                         {% endif %}
                     </h3>
-
                     <div class="hyperparam-grid-inner">
                         {% if model.model_config %}
                             {% for param, value in model.model_config.items() %}
                             <div class="hyperparam-item">
-                                <strong>{{ param.replace('_', ' ').title() }}</strong>
+                                <strong>{{ param }}</strong>
                                 <span>{{ value }}</span>
                             </div>
                             {% endfor %}
@@ -734,12 +640,88 @@
                 </div>
                 {% endfor %}
             </div>
-
             <div class="info-banner" style="margin-top: 2rem;">
-                <strong>ℹ️ Note:</strong> Auto-tuned models used grid search to find optimal hyperparameters. Manual models used user-specified or default values.
+                <strong>ℹ️ Note:</strong> Auto-tuned models used grid search to find optimal hyperparameters.
             </div>
         </div>
 
+        <!-- ══════════════════ PARAMETER ESTIMATES TOGGLE ══════════════════ -->
+        <div class="hyperparams-toggle" style="margin-top: 1rem;">
+            <button onclick="toggleParamEst()" class="toggle-btn"
+                    style="background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+                           box-shadow: 0 8px 25px rgba(229,62,62,0.3);">
+                📋 View Parameter Estimates
+            </button>
+        </div>
+
+        <div id="paramEstSection" class="param-est-content">
+            <h2>📋 Parameter Estimates (ARIMA &amp; GARCH Family)</h2>
+            <div class="param-est-grid">
+                {% for model in models %}
+                {% if model.param_estimates_table is defined and model.param_estimates_table is not none %}
+                <div class="param-est-card {% if loop.index == 1 %}winner{% endif %}">
+                    <h3>
+                        <span>{% if loop.index == 1 %}🏆 {% endif %}{{ model.name }}</span>
+                    </h3>
+                    <p class="param-est-note">
+                        Maximum-likelihood estimates fitted on the training set.
+                        <span class="pe-sig-star">*</span> p &lt; 0.05 &nbsp;
+                        <span class="pe-sig-star">**</span> p &lt; 0.01 &nbsp;
+                        <span class="pe-sig-star">***</span> p &lt; 0.001
+                    </p>
+                    <div style="overflow-x: auto;">
+                        <table class="param-est-table">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Coefficient</th>
+                                    <th>Standard Error</th>
+                                    <th>Test Statistic</th>
+                                    <th>P-Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for _, row in model.param_estimates_table.iterrows() %}
+                                {% set coef   = row.get("Coef",    row.get("coef",    row.get("Estimate", none))) %}
+                                {% set stderr = row.get("Std Err", row.get("std_err", row.get("std err",  none))) %}
+                                {% set zstat  = row.get("z",       row.get("t",       row.get("statistic",none))) %}
+                                {% set pval   = row.get("P>|z|",   row.get("P>|t|",   row.get("pvalue",   none))) %}
+                                <tr>
+                                    <td>{{ row.get("Parameter", "—") }}</td>
+                                    <td>{{ "%.4f" | format(coef)   if coef   is not none and coef   is number else (coef   or "—") }}</td>
+                                    <td>{{ "%.4f" | format(stderr) if stderr is not none and stderr is number else (stderr or "—") }}</td>
+                                    <td>{{ "%.4f" | format(zstat)  if zstat  is not none and zstat  is number else (zstat  or "—") }}</td>
+                                    <td>
+                                        {{ "%.4f" | format(pval) if pval is not none and pval is number else (pval or "—") }}
+                                        {% if pval is not none and pval is number %}
+                                            {% if pval < 0.001 %}<span class="pe-sig-star">***</span>
+                                            {% elif pval < 0.01 %}<span class="pe-sig-star">**</span>
+                                            {% elif pval < 0.05 %}<span class="pe-sig-star">*</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="param-est-card">
+                    <h3><span>{{ model.name }}</span></h3>
+                    <div class="no-param-est">
+                        ℹ️ No parameter estimates available for this model type.
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <div class="info-banner" style="margin-top: 2rem;">
+                <strong>ℹ️ Note:</strong> Parameter estimates are shown for ARIMA and GARCH-family models only.
+                ML / DL models do not produce interpretable coefficient tables.
+            </div>
+        </div>
+        
         <!-- Performance Metrics -->
         <div class="content-card">
             {% if models|length == 1 %}
@@ -770,25 +752,40 @@
                                 {% if loop.index == 1 %}🥇
                                 {% elif loop.index == 2 %}🥈
                                 {% elif loop.index == 3 %}🥉
-                                {% else %}{{ loop.index }}
-                                {% endif %}
+                                {% else %}{{ loop.index }}{% endif %}
                             </td>
                             <td class="model-name">{{ model.name }}</td>
-                            <td style="text-align: center;">
+                            <td style="text-align:center;">
                                 {% if model.auto_tuned %}
                                 <span class="auto-tuned-badge yes">✅ Yes</span>
                                 {% else %}
                                 <span class="auto-tuned-badge no">Manual</span>
                                 {% endif %}
                             </td>
-                            <td class="highlight-col" style="text-align: center;">
+                            <td class="highlight-col" style="text-align:center;">
+                                {% if model.rmse_test is none %}
+                                <span style="color:#e53e3e;font-size:0.85rem;">⚠️ Not fitted</span>
+                                {% else %}
                                 <span class="metric-value">{{ model.rmse_test }}</span>
+                                {% endif %}
                             </td>
-                            <td style="text-align: center;"><span class="metric-value">{{ model.mae_test }}</span></td>
-                            <td style="text-align: center;"><span class="metric-value">{{ model.mape_test }}</span></td>
-                            <td style="text-align: center; color: #718096;">{{ model.rmse_train }}</td>
-                            <td style="text-align: center; color: #718096;">{{ model.mae_train }}</td>
-                            <td style="text-align: center; color: #718096;">{{ model.mape_train }}</td>
+                            <td style="text-align:center;">
+                                {% if model.mae_test is none %}<span style="color:#e53e3e;">—</span>
+                                {% else %}<span class="metric-value">{{ model.mae_test }}</span>{% endif %}
+                            </td>
+                            <td style="text-align:center;">
+                                {% if model.mape_test is none %}<span style="color:#e53e3e;">—</span>
+                                {% else %}<span class="metric-value">{{ model.mape_test }}</span>{% endif %}
+                            </td>
+                            <td style="text-align:center; color:#718096;">
+                                {% if model.rmse_train is none %}—{% else %}{{ model.rmse_train }}{% endif %}
+                            </td>
+                            <td style="text-align:center; color:#718096;">
+                                {% if model.mae_train is none %}—{% else %}{{ model.mae_train }}{% endif %}
+                            </td>
+                            <td style="text-align:center; color:#718096;">
+                                {% if model.mape_train is none %}—{% else %}{{ model.mape_train }}{% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -796,233 +793,281 @@
             </div>
 
             <div class="info-banner">
-                <strong>ℹ️ Note:</strong> Models are ranked by Test RMSE (lower is better). The test set metrics are most important for evaluating model performance.
+                <strong>ℹ️ Note:</strong> Models are ranked by Test RMSE (lower is better).
             </div>
         </div>
 
+        <!-- ══════════════════ TRAINING & TESTING PLOTS + RESIDUAL BUTTONS ══════════════════ -->
         <!-- Combined Training & Testing Plots -->
-<div class="content-card">
-    <h2>📊 Training & Testing Set Plots</h2>
-    <p style="color: #718096; margin-bottom: 1.5rem;">
-        Blue = Training period &nbsp;|&nbsp; Orange = Testing period &nbsp;|&nbsp; Dotted line = Train/Test split
-    </p>
-    <div class="plots-grid">
-        {% for model in models %}
-        <div class="plot-card {% if loop.index == 1 %}winner{% endif %}">
-            <h3>
-                {% if loop.index == 1 %}🏆 {% endif %}{{ model.name }}
-            </h3>
-            <img src="/static/{{ model.key }}_train.png" alt="{{ model.name }} Predictions">
-            <div class="plot-stats">
-                Train → RMSE: <strong>{{ model.rmse_train }}</strong> | MAE: <strong>{{ model.mae_train }}</strong>
-                &nbsp;&nbsp;|&nbsp;&nbsp;
-                Test → RMSE: <strong>{{ model.rmse_test }}</strong> | MAE: <strong>{{ model.mae_test }}</strong>
+        <div class="content-card">
+            <h2>📊 Training & Testing Set Plots</h2>
+            <p style="color: #718096; margin-bottom: 1.5rem;">
+                Blue = Training period &nbsp;|&nbsp; Orange = Testing period &nbsp;|&nbsp; Dotted line = Train/Test split
+            </p>
+            <div class="plots-grid">
+                {% for model in models %}
+
+                {# ── SKIP models where ARCH test was not significant ── #}
+                {% if model.arch_significant is not false %}
+
+                <div class="plot-card {% if loop.index == 1 %}winner{% endif %}">
+                    <h3>
+                        {% if loop.index == 1 %}🏆 {% endif %}{{ model.name }}
+                    </h3>
+                    <img src="/static/{{ model.key }}_train.png?v={{ ts }}" alt="{{ model.name }} Predictions">
+                    <div class="plot-stats">
+                        Train → RMSE: <strong>{{ model.rmse_train }}</strong> | MAE: <strong>{{ model.mae_train }}</strong>
+                        &nbsp;&nbsp;|&nbsp;&nbsp;
+                        Test → RMSE: <strong>{{ model.rmse_test }}</strong> | MAE: <strong>{{ model.mae_test }}</strong>
+                    </div>
+                </div>
+
+                {% else %}
+                {# Show a "not fitted" placeholder instead #}
+                <div class="plot-card" style="border-color:#ffc107; opacity:0.7;">
+                    <h3>{{ model.name }}</h3>
+                    <div style="padding:3rem; text-align:center; background:#fff3cd; border-radius:10px; color:#856404;">
+                        <div style="font-size:2.5rem; margin-bottom:1rem;">⚠️</div>
+                        <strong>Model not fitted</strong>
+                        <p style="margin:0.5rem 0 0; font-size:0.9rem;">ARCH LM test was not significant — no plot available.</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
-    </div>
-</div>
-      <!-- Future Forecasting -->
-<!-- Future Forecasting -->
-<div class="forecast-section">
-    <div class="forecast-header">
-        <h2>🔮 Generate Future Forecasts</h2>
-        {% if all_univariate %}
-        <p>All models were trained on univariate data and will forecast based on historical patterns only</p>
-        {% else %}
-        <p>Input future values of exogenous variables to generate forecasts for the next {{ horizon }} period(s)</p>
+
+        <!-- ══════════════════ RESIDUAL DIAGNOSTICS QUICK SUMMARY ══════════════════ -->
+        <div class="content-card" style="border-left:5px solid #e53e3e;">
+            <h2 style="color:#e53e3e;">🔍 Residual Diagnostics — Quick Overview</h2>
+            <p style="color:#718096; margin-bottom:1.5rem;">
+                Click any model card below to run the full suite of residual diagnostic tests
+                (normality, autocorrelation, heteroskedasticity, stationarity, non-linearity) and see diagnostic plots.
+            </p>
+
+            <div class="diag-summary-grid">
+                {% for model in models %}
+                {% if model.rmse_test is not none %}
+                <div class="diag-summary-card">
+                    <div class="dsm-name">
+                        {% if loop.index == 1 %}🏆{% else %}🔬{% endif %}
+                        {{ model.name }}
+                    </div>
+                    <div class="dsm-metrics">
+                        <span class="dsm-chip">Train RMSE: {{ model.rmse_train }}</span>
+                        <span class="dsm-chip">Test RMSE: {{ model.rmse_test }}</span>
+                        <span class="dsm-chip">MAPE: {{ model.mape_test }}%</span>
+                    </div>
+                    <a href="{{ url_for('residual_diagnostics_comparison', model_key=model.key) }}"
+                       class="diag-btn">
+                        🔍 Run Diagnostics for {{ model.name }}
+                    </a>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- ARCH LM Notice -->
+        {% set arch_failed = models | selectattr('arch_significant', 'equalto', false) | list %}
+        {% if arch_failed %}
+        <div style="background:#fff3cd; border-left:4px solid #ffc107; padding:1.2rem 1.5rem;
+                    border-radius:12px; margin-bottom:2rem; box-shadow:0 4px 15px rgba(255,193,7,0.2);">
+            <strong style="color:#856404; font-size:1.05rem;">⚠️ ARCH LM Test Notice</strong>
+            <ul style="margin:0.8rem 0 0; color:#856404; padding-left:1.2rem; line-height:1.8;">
+                {% for m in arch_failed %}
+                <li>
+                    <strong>{{ m.name }}</strong> —
+                    {{ m.arch_not_significant_message or "ARCH test not significant. Model was not fitted." }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
         {% endif %}
-    </div>
 
-    {% if all_univariate %}
-    {# ALL models are univariate - show single button for all #}
-    <div class="arima-section">
-        <h3 style="color: #667eea; font-size: 1.5rem; margin-bottom: 1rem;">📊 Generate Forecasts (All Models)</h3>
-        <p>All selected models will forecast the next <strong>{{ horizon }}</strong> period(s) based on historical patterns only.</p>
-        <p style="font-size: 0.95rem; color: #666; margin-top: 0.5rem;">
-            Models: <strong>{{ models|map(attribute='name')|join(', ') }}</strong>
-        </p>
-        <!-- ✅ CHANGED: Use /generate_forecasts with univariate flag -->
-    <form method="post" action="/generate_forecasts">
-        <input type="hidden" name="models" value="{{ models|map(attribute='key')|join(',') }}">
-        <input type="hidden" name="horizon" value="{{ horizon }}">
-        <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
-        <input type="hidden" name="univariate_mode" value="true">
-            <button type="submit" class="forecast-submit-btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-                🔮 Generate Forecasts for All Models
-            </button>
-        </form>
-    </div>
-
-    {% else %}
-    {# Has multivariate models OR mixed #}
-    {% if has_multivariate %}
-    {# Show climate input form for multivariate models #}
-    <div class="forecast-form-container">
-        <h3>📊 Input Future Exogenous Variables (For Multivariate Models)</h3>
-        <p>Provide values for the next {{ horizon }} period(s). These will be used by multivariate models to generate forecasts.</p>
-        
-        {% if has_univariate %}
-        <p class="info-message" style="padding: 1rem; background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; margin-bottom: 1.5rem;">
-            ℹ️ Note: Univariate models (like ARIMA) will use only historical patterns. Use the separate button below for univariate forecasting.
-        </p>
-        {% endif %}
-
-        <form method="post" action="/generate_forecasts">
-            <input type="hidden" name="models" value="{{ models|map(attribute='key')|join(',') }}">
-            <input type="hidden" name="horizon" value="{{ horizon }}">
-            <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
-
-            <div class="table-scroll">
-                <table class="forecast-table">
-                    <thead>
-                        <tr>
-                            <th>Period</th>
-                            {% for col in exog_cols %}
-                            <th>{{ col }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for i in range(1, horizon + 1) %}
-                        <tr>
-                            <td><strong>Period {{ i }}</strong></td>
-                            {% for col in exog_cols %}
-                            <td>
-                                <input type="number" name="future_exog_{{ col }}_{{ i }}"
-                                       step="any" placeholder="e.g., value {{ i }}" required>
-                            </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <!-- Future Forecasting -->
+        <div class="forecast-section">
+            <div class="forecast-header">
+                <h2>🔮 Generate Future Forecasts</h2>
+                {% if all_univariate %}
+                <p>All models were trained on univariate data and will forecast based on historical patterns only</p>
+                {% else %}
+                <p>Input future values of exogenous variables to generate forecasts for the next {{ horizon }} period(s)</p>
+                {% endif %}
             </div>
 
-            <div style="margin: 1.5rem 0; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-    <button type="button" onclick="autoFillExog(this)"
-        style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;
-               border:none;padding:0.8rem 2rem;font-size:1rem;font-weight:600;
-               border-radius:50px;cursor:pointer;
-               box-shadow:0 4px 15px rgba(102,126,234,0.4);">
-        🤖 Auto-fill with ARIMA
-    </button>
-    <button type="button" onclick="clearAll()"
-        style="background:linear-gradient(135deg,#dc3545,#c82333);color:white;
-               border:none;padding:0.8rem 2rem;font-size:1rem;font-weight:600;
-               border-radius:50px;cursor:pointer;">
-        🗑️ Clear All
-    </button>
-    <span id="autofill_status_compare"
-        style="font-size:0.9rem;color:#667eea;font-style:italic;"></span>
-</div>
-
-            <div class="forecast-submit">
-                <button type="submit" class="forecast-submit-btn">
-                    🚀 Generate Multivariate Forecasts
-                </button>
+            {% if all_univariate %}
+            <div class="arima-section">
+                <h3>📊 Generate Forecasts (All Models)</h3>
+                <p>All selected models will forecast the next <strong>{{ horizon }}</strong> period(s) based on historical patterns only.</p>
+                <p style="font-size:1rem; margin-top:1rem;">
+                    <strong>Models:</strong> {{ models|map(attribute='name')|join(', ') }}
+                </p>
+                <form method="post" action="/generate_forecasts" style="margin-top:2rem;">
+                    <input type="hidden" name="models"        value="{{ models|map(attribute='key')|join(',') }}">
+                    <input type="hidden" name="horizon"       value="{{ horizon }}">
+                    <input type="hidden" name="session_id"    value="{{ session.get('comparison_id', 'default') }}">
+                    <input type="hidden" name="univariate_mode" value="true">
+                    <div class="forecast-submit">
+                        <button type="submit" class="forecast-submit-btn"
+                                style="background:linear-gradient(135deg,#28a745 0%,#20c997 100%);">
+                            🔮 Generate Forecasts for All Models
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
-    </div>
-    {% endif %}
 
-    {% if has_univariate %}
-{# Show ARIMA button for univariate models #}
-<div class="arima-section" {% if has_multivariate %}style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #e2e8f0;"{% endif %}>
-    <h3 style="color: #667eea; font-size: 1.5rem; margin-bottom: 1rem;">📊 Univariate Model Forecasting</h3>
-    <p>Univariate models (like ARIMA) forecast based on historical patterns only — no climate inputs needed.</p>
-    <form method="post" action="/generate_arima_forecast">
-        <input type="hidden" name="horizon" value="{{ horizon }}">
-        <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
-        <button type="submit" class="forecast-submit-btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-            🔮 Generate Univariate Forecasts
-        </button>
-    </form>
-</div>
-    {% endif %}
-{% endif %}
-</div>
+            {% else %}
+            {% if has_multivariate %}
+            <div class="forecast-form-container">
+                <h3>📊 Input Future Exogenous Variables (For Multivariate Models)</h3>
+                <p>Provide values for the next {{ horizon }} period(s).</p>
 
-        
+                {% if has_univariate %}
+                <p style="padding:1rem; background:rgba(255,193,7,0.1); border-left:4px solid #ffc107;
+                           margin-bottom:1.5rem; color:#2d3748; border-radius:8px;">
+                    ℹ️ Univariate models will use only historical patterns. Use the button below for those.
+                </p>
+                {% endif %}
+
+                <form method="post" action="/generate_forecasts">
+                    <input type="hidden" name="models"     value="{{ multivariate_model_keys | join(',') }}">
+                    <input type="hidden" name="horizon"    value="{{ horizon }}">
+                    <input type="hidden" name="session_id" value="{{ session.get('comparison_id', 'default') }}">
+
+                    <div class="table-scroll">
+                        <table class="forecast-table">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    {% for col in exog_cols %}<th>{{ col }}</th>{% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in range(1, horizon + 1) %}
+                                <tr>
+                                    <td><strong>Period {{ i }}</strong></td>
+                                    {% for col in exog_cols %}
+                                    <td>
+                                        <input type="number" name="future_exog_{{ col }}_{{ i }}"
+                                               step="any" placeholder="value {{ i }}" required>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin:1.5rem 0; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+                        <button type="button" onclick="autoFillExog(this)"
+                            style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;
+                                   border:none;padding:0.8rem 2rem;font-size:1rem;font-weight:600;
+                                   border-radius:50px;cursor:pointer;
+                                   box-shadow:0 4px 15px rgba(102,126,234,0.4);">
+                            🤖 Auto-fill with ARIMA
+                        </button>
+                        <button type="button" onclick="clearAll()"
+                            style="background:linear-gradient(135deg,#dc3545,#c82333);color:white;
+                                   border:none;padding:0.8rem 2rem;font-size:1rem;font-weight:600;
+                                   border-radius:50px;cursor:pointer;">
+                            🗑️ Clear All
+                        </button>
+                        <span id="autofill_status_compare"
+                              style="font-size:0.9rem;color:#667eea;font-style:italic;"></span>
+                    </div>
+
+                    <div class="forecast-submit">
+                        <button type="submit" class="forecast-submit-btn">
+                            🚀 Generate Multivariate Forecasts
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            {% if has_univariate %}
+            <div class="arima-section" {% if has_multivariate %}style="margin-top:3rem;"{% endif %}>
+                <h3>📊 Univariate Model Forecasting</h3>
+                <p>These models forecast based on historical patterns only — no exogenous inputs needed.</p>
+                <p style="font-size:0.95rem; color:#4a5568; margin-top:0.5rem;">
+                    <strong>Models:</strong> {{ univariate_model_keys | join(', ') | upper }}
+                </p>
+                <form method="post" action="/generate_forecasts" style="margin-top:1.5rem;">
+                    <input type="hidden" name="models"         value="{{ univariate_model_keys | join(',') }}">
+                    <input type="hidden" name="horizon"        value="{{ horizon }}">
+                    <input type="hidden" name="session_id"     value="{{ session.get('comparison_id', 'default') }}">
+                    <input type="hidden" name="univariate_mode" value="true">
+                    <div class="forecast-submit">
+                        <button type="submit" class="forecast-submit-btn"
+                                style="background:linear-gradient(135deg,#28a745 0%,#20c997 100%);">
+                            🔮 Generate Univariate Forecasts
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
 
         <!-- Action Buttons -->
         <div class="action-buttons">
+            <a href="{{ url_for('download_comparison_excel') }}" class="action-btn success">
+                ⬇ Download All Results (Excel)
+            </a>
+            <a href="{{ url_for('print_comparison') }}" target="_blank" class="action-btn secondary">
+                🖨 Print / Save PDF
+            </a>
             <a href="/detailed_comparison" class="action-btn primary">
                 📋 View Detailed Predictions
             </a>
-            <a href="/models" class="action-btn success">
+            <a href="/select_models" class="action-btn success">
                 🔄 Start New Comparison
             </a>
-            <a href="/" class="action-btn secondary">
-                🏠 Home
-            </a>
+            <a href="/" class="action-btn secondary">🏠 Home</a>
         </div>
+
     </div>
 </div>
 
-<script id="forecast-data" type="application/json">
-{
-    "horizon": {{ horizon }}
-}
-</script>
-
 <script>
-    const forecastData = JSON.parse(document.getElementById('forecast-data').textContent);
-
     async function autoFillExog(btn) {
         const status = document.getElementById('autofill_status_compare');
-
-        btn.disabled    = true;
+        btn.disabled = true;
         btn.textContent = '⏳ Forecasting...';
         status.textContent = 'Running ARIMA on historical data...';
-
         try {
-            const res = await fetch('/autofill_exog', {
+            const res  = await fetch('/autofill_exog', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
             });
-
             const data = await res.json();
-
             if (data.status !== 'ok') {
                 status.textContent = '❌ Error: ' + (data.error || 'Unknown error');
-                btn.disabled    = false;
-                btn.textContent = '🤖 Auto-fill with ARIMA';
+                btn.disabled = false; btn.textContent = '🤖 Auto-fill with ARIMA';
                 return;
             }
-
-            // Fill individual period inputs: future_exog_COL_PERIOD
             let colsFilled = 0;
             for (const [col, values] of Object.entries(data.forecasts)) {
                 values.forEach((val, idx) => {
-                    const period = idx + 1;
-                    const input  = document.querySelector(
-                        `input[name="future_exog_${col}_${period}"]`
-                    );
-                    if (input) {
-                        input.value            = val;
-                        input.style.borderColor = '#28a745';
-                    }
+                    const input = document.querySelector(`input[name="future_exog_${col}_${idx+1}"]`);
+                    if (input) { input.value = val; input.style.borderColor = '#28a745'; }
                 });
                 colsFilled++;
             }
-
-            status.textContent  = `✅ Auto-filled ${colsFilled} column(s) using ARIMA!`;
-            btn.textContent     = '🤖 Auto-fill with ARIMA';
-            btn.disabled        = false;
-
+            status.textContent = `✅ Auto-filled ${colsFilled} column(s)!`;
+            btn.textContent = '🤖 Auto-fill with ARIMA'; btn.disabled = false;
         } catch (err) {
-            status.textContent  = '❌ Request failed: ' + err.message;
-            btn.textContent     = '🤖 Auto-fill with ARIMA';
-            btn.disabled        = false;
+            status.textContent = '❌ Request failed: ' + err.message;
+            btn.textContent = '🤖 Auto-fill with ARIMA'; btn.disabled = false;
         }
     }
 
     function clearAll() {
-        document.querySelectorAll('input[name^="future_exog_"]').forEach(input => {
-            input.value            = '';
-            input.style.borderColor = '';
+        document.querySelectorAll('input[name^="future_exog_"]').forEach(i => {
+            i.value = ''; i.style.borderColor = '';
         });
         document.getElementById('autofill_status_compare').textContent = '';
     }
@@ -1030,13 +1075,24 @@
     function toggleHyperparams() {
         const section = document.getElementById('hyperparamsSection');
         const button  = event.target;
-
         if (section.classList.contains('show')) {
             section.classList.remove('show');
             button.textContent = '⚙️ View Hyperparameter Details';
         } else {
             section.classList.add('show');
             button.textContent = '⚙️ Hide Hyperparameter Details';
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+    function toggleParamEst() {
+        const section = document.getElementById('paramEstSection');
+        const button  = event.target;
+        if (section.classList.contains('show')) {
+            section.classList.remove('show');
+            button.textContent = '📋 View Parameter Estimates';
+        } else {
+            section.classList.add('show');
+            button.textContent = '📋 Hide Parameter Estimates';
             section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }

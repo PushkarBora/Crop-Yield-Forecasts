@@ -1,0 +1,160 @@
+<!-- ============================================================
+     AR-EGARCH Configuration Partial
+     Used in: hyperparams.html + hyperparams_comparison.html
+     ============================================================ -->
+
+<!-- Auto-Tune Toggle -->
+<div class="auto-tune-section">
+    <label>
+        <input type="checkbox" id="auto_aregarch" name="auto_aregarch"
+               value="true" checked
+               onchange="toggleAregarchManual(this.checked)">
+        🚀 Auto-Select Best AR-EGARCH Order (Recommended)
+    </label>
+    <p class="help-text-small" style="margin-top:0.5rem;">
+        Automatically searches AR(ar_lags)-EGARCH(p, o, q) combinations and selects the best by AIC.
+    </p>
+</div>
+
+<!-- Grid Search Ranges (shown when auto-tune ON) -->
+<div id="aregarch_grid_section">
+    <div class="grid-search-section">
+        <h4>🔍 Grid Search Ranges</h4>
+
+        <!-- ar_lags -->
+        <div class="parameter-group">
+            <label>AR Lags Range</label>
+            <div class="range-input-group">
+                <div>
+                    <label>Min</label>
+                    <input type="number" name="ar_lags_min" value="1" min="1" max="5" title="AR Lags Minimum">
+                </div>
+                <div>
+                    <label>Max</label>
+                    <input type="number" name="ar_lags_max" value="3" min="1" max="5" title="AR Lags Maximum">
+                </div>
+                <div>
+                    <label>Step</label>
+                    <input type="number" name="ar_lags_step" value="1" min="1" max="3" title="AR Lags Step">
+                </div>
+            </div>
+            <p class="help-text-small">Number of autoregressive terms in the mean equation AR(p). Grid searches 1 to Max.</p>
+        </div>
+
+        <!-- p (ARCH order) -->
+        <div class="parameter-group">
+            <label>p — ARCH Order Range</label>
+            <div class="range-input-group">
+                <div>
+                    <label>Min</label>
+                    <input type="number" name="egarch_p_min" value="1" min="1" max="5" title="ARCH Order Minimum">
+                </div>
+                <div>
+                    <label>Max</label>
+                    <input type="number" name="egarch_p_max" value="2" min="1" max="5" title="ARCH Order Maximum">
+                </div>
+                <div>
+                    <label>Step</label>
+                    <input type="number" name="egarch_p_step" value="1" min="1" max="3" title="ARCH Order Step">
+                </div>
+            </div>
+            <p class="help-text-small">Controls the number of lagged squared residual terms in the variance equation.</p>
+        </div>
+
+        <!-- o (Leverage order) -->
+        <div class="parameter-group">
+            <label>o — Leverage / Asymmetry Order Range</label>
+            <div class="range-input-group">
+                <div>
+                    <label>Min</label>
+                    <input type="number" name="egarch_o_min" value="0" min="0" max="2" title="Leverage Order Minimum">
+                </div>
+                <div>
+                    <label>Max</label>
+                    <input type="number" name="egarch_o_max" value="1" min="0" max="2" title="Leverage Order Maximum">
+                </div>
+                <div>
+                    <label>Step</label>
+                    <input type="number" name="egarch_o_step" value="1" min="1" max="2" title="Leverage Order Step">
+                </div>
+            </div>
+            <p class="help-text-small">Captures leverage effect — negative shocks impact volatility more than positive ones. Set min=0 to also test symmetric models.</p>
+        </div>
+
+        <!-- q (GARCH order) -->
+        <div class="parameter-group">
+            <label>q — GARCH Order Range</label>
+            <div class="range-input-group">
+                <div>
+                    <label>Min</label>
+                    <input type="number" name="egarch_q_min" value="1" min="1" max="5" title="GARCH Order Minimum">
+                </div>
+                <div>
+                    <label>Max</label>
+                    <input type="number" name="egarch_q_max" value="2" min="1" max="5" title="GARCH Order Maximum">
+                </div>
+                <div>
+                    <label>Step</label>
+                    <input type="number" name="egarch_q_step" value="1" min="1" max="3" title="GARCH Order Step">
+                </div>
+            </div>
+            <p class="help-text-small">Controls persistence of volatility — how long past volatility affects current variance.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Manual Configuration (shown when auto-tune OFF) -->
+<div id="aregarch_manual_section" class="manual-section" style="display:none;">
+    <h4>🔧 Manual AR-EGARCH Configuration</h4>
+
+    <label for="aregarch_ar_lags">AR Lags</label>
+    <input type="number" id="aregarch_ar_lags" name="ar_lags" value="1" min="1" max="10" >
+
+    <label for="aregarch_p_manual">ARCH Order (p)</label>
+    <input type="number" id="aregarch_p_manual" name="egarch_p" value="1" min="1" max="5">
+
+    <label for="aregarch_o_manual">Leverage Order (o)</label>
+    <input type="number" id="aregarch_o_manual" name="egarch_o" value="1" min="0" max="3">
+
+    <label for="aregarch_q_manual">GARCH Order (q)</label>
+    <input type="number" id="aregarch_q_manual" name="egarch_q" value="1" min="1" max="5">
+</div>
+
+<!-- Additional Settings (always visible) -->
+<div class="manual-section" style="margin-top:1.5rem;">
+    <h4>⚙️ Additional Settings</h4>
+
+    <label for="aregarch_diff_order">Differencing Order</label>
+    <select id="aregarch_diff_order" name="diff_order">
+        <option value="0" selected>0 — No differencing (stationary series)</option>
+        <option value="1">1 — First difference (non-stationary)</option>
+    </select>
+    <small class="help-text-small" style="margin-bottom:1.5rem;display:block;">
+        💡 Use ADF/KPSS test results to decide. If series is non-stationary, select d=1.
+    </small>
+
+    <label for="aregarch_exog_lags">Exogenous Lags (multivariate only)</label>
+    <input type="number" id="aregarch_exog_lags" name="exog_lags" value="1" min="1" max="5" title="Exogenous Lags">
+    <small class="help-text-small" style="margin-bottom:1.5rem;display:block;">
+        💡 Only applies when exogenous variables are uploaded. Ignored in univariate mode.
+    </small>
+
+    <label for="aregarch_arch_lags">ARCH LM Test Lags</label>
+    <input type="number" id="aregarch_arch_lags" name="arch_lags" value="5" min="1" max="20" title="ARCH LM Test Lags">
+    <small class="help-text-small" style="margin-bottom:1rem;display:block;">
+        💡 Number of lags used in Engle's ARCH LM pre-test (applied on full series Auto-ARIMA residuals).
+        Default is 5. For short series (&lt; 30 obs), consider reducing to 3.
+    </small>
+</div>
+
+<script>
+function toggleAregarchManual(isAuto) {
+    document.getElementById('aregarch_grid_section').style.display  = isAuto ? 'block' : 'none';
+    document.getElementById('aregarch_manual_section').style.display = isAuto ? 'none'  : 'block';
+}
+// Initialise on load
+document.addEventListener('DOMContentLoaded', function() {
+    const cb = document.getElementById('auto_aregarch');
+    if (cb) toggleAregarchManual(cb.checked);
+});
+</script>

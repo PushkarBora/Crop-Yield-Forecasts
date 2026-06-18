@@ -1,0 +1,434 @@
+<div class="auto-tune-section">
+    <label for="auto_tune_wtransformer">
+        <input type="checkbox" id="auto_tune_wtransformer" name="auto_tune_wtransformer" value="true" checked>
+        <span>🌊 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+    </label>
+</div>
+ 
+<div id="wtransformer_grid_search_ranges" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p style="color:#718096;margin-bottom:2rem;font-size:0.95rem;">
+        Tests all combinations of <strong>Wavelet × Level × Lags</strong>.
+        For each coefficient sub-series, a separate Transformer encoder is trained.
+        Forecasts are summed. MC Dropout (300 samples) generates uncertainty intervals.
+        <br><br>
+        d_model % nhead ≠ 0 combinations are <strong>silently skipped</strong> — no error.
+    </p>
+ 
+    <!-- Wavelet Selection -->
+    <div class="parameter-group">
+        <label>Wavelet Filters to Test</label>
+        <input type="text" id="wtransformer_wavelet_search"
+               placeholder="🔍 Search wavelets (e.g. db, sym, coif)..."
+               style="width:100%;padding:0.6rem 0.8rem;border:2px solid #e2e8f0;
+                      border-radius:8px 8px 0 0;font-size:0.95rem;
+                      box-sizing:border-box;border-bottom:1px solid #e2e8f0;"
+               oninput="filterWaveletsTransformer(this.value)">
+        <div id="wtransformer_wavelet_list"
+             style="max-height:180px;overflow-y:auto;border:2px solid #e2e8f0;
+                    border-top:none;border-radius:0 0 8px 8px;background:white;padding:0.4rem 0;">
+        </div>
+        <input type="hidden" name="wtransformer_wavelets" id="wtransformer_wavelets_hidden" value="">
+        <div id="wtransformer_wavelet_display"
+             style="margin-top:0.5rem;font-size:0.85rem;color:#e53e3e;font-style:italic;">
+            ⚠️ Please select at least one wavelet filter
+        </div>
+        <small class="help-text-small">💡 Default: haar, db2, db4, sym8</small>
+    </div>
+ 
+    <!-- Decomposition Level -->
+    <div class="parameter-group">
+        <label>Decomposition Level Range</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_min_level">Minimum</label>
+                 <input type="number" id="wtransformer_min_level" name="wtransformer_min_level" value="1" min="1" max="10"></div>
+            <div><label for="wtransformer_max_level">Maximum</label>
+                 <input type="number" id="wtransformer_max_level" name="wtransformer_max_level" value="3" min="1" max="10"></div>
+            <div style="display:flex;align-items:flex-end;padding-bottom:0.5rem;">
+                <small class="help-text-small" style="margin:0;color:#a0aec0;">(auto-capped by data)</small>
+            </div>
+        </div>
+        <small class="help-text-small">💡 Example: 1 to 3 → tests [1, 2, 3]</small>
+    </div>
+ 
+    <!-- Lags -->
+    <div class="parameter-group">
+        <label>Number of Lags Range (Sequence Length per Coefficient)</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_lags_min">Minimum</label>
+                 <input type="number" id="wtransformer_lags_min" name="wtransformer_lags_min" value="2" min="1" max="20"></div>
+            <div><label for="wtransformer_lags_max">Maximum</label>
+                 <input type="number" id="wtransformer_lags_max" name="wtransformer_lags_max" value="4" min="1" max="20"></div>
+            <div><label for="wtransformer_lags_step">By</label>
+                 <input type="number" id="wtransformer_lags_step" name="wtransformer_lags_step" value="2" min="1" max="5"></div>
+        </div>
+        <small class="help-text-small">💡 Example: 2 to 4 by 2 → tests [2, 4]</small>
+    </div>
+ 
+    <!-- d_model -->
+    <div class="parameter-group">
+        <label>d_model (Embedding Dimension) Range — per Coefficient Transformer</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_dmodel_min">Minimum</label>
+                 <input type="number" id="wtransformer_dmodel_min" name="wtransformer_dm_min" value="8" min="2"></div>
+            <div><label for="wtransformer_dmodel_max">Maximum</label>
+                 <input type="number" id="wtransformer_dmodel_max" name="wtransformer_dm_max" value="16" min="2"></div>
+            <div><label for="wtransformer_dmodel_step">By</label>
+                 <input type="number" id="wtransformer_dmodel_step" name="wtransformer_dm_step" value="8" min="1"></div>
+        </div>
+        <small class="help-text-small">💡 Example: 8 to 16 by 8 → tests [8, 16]. Must be divisible by nhead — invalid combos are auto-skipped.</small>
+    </div>
+ 
+    <!-- nhead -->
+    <div class="parameter-group">
+        <label>Attention Heads (nhead) Range</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_nhead_min">Minimum</label>
+                 <input type="number" id="wtransformer_nhead_min" name="wtransformer_nhead_min" value="1" min="1" max="8"></div>
+            <div><label for="wtransformer_nhead_max">Maximum</label>
+                 <input type="number" id="wtransformer_nhead_max" name="wtransformer_nhead_max" value="2" min="1" max="8"></div>
+            <div><label for="wtransformer_nhead_step">By</label>
+                 <input type="number" id="wtransformer_nhead_step" name="wtransformer_nhead_step" value="1" min="1" max="4"></div>
+        </div>
+        <small class="help-text-small">💡 Example: 1 to 2 by 1 → tests [1, 2]. Combos where d_model % nhead ≠ 0 are skipped automatically.</small>
+    </div>
+ 
+    <!-- Encoder Layers -->
+    <div class="parameter-group">
+        <label>Encoder Layers Range</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_nl_min">Minimum</label>
+                 <input type="number" id="wtransformer_nl_min" name="wtransformer_num_layers_min" value="1" min="1" max="4"></div>
+            <div><label for="wtransformer_nl_max">Maximum</label>
+                 <input type="number" id="wtransformer_nl_max" name="wtransformer_num_layers_max" value="2" min="1" max="4"></div>
+            <div><label for="wtransformer_nl_step">By</label>
+                 <input type="number" id="wtransformer_nl_step" name="wtransformer_num_layers_step" value="1" min="1" max="2"></div>
+        </div>
+        <small class="help-text-small">💡 Example: 1 to 2 by 1 → tests [1, 2]. dim_feedforward = max(d_model × 2, 16) — auto-computed.</small>
+    </div>
+ 
+    <!-- Dropout -->
+    <div class="parameter-group">
+        <label>Dropout Range</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_d_min">Minimum</label>
+                 <input type="number" step="0.1" id="wtransformer_d_min" name="wtransformer_dr_min" value="0.1" min="0" max="0.9"></div>
+            <div><label for="wtransformer_d_max">Maximum</label>
+                 <input type="number" step="0.1" id="wtransformer_d_max" name="wtransformer_dr_max" value="0.2" min="0" max="0.9"></div>
+            <div><label for="wtransformer_d_step">By</label>
+                 <input type="number" step="0.1" id="wtransformer_d_step" name="wtransformer_dr_step" value="0.1" min="0.05"></div>
+        </div>
+        <small class="help-text-small">💡 Used as MC Dropout at forecast time. Set min=max to fix at one value.</small>
+    </div>
+ 
+    <!-- Learning Rate -->
+    <div class="parameter-group">
+        <label>Learning Rate Range</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_lr_min">Minimum</label>
+                 <input type="number" step="0.001" id="wtransformer_lr_min" name="wtransformer_lr_min" value="0.001"></div>
+            <div><label for="wtransformer_lr_max">Maximum</label>
+                 <input type="number" step="0.001" id="wtransformer_lr_max" name="wtransformer_lr_max" value="0.003"></div>
+            <div><label for="wtransformer_lr_step">By</label>
+                 <input type="number" step="0.001" id="wtransformer_lr_step" name="wtransformer_lr_step" value="0.002"></div>
+        </div>
+        <small class="help-text-small">⚙️ Example: 0.001 to 0.003 by 0.002 → tests [0.001, 0.003]</small>
+    </div>
+ 
+    <!-- Weight Decay -->
+    <div class="parameter-group">
+        <label>Weight Decay Range</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_wd_min">Minimum</label>
+                 <input type="number" step="0.0001" id="wtransformer_wd_min" name="wtransformer_wd_min" value="0.0001"></div>
+            <div><label for="wtransformer_wd_max">Maximum</label>
+                 <input type="number" step="0.0001" id="wtransformer_wd_max" name="wtransformer_wd_max" value="0.0001"></div>
+            <div><label for="wtransformer_wd_step">By</label>
+                 <input type="number" step="0.0001" id="wtransformer_wd_step" name="wtransformer_wd_step" value="0.0001"></div>
+        </div>
+        <small class="help-text-small">📊 Set min=max to fix at one value</small>
+    </div>
+ 
+    <!-- Huber Delta -->
+    <div class="parameter-group">
+        <label>Huber Delta Range</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_hd_min">Minimum</label>
+                 <input type="number" step="0.5" id="wtransformer_hd_min" name="wtransformer_hd_min" value="1.0"></div>
+            <div><label for="wtransformer_hd_max">Maximum</label>
+                 <input type="number" step="0.5" id="wtransformer_hd_max" name="wtransformer_hd_max" value="1.0"></div>
+            <div><label for="wtransformer_hd_step">By</label>
+                 <input type="number" step="0.5" id="wtransformer_hd_step" name="wtransformer_hd_step" value="0.5"></div>
+        </div>
+        <small class="help-text-small">🎯 Set min=max to fix at one value</small>
+    </div>
+ 
+    <!-- Epochs -->
+    <div class="parameter-group">
+        <label>Number of Epochs Range</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_ep_min">Minimum</label>
+                 <input type="number" id="wtransformer_ep_min" name="wtransformer_ep_min" value="200" min="50"></div>
+            <div><label for="wtransformer_ep_max">Maximum</label>
+                 <input type="number" id="wtransformer_ep_max" name="wtransformer_ep_max" value="200" min="50"></div>
+            <div><label for="wtransformer_ep_step">By</label>
+                 <input type="number" id="wtransformer_ep_step" name="wtransformer_ep_step" value="100" min="50"></div>
+        </div>
+        <small class="help-text-small">🔄 Set min=max to fix at one value</small>
+    </div>
+ 
+    <!-- Patience -->
+    <div class="parameter-group">
+        <label>Early Stopping Patience Range</label>
+        <div class="range-input-group">
+            <div><label for="wtransformer_pa_min">Minimum</label>
+                 <input type="number" id="wtransformer_pa_min" name="wtransformer_pa_min" value="30" min="5"></div>
+            <div><label for="wtransformer_pa_max">Maximum</label>
+                 <input type="number" id="wtransformer_pa_max" name="wtransformer_pa_max" value="30" min="5"></div>
+            <div><label for="wtransformer_pa_step">By</label>
+                 <input type="number" id="wtransformer_pa_step" name="wtransformer_pa_step" value="10" min="5"></div>
+        </div>
+        <small class="help-text-small">⏱️ Set min=max to fix at one value</small>
+    </div>
+ 
+    <!-- Combination Estimate -->
+    <div id="wtransformer_combination_estimate" class="combination-estimate warning" style="padding:1.2rem 1.5rem;">
+        <strong style="font-size:1rem;">📊 Estimated Training Combinations</strong>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1rem;text-align:center;">
+            <div style="background:rgba(255,255,255,0.25);border-radius:10px;padding:0.8rem;">
+                <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;opacity:0.85;">Outer Grid</div>
+                <div id="wtransformer_outer_count" style="font-size:1.6rem;font-weight:800;">—</div>
+                <div style="font-size:0.72rem;opacity:0.8;">Wavelet × Level × Lags</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.25);border-radius:10px;padding:0.8rem;">
+                <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;opacity:0.85;">Inner Grid (per coeff.)</div>
+                <div id="wtransformer_inner_count" style="font-size:1.6rem;font-weight:800;">—</div>
+                <div style="font-size:0.72rem;opacity:0.8;">Transformer hyperparams</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.35);border-radius:10px;padding:0.8rem;border:2px solid rgba(255,255,255,0.5);">
+                <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;opacity:0.85;">Grand Total</div>
+                <div id="wtransformer_total_combinations" style="font-size:1.6rem;font-weight:800;">—</div>
+                <div style="font-size:0.72rem;opacity:0.8;">Outer × Inner</div>
+            </div>
+        </div>
+        <div id="wtransformer_breakdown" style="margin-top:1rem;font-size:0.82rem;opacity:0.9;"></div>
+        <small style="display:block;margin-top:0.8rem;opacity:0.75;font-size:0.75rem;">
+            💡 Keep Grand Total under 50 — each outer combo trains J+1 Transformer encoders.
+            Invalid d_model/nhead combos are skipped so actual count may be lower.
+        </small>
+    </div>
+</div>
+ 
+<!-- Manual Section -->
+<div id="wtransformer_manual_section" class="manual-section" style="display:none;">
+    <h4>🎛️ Manual Wavelet-Transformer Configuration</h4>
+ 
+    <label>Wavelet Filter</label>
+    <select name="wtransformer_manual_wavelet" style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+        <option value="haar">Haar</option>
+        <option value="db2">DB2</option>
+        <option value="db4">DB4</option>
+        <option value="sym8" selected>sym8</option>
+        <option value="coif3">Coiflet-3</option>
+        <option value="dmey">Discrete Meyer</option>
+    </select>
+ 
+    <label for="wtransformer_m_level">Decomposition Level</label>
+    <input type="number" id="wtransformer_m_level" name="wtransformer_manual_level" value="3" min="1" max="10"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_lags">Lags (per coefficient Transformer)</label>
+    <input type="number" id="wtransformer_m_lags" name="wtransformer_lags_min" value="3" min="1" max="20"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_dmodel">d_model (Embedding Dimension)</label>
+    <input type="number" id="wtransformer_m_dmodel" name="wtransformer_dm_min" value="8" min="2"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_nhead">Attention Heads (nhead)</label>
+    <input type="number" id="wtransformer_m_nhead" name="wtransformer_nhead_min" value="2" min="1" max="8"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_nl">Encoder Layers</label>
+    <input type="number" id="wtransformer_m_nl" name="wtransformer_num_layers_min" value="1" min="1" max="4"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_d">Dropout</label>
+    <input type="number" step="0.05" id="wtransformer_m_d" name="wtransformer_dr_min" value="0.1" min="0" max="0.9"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_lr">Learning Rate</label>
+    <input type="number" step="0.0001" id="wtransformer_m_lr" name="wtransformer_lr_min" value="0.001"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_wd">Weight Decay</label>
+    <input type="number" step="0.00001" id="wtransformer_m_wd" name="wtransformer_wd_min" value="0.0001"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_hd">Huber Delta</label>
+    <input type="number" step="0.5" id="wtransformer_m_hd" name="wtransformer_hd_min" value="1.0"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_ep">Epochs</label>
+    <input type="number" id="wtransformer_m_ep" name="wtransformer_ep_min" value="200" min="50"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+ 
+    <label for="wtransformer_m_pa">Patience</label>
+    <input type="number" id="wtransformer_m_pa" name="wtransformer_pa_min" value="30" min="5"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;font-size:1rem;margin-bottom:1.5rem;">
+</div>
+ 
+<div class="help-text">
+    <strong>💡 How it works:</strong> Target series is decomposed via circular MODWT into detail (W₁…Wⱼ)
+    and smooth (Vⱼ) coefficients. A separate encoder-only Transformer (CoeffTransformer) is trained
+    on each coefficient. Forecasts are summed. MC Dropout (300 samples) generates
+    50%, 80% and 95% uncertainty intervals. dim_feedforward = max(d_model × 2, 16) is auto-computed.
+</div>
+ 
+<script>
+(function () {
+    const WAVELET_GROUPS_WTRANSFORMER = {
+        "Haar": ["haar"],
+        "Daubechies (db)":    ["db1","db2","db3","db4","db5","db6","db7","db8",
+                               "db9","db10","db11","db12","db13","db14","db15",
+                               "db16","db17","db18","db19","db20","db21","db22",
+                               "db23","db24","db25","db26","db27","db28","db29",
+                               "db30","db31","db32","db33","db34","db35","db36",
+                               "db37","db38"],
+        "Symlets (sym)":      ["sym2","sym3","sym4","sym5","sym6","sym7","sym8",
+                               "sym9","sym10","sym11","sym12","sym13","sym14",
+                               "sym15","sym16","sym17","sym18","sym19","sym20"],
+        "Coiflets (coif)":    ["coif1","coif2","coif3","coif4","coif5","coif6",
+                               "coif7","coif8","coif9","coif10","coif11","coif12",
+                               "coif13","coif14","coif15","coif16","coif17"],
+        "Biorthogonal (bior)":["bior1.1","bior1.3","bior1.5","bior2.2","bior2.4",
+                               "bior2.6","bior2.8","bior3.1","bior3.3","bior3.5",
+                               "bior3.7","bior3.9","bior4.4","bior5.5","bior6.8"],
+        "Rev. Biorthogonal":  ["rbio1.1","rbio1.3","rbio1.5","rbio2.2","rbio2.4",
+                               "rbio2.6","rbio2.8","rbio3.1","rbio3.3","rbio3.5",
+                               "rbio3.7","rbio3.9","rbio4.4","rbio5.5","rbio6.8"],
+        "Discrete Meyer":     ["dmey"],
+    };
+    const DEFAULTS_WTRANSFORMER = ["haar","db2","db4","sym8"];
+    const container = document.getElementById('wtransformer_wavelet_list');
+    const hidden    = document.getElementById('wtransformer_wavelets_hidden');
+    const display   = document.getElementById('wtransformer_wavelet_display');
+ 
+    function rc(mn, mx, st) {
+        if (st <= 0 || mn > mx) return 1;
+        return Math.floor((mx - mn) / st) + 1;
+    }
+    function gv(id, fb) {
+        const el = document.getElementById(id);
+        return el ? (parseFloat(el.value) || fb) : fb;
+    }
+ 
+    function calcWTransformer() {
+        const sel = getSelWT(); const wc = sel.length;
+        const lv  = Math.max(1, gv('wtransformer_max_level', 3) - gv('wtransformer_min_level', 1) + 1);
+        const lg  = rc(gv('wtransformer_lags_min', 2), gv('wtransformer_lags_max', 4), gv('wtransformer_lags_step', 2));
+        const outer = wc * lv * lg;
+ 
+        const dm = rc(gv('wtransformer_dmodel_min', 8),  gv('wtransformer_dmodel_max', 16), gv('wtransformer_dmodel_step', 8));
+        const nh = rc(gv('wtransformer_nhead_min',  1),  gv('wtransformer_nhead_max',  2),  gv('wtransformer_nhead_step',  1));
+        const nl = rc(gv('wtransformer_nl_min',     1),  gv('wtransformer_nl_max',     2),  gv('wtransformer_nl_step',     1));
+        const dr = rc(gv('wtransformer_d_min',  0.1),  gv('wtransformer_d_max',  0.2),  gv('wtransformer_d_step',  0.1));
+        const lr = rc(gv('wtransformer_lr_min', 0.001), gv('wtransformer_lr_max', 0.003), gv('wtransformer_lr_step', 0.002));
+        const wd = rc(gv('wtransformer_wd_min', 0.0001), gv('wtransformer_wd_max', 0.0001), gv('wtransformer_wd_step', 0.0001));
+        const hd = rc(gv('wtransformer_hd_min', 1.0),  gv('wtransformer_hd_max', 1.0),  gv('wtransformer_hd_step', 0.5));
+        const ep = rc(gv('wtransformer_ep_min', 200),   gv('wtransformer_ep_max', 200),   gv('wtransformer_ep_step', 100));
+        const pa = rc(gv('wtransformer_pa_min', 30),    gv('wtransformer_pa_max', 30),    gv('wtransformer_pa_step', 10));
+        const inner = dm * nh * nl * dr * lr * wd * hd * ep * pa;
+        const grand = outer * inner;
+ 
+        document.getElementById('wtransformer_outer_count').textContent       = wc > 0 ? outer.toLocaleString() : '—';
+        document.getElementById('wtransformer_inner_count').textContent        = inner.toLocaleString();
+        document.getElementById('wtransformer_total_combinations').textContent = wc > 0 ? grand.toLocaleString() : '—';
+        document.getElementById('wtransformer_breakdown').innerHTML = wc > 0
+            ? `<strong>Outer:</strong> ${wc} wavelet(s) × ${lv} level(s) × ${lg} lag(s) = ${outer} | <strong>Inner:</strong> d_model(${dm})×nhead(${nh})×layers(${nl})×DR(${dr})×LR(${lr})×WD(${wd})×HD(${hd})×EP(${ep})×PA(${pa}) = ${inner.toLocaleString()}`
+            : '⚠️ Select at least one wavelet.';
+ 
+        const el = document.getElementById('wtransformer_combination_estimate');
+        el.className = 'combination-estimate';
+        if      (wc === 0)      el.classList.add('warning');
+        else if (grand <= 20)   el.classList.add('good');
+        else if (grand <= 100)  el.classList.add('warning');
+        else                    el.classList.add('danger');
+    }
+ 
+    function getSelWT() {
+        return hidden.value ? hidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+    }
+ 
+    function buildWT(filter) {
+        filter = (filter || '').toLowerCase();
+        container.innerHTML = '';
+        Object.entries(WAVELET_GROUPS_WTRANSFORMER).forEach(([g, ws]) => {
+            const vis = filter ? ws.filter(w => w.includes(filter)) : ws;
+            if (!vis.length) return;
+            const h = document.createElement('div');
+            h.textContent = g;
+            h.style.cssText = 'padding:4px 10px;font-size:0.75rem;font-weight:700;color:#764ba2;text-transform:uppercase;background:#f7f0ff;border-top:1px solid #ede9f7;margin-top:2px;';
+            container.appendChild(h);
+            vis.forEach(w => {
+                const l = document.createElement('label');
+                l.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 14px;cursor:pointer;font-size:0.9rem;color:#2d3748;';
+                l.onmouseenter = () => l.style.background = '#f0f4ff';
+                l.onmouseleave = () => l.style.background = '';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox'; cb.value = w; cb.checked = getSelWT().includes(w);
+                cb.style.cssText = 'accent-color:#667eea;width:16px;height:16px;cursor:pointer;';
+                cb.addEventListener('change', updateWT);
+                l.appendChild(cb);
+                l.appendChild(Object.assign(document.createElement('span'), { textContent: w }));
+                container.appendChild(l);
+            });
+        });
+    }
+ 
+    function updateWT() {
+        const checked = Array.from(container.querySelectorAll('input:checked')).map(c => c.value);
+        const prev    = getSelWT();
+        const allVis  = Array.from(container.querySelectorAll('input')).map(c => c.value);
+        const merged  = [...new Set([...prev.filter(w => !allVis.includes(w)), ...checked])];
+        hidden.value  = merged.join(',');
+        display.textContent = merged.length > 0
+            ? `✅ Selected (${merged.length}): ${merged.join(', ')}`
+            : '⚠️ Please select at least one wavelet filter';
+        display.style.color = merged.length > 0 ? '#38a169' : '#e53e3e';
+        calcWTransformer();
+    }
+ 
+    window.filterWaveletsTransformer = function(v) { buildWT(v); };
+ 
+    document.getElementById('auto_tune_wtransformer').addEventListener('change', function () {
+        document.getElementById('wtransformer_grid_search_ranges').style.display = this.checked ? 'block' : 'none';
+        document.getElementById('wtransformer_manual_section').style.display     = this.checked ? 'none'  : 'block';
+        if (this.checked) calcWTransformer();
+    });
+ 
+    // Init
+    hidden.value = DEFAULTS_WTRANSFORMER.join(',');
+    buildWT('');
+    updateWT();
+ 
+    [
+        'wtransformer_min_level','wtransformer_max_level',
+        'wtransformer_lags_min','wtransformer_lags_max','wtransformer_lags_step',
+        'wtransformer_dmodel_min','wtransformer_dmodel_max','wtransformer_dmodel_step',
+        'wtransformer_nhead_min','wtransformer_nhead_max','wtransformer_nhead_step',
+        'wtransformer_nl_min','wtransformer_nl_max','wtransformer_nl_step',
+        'wtransformer_d_min','wtransformer_d_max','wtransformer_d_step',
+        'wtransformer_lr_min','wtransformer_lr_max','wtransformer_lr_step',
+        'wtransformer_wd_min','wtransformer_wd_max','wtransformer_wd_step',
+        'wtransformer_hd_min','wtransformer_hd_max','wtransformer_hd_step',
+        'wtransformer_ep_min','wtransformer_ep_max','wtransformer_ep_step',
+        'wtransformer_pa_min','wtransformer_pa_max','wtransformer_pa_step',
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', calcWTransformer);
+    });
+ 
+    calcWTransformer();
+})();
+</script>

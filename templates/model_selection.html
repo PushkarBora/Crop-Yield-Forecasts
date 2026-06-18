@@ -4,7 +4,6 @@
 
 {% block extra_css %}
 <style>
-    /* Page Container */
     .models-page {
         min-height: 100vh;
         padding: 2rem 0 4rem;
@@ -16,39 +15,66 @@
         padding: 0 2rem;
     }
 
-    /* Page Header */
+    /* ── Page Header ── */
     .page-header {
         text-align: center;
-        margin-bottom: 3rem;
+        margin-bottom: 2rem;
         animation: fadeInUp 0.8s ease;
     }
 
     @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(30px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 
-    .page-header h1 {
-        font-size: 3rem;
+    .page-header h1 { font-size: 3rem; color: white; margin-bottom: 1rem; font-weight: 700; }
+    .page-header p  { font-size: 1.2rem; color: rgba(255,255,255,0.9); max-width: 700px; margin: 0 auto; }
+
+    /* ── Category Tab Bar ── */
+    .category-bar {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.7s ease 0.1s both;
+    }
+
+    .cat-tab {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 1.15rem;
+        border-radius: 50px;
+        border: 2px solid rgba(255,255,255,0.35);
+        background: rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.85);
+        font-size: 0.86rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        white-space: nowrap;
+        text-decoration: none;
+    }
+
+    .cat-tab:hover {
+        background: rgba(255,255,255,0.25);
         color: white;
-        margin-bottom: 1rem;
-        font-weight: 700;
+        border-color: rgba(255,255,255,0.6);
+        transform: translateY(-2px);
     }
 
-    .page-header p {
-        font-size: 1.2rem;
-        color: rgba(255,255,255,0.9);
-        max-width: 700px;
-        margin: 0 auto;
+    .cat-tab.active {
+        background: white;
+        color: #667eea;
+        border-color: white;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        transform: translateY(-2px);
     }
 
-    /* Main Form Card */
+    /* ── Form Card ── */
     .form-card {
         background: rgba(255, 255, 255, 0.97);
         border-radius: 20px;
@@ -57,7 +83,6 @@
         animation: fadeInUp 0.8s ease 0.2s backwards;
     }
 
-    /* Section Headers */
     .section-header {
         font-size: 1.8rem;
         color: #2d3748;
@@ -68,7 +93,19 @@
         font-weight: 600;
     }
 
-    /* Selection Controls */
+    /* ── Info Banner ── */
+    .info-banner {
+        background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+
+    .info-banner p { color: #2d3748; margin: 0; font-size: 0.95rem; line-height: 1.6; }
+    .info-banner strong { color: #667eea; }
+
+    /* ── Select / Deselect Buttons ── */
     .selection-controls {
         display: flex;
         gap: 1rem;
@@ -91,25 +128,21 @@
         background: #667eea;
         color: white;
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 15px rgba(102,126,234,0.3);
     }
 
-    .deselect-btn {
-        background: #f56565;
-        border-color: #f56565;
-        color: white;
-    }
+    .deselect-btn { background: #f56565; border-color: #f56565; color: white; }
+    .deselect-btn:hover { background: #e53e3e; border-color: #e53e3e; }
 
-    .deselect-btn:hover {
-        background: #e53e3e;
-        border-color: #e53e3e;
-    }
-
-    /* Model Categories */
+    /* ── Category Block ── */
     .model-category {
         margin-bottom: 2.5rem;
+        transition: all 0.3s;
     }
 
+    .model-category.hidden { display: none; }
+
+    /* Category title with accent bar */
     .category-title {
         font-size: 1.3rem;
         color: #2d3748;
@@ -117,24 +150,33 @@
         font-weight: 600;
         display: flex;
         align-items: center;
+        gap: 0.75rem;
+        padding: 0.9rem 1.2rem;
+        border-radius: 12px;
+        background: #f8f9ff;
     }
 
-    .category-title::before {
-        content: '';
-        width: 4px;
-        height: 24px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        margin-right: 1rem;
-        border-radius: 2px;
+    .cat-accent {
+        width: 5px;
+        height: 26px;
+        border-radius: 3px;
+        flex-shrink: 0;
     }
 
+    .cat-accent.blue   { background: linear-gradient(180deg,#667eea,#764ba2); }
+    .cat-accent.purple { background: linear-gradient(180deg,#9f7aea,#805ad5); }
+    .cat-accent.green  { background: linear-gradient(180deg,#48bb78,#38a169); }
+    .cat-accent.orange { background: linear-gradient(180deg,#f6ad55,#ed8936); }
+    .cat-accent.teal   { background: linear-gradient(180deg,#38b2ac,#2c7a7b); }
+
+    /* ── Models Grid ── */
     .models-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.2rem;
     }
 
-    /* Custom Checkbox Card */
+    /* ── Checkbox Card ── */
     .model-checkbox-card {
         position: relative;
         cursor: pointer;
@@ -148,38 +190,60 @@
     }
 
     .checkbox-content {
-        padding: 1.5rem;
+        padding: 1.4rem 1.2rem;
         border: 2px solid #e2e8f0;
-        border-radius: 15px;
+        border-radius: 14px;
         background: white;
         transition: all 0.3s;
         display: flex;
-        align-items: center;
-        gap: 1rem;
+        align-items: flex-start;
+        gap: 0.9rem;
     }
 
     .checkbox-content:hover {
         border-color: #667eea;
         transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+        box-shadow: 0 8px 25px rgba(102,126,234,0.15);
     }
 
     .model-checkbox-card input[type="checkbox"]:checked ~ .checkbox-content {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-color: #667eea;
         color: white;
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 8px 25px rgba(102,126,234,0.35);
+        transform: translateY(-3px);
     }
 
+    /* Colour variants when checked */
+    .model-checkbox-card.cc-orange input[type="checkbox"]:checked ~ .checkbox-content {
+        background: linear-gradient(135deg,#f6ad55,#ed8936);
+        border-color: #ed8936;
+        box-shadow: 0 8px 25px rgba(237,137,54,0.35);
+    }
+
+    .model-checkbox-card.cc-green input[type="checkbox"]:checked ~ .checkbox-content {
+        background: linear-gradient(135deg,#48bb78,#38a169);
+        border-color: #38a169;
+        box-shadow: 0 8px 25px rgba(72,187,120,0.35);
+    }
+
+    .model-checkbox-card.cc-teal input[type="checkbox"]:checked ~ .checkbox-content {
+        background: linear-gradient(135deg,#38b2ac,#2c7a7b);
+        border-color: #2c7a7b;
+        box-shadow: 0 8px 25px rgba(56,178,172,0.35);
+    }
+
+    /* Custom tick box */
     .checkbox-icon {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         border: 2px solid #cbd5e0;
         border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        margin-top: 2px;
         transition: all 0.3s;
         background: white;
     }
@@ -193,7 +257,7 @@
         content: '✓';
         color: #667eea;
         font-weight: bold;
-        font-size: 1.1rem;
+        font-size: 1rem;
         opacity: 0;
         transform: scale(0);
         transition: all 0.2s;
@@ -204,12 +268,54 @@
         transform: scale(1);
     }
 
+    /* Card text */
     .model-label-text {
-        font-weight: 600;
-        font-size: 1.05rem;
+        font-weight: 700;
+        font-size: 1rem;
+        display: block;
+        line-height: 1.3;
     }
 
-    /* Submit Button */
+    .model-label-sub {
+        font-size: 0.78rem;
+        color: #718096;
+        margin-top: 0.25rem;
+        display: block;
+        line-height: 1.4;
+    }
+
+    .model-checkbox-card input[type="checkbox"]:checked ~ .checkbox-content .model-label-sub {
+        color: rgba(255,255,255,0.8);
+    }
+
+    /* ── Disabled / Coming Soon ── */
+    .model-checkbox-card.disabled-card {
+        cursor: not-allowed;
+    }
+
+    .disabled-card .checkbox-content {
+        border-color: #e2e8f0;
+        background: #f7f8fc;
+        opacity: 0.72;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    .coming-soon-badge {
+        display: inline-block;
+        margin-top: 0.4rem;
+        background: linear-gradient(135deg,#f6ad55,#ed8936);
+        color: white;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 0.18rem 0.6rem;
+        border-radius: 20px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+    }
+
+    /* ── Submit ── */
     .submit-container {
         text-align: center;
         margin-top: 3rem;
@@ -217,7 +323,7 @@
 
     .submit-btn {
         padding: 1.2rem 4rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
         color: white;
         border: none;
         border-radius: 50px;
@@ -225,210 +331,1405 @@
         font-weight: 700;
         cursor: pointer;
         transition: all 0.3s;
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 10px 30px rgba(102,126,234,0.4);
         text-transform: uppercase;
         letter-spacing: 1px;
     }
 
-    .submit-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    .submit-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(102,126,234,0.5); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* ── Count badge ── */
+    .selected-count {
+        display: inline-block;
+        margin-left: 1rem;
+        background: rgba(102,126,234,0.12);
+        color: #667eea;
+        font-size: 0.88rem;
+        font-weight: 700;
+        padding: 0.3rem 0.9rem;
+        border-radius: 20px;
+        vertical-align: middle;
+        transition: all 0.3s;
     }
 
-    /* Info Banner */
-    .info-banner {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-        border-left: 4px solid #667eea;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin-bottom: 2rem;
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+        .page-header h1 { font-size: 2rem; }
+        .form-card { padding: 2rem 1.5rem; }
+        .models-grid { grid-template-columns: 1fr 1fr; }
+        .submit-btn { padding: 1rem 2.5rem; font-size: 1rem; }
     }
 
-    .info-banner p {
-        color: #2d3748;
-        margin: 0;
+    @media (max-width: 480px) {
+        .models-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── ARCH Test Card ── */
+    .model-checkbox-card.cc-arch input[type="checkbox"]:checked ~ .checkbox-content {
+        background: linear-gradient(135deg,#e53e3e,#c53030);
+        border-color: #c53030;
+        box-shadow: 0 8px 25px rgba(229,62,62,0.35);
+    }
+
+    /* ── ARCH Test Panel ── */
+    .arch-test-panel {
+        margin-top: 1.5rem;
+        background: linear-gradient(135deg, rgba(229,62,62,0.04), rgba(197,48,48,0.07));
+        border: 2px solid rgba(229,62,62,0.25);
+        border-radius: 16px;
+        padding: 1.8rem 2rem;
+        animation: fadeInUp 0.35s ease;
+    }
+
+    .arch-panel-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #c53030;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* ── Lag Method Toggle ── */
+    .lag-method-tabs {
+        display: flex;
+        gap: 0.6rem;
+        margin-bottom: 1.4rem;
+    }
+
+    .lag-method-tab {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        background: white;
+        color: #718096;
+        font-weight: 600;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: all 0.25s;
+        text-align: center;
+    }
+
+    .lag-method-tab.active {
+        border-color: #e53e3e;
+        background: rgba(229,62,62,0.06);
+        color: #c53030;
+    }
+
+    .lag-method-tab:hover:not(.active) {
+        border-color: #cbd5e0;
+        background: #f7fafc;
+    }
+
+    .lag-method-panel { display: none; }
+    .lag-method-panel.active { display: block; }
+
+    /* ── Manual lag input ── */
+    .arch-input-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .arch-input-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #4a5568;
+        white-space: nowrap;
+    }
+
+    .arch-lag-input {
+        padding: 0.55rem 0.9rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.92rem;
+        width: 200px;
+        transition: border-color 0.2s;
+        outline: none;
+    }
+
+    .arch-lag-input:focus { border-color: #e53e3e; }
+
+    .arch-hint {
+        font-size: 0.78rem;
+        color: #a0aec0;
+        margin-top: 0.4rem;
+    }
+
+    /* ── ACF-based panel ── */
+    .acf-detect-btn {
+        padding: 0.65rem 1.5rem;
+        background: linear-gradient(135deg,#e53e3e,#c53030);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: all 0.25s;
+    }
+
+    .acf-detect-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .acf-detect-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .acf-table-wrapper {
+        margin-top: 1rem;
+        overflow-x: auto;
+        display: none;
+    }
+
+    .acf-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .acf-table th {
+        background: #2d3748;
+        color: white;
+        padding: 0.55rem 0.9rem;
+        text-align: center;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    .acf-table td {
+        padding: 0.5rem 0.9rem;
+        text-align: center;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.83rem;
+    }
+
+    .acf-table tr:nth-child(even) { background: #f8f9ff; }
+
+    .sig-yes {
+        background: rgba(72,187,120,0.12);
+        color: #276749;
+        font-weight: 700;
+        padding: 0.15rem 0.55rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+
+    .sig-no {
+        background: rgba(160,174,192,0.15);
+        color: #718096;
+        padding: 0.15rem 0.55rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+
+    .acf-sig-row { background: rgba(72,187,120,0.06) !important; }
+
+    .sig-lags-summary {
+        margin-top: 0.9rem;
+        padding: 0.7rem 1rem;
+        background: rgba(72,187,120,0.1);
+        border-left: 4px solid #48bb78;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        color: #276749;
+        font-weight: 600;
+        display: none;
+    }
+
+    /* ── Run ARCH Test button ── */
+    .run-arch-btn {
+        margin-top: 1.3rem;
+        padding: 0.75rem 2rem;
+        background: linear-gradient(135deg,#e53e3e,#c53030);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: all 0.25s;
+        box-shadow: 0 4px 15px rgba(229,62,62,0.3);
+    }
+
+    .run-arch-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(229,62,62,0.4); }
+    .run-arch-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    /* ── ARCH Results Table ── */
+    .arch-results-wrapper { margin-top: 1.2rem; display: none; }
+
+    .arch-results-title {
         font-size: 0.95rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 0.7rem;
+    }
+
+    .arch-results-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.84rem;
+    }
+
+    .arch-results-table th {
+        background: linear-gradient(135deg,#e53e3e,#c53030);
+        color: white;
+        padding: 0.6rem 0.9rem;
+        text-align: center;
+        font-weight: 700;
+    }
+
+    .arch-results-table td {
+        padding: 0.55rem 0.9rem;
+        text-align: center;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .arch-results-table tr:nth-child(even) { background: #fff5f5; }
+
+    .arch-sig-yes {
+        background: rgba(229,62,62,0.12);
+        color: #c53030;
+        font-weight: 700;
+        padding: 0.15rem 0.55rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+
+    .arch-sig-no {
+        background: rgba(72,187,120,0.12);
+        color: #276749;
+        font-weight: 700;
+        padding: 0.15rem 0.55rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+
+    .arch-verdict {
+        margin-top: 1rem;
+        padding: 1rem 1.2rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
         line-height: 1.6;
     }
 
-    .info-banner strong {
-        color: #667eea;
+    .arch-verdict.arch-present {
+        background: rgba(229,62,62,0.08);
+        border-left: 4px solid #e53e3e;
+        color: #c53030;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-        .page-header h1 {
-            font-size: 2rem;
-        }
-
-        .form-card {
-            padding: 2rem 1.5rem;
-        }
-
-        .models-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .submit-btn {
-            padding: 1rem 2.5rem;
-            font-size: 1rem;
-        }
+    .arch-verdict.arch-absent {
+        background: rgba(72,187,120,0.08);
+        border-left: 4px solid #48bb78;
+        color: #276749;
     }
+
+    .arch-spinner {
+        display: inline-block;
+        width: 16px; height: 16px;
+        border: 2px solid rgba(255,255,255,0.4);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: middle;
+        margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="models-page">
     <div class="models-container">
-        <!-- Page Header -->
+
+        <!-- ── Page Header ── -->
         <div class="page-header">
             <h1>🤖 Select Forecasting Models</h1>
             <p>Choose one model for detailed analysis or multiple models for performance comparison.</p>
         </div>
 
-        <!-- Main Form -->
+        <!-- ── Category Tab Bar ── -->
+        <div class="category-bar" id="categoryBar">
+            <a class="cat-tab" data-cat="all"        href="?category=all">        🔭 All Models        </a>
+            <a class="cat-tab" data-cat="stochastic" href="?category=stochastic"> 📉 Stochastic/Linear </a>
+            <a class="cat-tab" data-cat="volatility" href="?category=volatility"> 🔥 Volatility        </a>
+            <a class="cat-tab" data-cat="ml"         href="?category=ml">         🤖 Machine Learning  </a>
+            <a class="cat-tab" data-cat="dl"         href="?category=dl">         🧠 Deep Learning     </a>
+            <a class="cat-tab" data-cat="wavelet"    href="?category=wavelet">    🌊 Wavelet Based     </a>
+        </div>
+
+        <!-- ── Main Form ── -->
         <form action="{{ url_for('configure_models') }}" method="POST" id="modelForm">
             <div class="form-card">
-                
-                <h2 class="section-header">Select Model(s)</h2>
-                
+
+                <h2 class="section-header">
+                    Select Model(s)
+                    <span class="selected-count" id="selCount">0 selected</span>
+                </h2>
+
                 <div class="info-banner">
-                    <p><strong>💡 Pro Tip:</strong> Select <strong>one model</strong> for detailed analysis or <strong>multiple models</strong> (minimum 1, maximum 8) to compare performance side-by-side!</p>
+                    <p><strong>💡 Pro Tip:</strong> Select <strong>one model</strong> for detailed analysis or <strong>multiple models</strong> (min 1, max 10) to compare performance side-by-side. Use the tabs above to filter by category.</p>
                 </div>
 
-                <div class="model-selection">
-                    <div class="selection-controls">
-                        <button type="button" class="select-btn" onclick="selectAll()">✓ Select All</button>
-                        <button type="button" class="select-btn deselect-btn" onclick="deselectAll()">✗ Deselect All</button>
-                    </div>
+                <!-- Select / Deselect controls -->
+                <div class="selection-controls">
+                    <button type="button" class="select-btn"    onclick="selectVisible()">✓ Select Visible</button>
+                    <button type="button" class="select-btn deselect-btn" onclick="deselectAll()">✗ Deselect All</button>
+                </div>
 
-                    <!-- Deep Learning Models -->
-                    <div class="model-category">
-                        <h3 class="category-title">🧠 Deep Learning Models</h3>
-                        <div class="models-grid">
-                            <label class="model-checkbox-card">
-                                <input type="checkbox" name="models" value="lstm">
-                                <div class="checkbox-content">
-                                    <div class="checkbox-icon"></div>
-                                    <span class="model-label-text">LSTM</span>
-                                </div>
-                            </label>
+                <!-- ════════════════════════════════
+                     STOCHASTIC / LINEAR
+                ════════════════════════════════ -->
+                <div class="model-category" data-cat="stochastic" id="cat-stochastic">
+                    <h3 class="category-title">
+                        <span class="cat-accent blue"></span>
+                        📉 Stochastic / Linear Time Series Models
+                    </h3>
+                    <div class="models-grid">
 
-                            <label class="model-checkbox-card">
-                                <input type="checkbox" name="models" value="gru">
-                                <div class="checkbox-content">
-                                    <div class="checkbox-icon"></div>
-                                    <span class="model-label-text">GRU</span>
-                                </div>
-                            </label>
-
-                            <label class="model-checkbox-card">
-                                <input type="checkbox" name="models" value="rnn">
-                                <div class="checkbox-content">
-                                    <div class="checkbox-icon"></div>
-                                    <span class="model-label-text">RNN</span>
-                                </div>
-                            </label>
-
-                            <label class="model-checkbox-card">
-                                <input type="checkbox" name="models" value="transformer">
-                                <div class="checkbox-content">
-                                    <div class="checkbox-icon"></div>
-                                    <span class="model-label-text">Transformer</span>
-                                </div>
-                            </label>
-
-                            <label class="model-checkbox-card">
-                                <input type="checkbox" name="models" value="ann">
-                                <div class="checkbox-content">
-                                    <div class="checkbox-icon"></div>
-                                    <span class="model-label-text">ANN</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Machine Learning Models -->
-                    <div class="model-category">
-                        <h3 class="category-title">🌲 Machine Learning Models</h3>
-                        <div class="models-grid">
-                            <label class="model-checkbox-card">
-                                <input type="checkbox" name="models" value="rf">
-                                <div class="checkbox-content">
-                                    <div class="checkbox-icon"></div>
-                                    <span class="model-label-text">Random Forest</span>
-                                </div>
-                            </label>
-
-                            <label class="model-checkbox-card">
-                                <input type="checkbox" name="models" value="svr">
-                                <div class="checkbox-content">
-                                    <div class="checkbox-icon"></div>
-                                    <span class="model-label-text">SVR</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Statistical Models -->
-                    <div class="model-category">
-                        <h3 class="category-title">📊 Statistical Model</h3>
-                        <div class="models-grid">
-                            <label class="model-checkbox-card">
-                                <input type="checkbox" name="models" value="arima">
-                                <div class="checkbox-content">
-                                    <div class="checkbox-icon"></div>
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="arima">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
                                     <span class="model-label-text">ARIMA</span>
+                                    <span class="model-label-sub">AutoRegressive Integrated Moving Average</span>
                                 </div>
-                            </label>
-                        </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="sarima">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">SARIMA</span>
+                                    <span class="model-label-sub">Seasonal ARIMA / SARIMAX</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="tbats">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">TBATS</span>
+                                    <span class="model-label-sub">Trigonometric Seasonality, Box-Cox, ARMA, Trend</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="ets">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">ETS</span>
+                                    <span class="model-label-sub">Error–Trend–Seasonality (Holt-Winters Family)</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="rw">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Random Walk</span>
+                                    <span class="model-label-sub">Naïve Benchmark (Pure RW / Drift / Seasonal Naïve)</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card disabled-card">
+                            <input type="checkbox" name="models" value="arimax" disabled>
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text" style="color:#718096;">ARIMAX</span>
+                                    <span class="model-label-sub">ARIMA with Exogenous Variables</span>
+                                    <span class="coming-soon-badge">🚧 Coming Soon</span>
+
+                                </div>
+                            </div>
+                        </label>
+
                     </div>
                 </div>
 
-                <!-- Submit Button -->
-                <div class="submit-container">
-                    <button type="submit" class="submit-btn">Next → Configure Hyperparameters</button>
+                <!-- ════════════════════════════════
+                     VOLATILITY
+                ════════════════════════════════ -->
+                <div class="model-category" data-cat="volatility" id="cat-volatility">
+                    <h3 class="category-title">
+                        <span class="cat-accent orange"></span>
+                        🔥 Volatility Models
+                    </h3>
+                    <!-- ── ARCH Test Diagnostic Card ── -->
+                    <div class="model-category" data-cat="volatility" style="margin-bottom:0; margin-top:-1.5rem;">
+                        <div style="
+                            background: linear-gradient(135deg, rgba(229,62,62,0.06), rgba(197,48,48,0.09));
+                            border: 2px solid rgba(229,62,62,0.35);
+                            border-radius: 14px;
+                            padding: 1.2rem 1.5rem;
+                            margin-bottom: 1.5rem;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            flex-wrap: wrap;
+                            gap: 1rem;
+                            cursor: pointer;
+                        " onclick="toggleArchPanel()" id="archTestCardFace">
+                            <div style="display:flex; align-items:center; gap:1rem;">
+                                <div class="checkbox-icon" style="border-color:#e53e3e; flex-shrink:0;" id="archCheckIcon"></div>
+                                <div>
+                                    <div style="font-weight:700; font-size:1rem; color:#c53030;">
+                                        🔬 ARCH LM Pre-Test (Engle's Test)
+                                    </div>
+                                    <div style="font-size:0.82rem; color:#718096; margin-top:0.2rem;">
+                                        ⚠️ Before selecting a GARCH-family model, it is strongly recommended to run this pre-test to confirm ARCH effects are present in your series.
+                                    </div>
+                                </div>
+                            </div>
+                            <span style="
+                                background: linear-gradient(135deg,#e53e3e,#c53030);
+                                color: white;
+                                font-size: 0.78rem;
+                                font-weight: 700;
+                                padding: 0.3rem 0.9rem;
+                                border-radius: 20px;
+                                white-space: nowrap;
+                            ">Run Pre-Test →</span>
+                        </div>
+                    </div>
+                    <!-- ══════════════════════════════════════════
+                         ARCH TEST INTERACTIVE PANEL
+                    ══════════════════════════════════════════ -->
+                    <div class="arch-test-panel" id="archTestPanel" style="display:none;">
+
+                        <div class="arch-panel-title">
+                            🔬 ARCH LM Test Configuration
+                            <span style="margin-left:auto;font-size:0.75rem;font-weight:600;color:#a0aec0;">
+                                Runs independently — does not affect model selection below
+                            </span>
+                        </div>
+
+                        <!-- Column selectors -->
+                        <!-- Target column only — time col not needed for Auto-ARIMA -->
+                        <div style="display:flex; gap:1.2rem; margin-bottom:1.2rem; flex-wrap:wrap;">
+                            <div style="flex:1; min-width:200px; max-width:360px;">
+                                <input type="hidden" id="archTargetCol" value="{{ target_col }}">
+                                <div style="font-size:0.82rem;font-weight:600;color:#4a5568;
+                                            padding:0.5rem 0.9rem;background:rgba(102,126,234,0.08);
+                                            border-radius:8px;">
+                                    📈 Target Series: <strong style="color:#667eea;">{{ target_col }}</strong>
+                                    <div class="arch-hint" style="margin-top:0.3rem;">
+                                        Auto-detected from your uploaded dataset.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lag Method Tabs -->
+                        <div style="font-size:0.85rem;font-weight:700;color:#4a5568;margin-bottom:0.6rem;">
+                            Select Lag Determination Method:
+                        </div>
+                        <div class="lag-method-tabs">
+                            <div class="lag-method-tab active" id="tabManual" onclick="switchLagMethod('manual')">
+                                ✍️ Manual Lag Input
+                            </div>
+                            <div class="lag-method-tab" id="tabAcf" onclick="switchLagMethod('acf')">
+                                📊 ACF Auto-Detect (Residuals²)
+                            </div>
+                        </div>
+
+                        <!-- ── Manual Lag Panel ── -->
+                        <div class="lag-method-panel active" id="panelManual">
+                            <div class="arch-input-row">
+                                <span class="arch-input-label">ARCH Test Lags:</span>
+                                <div>
+                                    <input type="text" id="manualLagInput"
+                                           class="arch-lag-input"
+                                           placeholder="e.g. 1, 2, 3, 5"
+                                           value="1, 2, 3, 4, 5">
+                                    <div class="arch-hint">
+                                        Enter comma-separated lag values — ARCH LM test will run for each lag separately.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── ACF Auto-Detect Panel ── -->
+                        <div class="lag-method-panel" id="panelAcf">
+                            <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+                                <div>
+                                    <span class="arch-input-label">Max ACF Lags to Check:</span>
+                                    <div class="arch-hint">ACF of squared residuals up to this lag.</div>
+                                </div>
+                                <input type="number" id="maxAcfLag" class="arch-lag-input"
+                                       value="12" min="1" max="40" style="width:90px;">
+                                <button type="button" class="acf-detect-btn" id="acfDetectBtn" onclick="runAcfDetect()">
+                                    🔍 Detect Significant Lags
+                                </button>
+                            </div>
+
+                            <!-- ACF Table -->
+                            <div class="acf-table-wrapper" id="acfTableWrapper">
+                                <div style="font-size:0.85rem;font-weight:700;color:#4a5568;margin-bottom:0.5rem;">
+                                ACF of Residuals² — Significant lags (|ACF| > 1.96/√n) are highlighted:
+                            </div>
+                            <div id="arimaOrderBadge" style="display:none;margin-bottom:0.6rem;
+                                 padding:0.45rem 0.9rem;background:rgba(102,126,234,0.1);
+                                 border-left:4px solid #667eea;border-radius:8px;
+                                 font-size:0.82rem;color:#4a5568;font-weight:600;"></div>
+                                <table class="acf-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Lag</th>
+                                            <th>ACF Value</th>
+                                            <th>95% Bound (±)</th>
+                                            <th>Significant?</th>
+                                            <th>Interpretation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="acfTableBody"></tbody>
+                                </table>
+                                <div class="sig-lags-summary" id="sigLagsSummary"></div>
+
+                                <!-- Residuals collapsible table -->
+                                <div id="residualTableWrapper" style="display:none; margin-top:1rem;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between;
+                                                margin-bottom:0.5rem;">
+                                        <span style="font-size:0.85rem;font-weight:700;color:#4a5568;">
+                                            📄 Residuals &amp; Residuals² (from Auto-ARIMA fit)
+                                        </span>
+                                        <button type="button" onclick="toggleResidualTable()"
+                                                id="residualToggleBtn"
+                                                style="padding:0.3rem 0.9rem;border:2px solid #667eea;
+                                                       border-radius:20px;background:white;color:#667eea;
+                                                    font-size:0.78rem;font-weight:700;cursor:pointer;">
+                                            👁 Show
+                                        </button>
+                                    </div>
+                                    <div id="residualTableInner" style="display:none; overflow-x:auto; max-height:280px; overflow-y:auto;">
+                                        <table class="acf-table" id="residualTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Obs #</th>
+                                                    <th>Residual (eₜ)</th>
+                                                    <th>Residual² (eₜ²)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="residualTableBody"></tbody>
+                                        </table>
+                                    </div>
+                                    <div id="coefDisplay" style="display:none; margin-top:0.6rem;
+                                         padding:0.5rem 0.9rem; background:rgba(102,126,234,0.08);
+                                        border-radius:8px; font-size:0.82rem; color:#4a5568; font-weight:600;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Run ARCH Test ── -->
+                        <div style="margin-top:1.4rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+                            <button type="button" class="run-arch-btn" id="runArchBtn" onclick="runArchTest()">
+                                ⚡ Run ARCH LM Test
+                            </button>
+                            <span style="font-size:0.8rem;color:#a0aec0;" id="archRunHint">
+                                Runs Auto-ARIMA → extracts residuals → ARCH LM test per lag
+                            </span>
+                        </div>
+
+                        <!-- ── ARCH Results ── -->
+                        <div class="arch-results-wrapper" id="archResultsWrapper">
+                            <div class="arch-results-title">📋 ARCH LM Test Results (per lag)</div>
+                            <table class="arch-results-table">
+                                <thead>
+                                    <tr>
+                                        <th>Lag</th>
+                                        <th>LM Statistic</th>
+                                        <th>p-value</th>
+                                        <th>F-Statistic</th>
+                                        <th>F p-value</th>
+                                        <th>ARCH Effects?</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="archResultsBody"></tbody>
+                            </table>
+                            <div class="arch-verdict" id="archVerdict"></div>
+                        </div>
+
+                    </div><!-- /arch-test-panel -->
+                    
+                    
+                    <div class="models-grid">
+
+                        
+
+                        <label class="model-checkbox-card cc-orange">
+                            <input type="checkbox" name="models" value="argarch">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">AR-GARCH</span>
+                                    <span class="model-label-sub">AutoRegressive GARCH</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card cc-orange">
+                            <input type="checkbox" name="models" value="armagarch">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">ARMA-GARCH</span>
+                                    <span class="model-label-sub">AutoRegressive Moving Average GARCH</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        
+
+                        <label class="model-checkbox-card cc-orange">
+                            <input type="checkbox" name="models" value="aregarch">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">AR-EGARCH</span>
+                                    <span class="model-label-sub">AutoRegressive Exponential GARCH</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card cc-orange">
+                            <input type="checkbox" name="models" value="artgarch">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">AR-TGARCH</span>
+                                    <span class="model-label-sub">AutoRegressive True Zakoian T-GARCH</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card cc-orange">
+                            <input type="checkbox" name="models" value="argjrgarch">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">AR-GJR-GARCH</span>
+                                    <span class="model-label-sub">AutoRegressive GJR-GARCH(Glosten-Jagannathan-Runkle)</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        
+
+                    
+                    </div><!-- /models-grid -->
+                </div><!-- /cat-volatility -->
+
+                <!-- ════════════════════════════════
+                     MACHINE LEARNING
+                ════════════════════════════════ -->
+                <div class="model-category" data-cat="ml" id="cat-ml">
+                    <h3 class="category-title">
+                        <span class="cat-accent green"></span>
+                        🤖 Machine Learning Models
+                    </h3>
+                    <div class="models-grid">
+
+                        <label class="model-checkbox-card cc-green">
+                            <input type="checkbox" name="models" value="ann">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">ANN</span>
+                                    <span class="model-label-sub">Artificial Neural Network</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card cc-green">
+                            <input type="checkbox" name="models" value="svr">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">SVR</span>
+                                    <span class="model-label-sub">Support Vector Regression</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card cc-green">
+                            <input type="checkbox" name="models" value="rf">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Random Forest</span>
+                                    <span class="model-label-sub">Ensemble of decision trees</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card cc-green">
+                            <input type="checkbox" name="models" value="xgb">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">XGBoost</span>
+                                    <span class="model-label-sub">Extreme Gradient Boosting</span>
+                                </div>
+                            </div>
+                        </label>
+                        
+                        <label class="model-checkbox-card cc-green">
+                            <input type="checkbox" name="models" value="gbm">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">GBM</span>
+                                    <span class="model-label-sub">Gradient Boosting Machine</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card cc-green">
+                            <input type="checkbox" name="models" value="knn">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">KNN</span>
+                                    <span class="model-label-sub">K-Nearest Neighbors Regression</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
+
+                <!-- ════════════════════════════════
+                     DEEP LEARNING
+                ════════════════════════════════ -->
+                <div class="model-category" data-cat="dl" id="cat-dl">
+                    <h3 class="category-title">
+                        <span class="cat-accent blue"></span>
+                        🧠 Deep Learning Models
+                    </h3>
+                    <div class="models-grid">
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="lstm">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">LSTM</span>
+                                    <span class="model-label-sub">Long Short-Term Memory</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="gru">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">GRU</span>
+                                    <span class="model-label-sub">Gated Recurrent Unit</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="rnn">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">RNN</span>
+                                    <span class="model-label-sub">Recurrent Neural Network</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="transformer">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Transformer</span>
+                                    <span class="model-label-sub">Self-attention sequence model</span>
+                                </div>
+                            </div>
+                        </label>
+                        
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="cnn">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Deep CNN</span>
+                                    <span class="model-label-sub">Deep 1-D Convolutional Neural Network</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="stacked_lstm">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Stacked LSTM</span>
+                                    <span class="model-label-sub">Manually Stacked LSTM cells with LayerNorm</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="bd_lstm">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">BD LSTM</span>
+                                    <span class="model-label-sub">Bidirectional LSTM with forward + backward context</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="conv_lstm">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Conv-LSTM</span>
+                                    <span class="model-label-sub">CNN feature extractor + LSTM temporal modeller</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card">
+                            <input type="checkbox" name="models" value="deep_lstm">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Deep LSTM</span>
+                                    <span class="model-label-sub">Deeply stacked LSTM with residual skip connections</span>
+                                </div>
+                            </div>
+                        </label>
+                        
+
+                    </div>
+                </div>
+
+                <!-- ════════════════════════════════
+                     WAVELET BASED
+                ════════════════════════════════ -->
+                <div class="model-category" data-cat="wavelet" id="cat-wavelet">
+                    <h3 class="category-title">
+                        <span class="cat-accent teal"></span>
+                        🌊 Wavelet Based Models
+                    </h3>
+                    <div class="models-grid">
+
+                        <label class="model-checkbox-card cc-teal">
+                            <input type="checkbox" name="models" value="wavelet_ann">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Wavelet-ANN</span>
+                                    <span class="model-label-sub">MODWT + Artificial Neural Network</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card disabled-card">
+                            <input type="checkbox" name="models" value="wave_arima" disabled>
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                     <span class="model-label-text" style="color:#718096;">Wave-ARIMA</span>
+                                    <span class="model-label-sub">MODWT + ARIMA</span>
+                                    <span class="coming-soon-badge">🚧 Coming Soon</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        
+                        <label class="model-checkbox-card cc-teal">
+                            <input type="checkbox" name="models" value="wavelet_lstm">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Wavelet-LSTM</span>
+                                    <span class="model-label-sub">MODWT + LSTM (per-coefficient)</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="model-checkbox-card cc-teal">
+                            <input type="checkbox" name="models" value="wavelet_transformer">
+                            <div class="checkbox-content">
+                                <div class="checkbox-icon"></div>
+                                <div>
+                                    <span class="model-label-text">Wavelet-Transformer</span>
+                                    <span class="model-label-sub">MODWT + Transformer (per-coefficient)</span>
+                                </div>
+                            </div>
+                        </label>
+
+                    </div>
+                </div>
+
+                <!-- ── Submit ── -->
+                <div class="submit-container">
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        Next → Configure Hyperparameters
+                    </button>
+                </div>
+
             </div>
         </form>
     </div>
 </div>
 {% endblock %}
 
+
 {% block extra_js %}
 <script>
-    // Select all checkboxes
-    function selectAll() {
-        const checkboxes = document.querySelectorAll('input[name="models"]');
-        checkboxes.forEach(cb => cb.checked = true);
-    }
+// ─────────────────────────────────────────
+//  Category filter
+// ─────────────────────────────────────────
+function getCategory() {
+    return new URLSearchParams(window.location.search).get('category') || 'all';
+}
 
-    // Deselect all checkboxes
-    function deselectAll() {
-        const checkboxes = document.querySelectorAll('input[name="models"]');
-        checkboxes.forEach(cb => cb.checked = false);
-    }
+function showCategory(cat) {
+    const tabs = document.querySelectorAll('.cat-tab');
+    const cats = document.querySelectorAll('.model-category');
 
-    // Form validation
-    document.getElementById('modelForm').addEventListener('submit', function(e) {
-        const checkboxes = document.querySelectorAll('input[name="models"]:checked');
-        
-        if (checkboxes.length === 0) {
-            e.preventDefault();
-            alert('⚠️ Please select at least one model!');
-            return false;
+    // Highlight active tab
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
+
+    // Show / hide category blocks
+    cats.forEach(block => {
+        if (cat === 'all' || block.dataset.cat === cat) {
+            block.classList.remove('hidden');
+        } else {
+            block.classList.add('hidden');
         }
-
-        if (checkboxes.length > 8) {
-            e.preventDefault();
-            alert('⚠️ Maximum 8 models can be selected at once!');
-            return false;
-        }
-
-        // Show loading state
-        const submitBtn = this.querySelector('.submit-btn');
-        submitBtn.textContent = 'Processing...';
-        submitBtn.disabled = true;
     });
+}
+
+// Tab click — update URL without reload
+document.querySelectorAll('.cat-tab').forEach(tab => {
+    tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        const cat = this.dataset.cat;
+        const url = new URL(window.location);
+        url.searchParams.set('category', cat);
+        window.history.pushState({}, '', url);
+        showCategory(cat);
+    });
+});
+
+// Browser back/forward
+window.addEventListener('popstate', () => showCategory(getCategory()));
+
+// Init
+showCategory(getCategory());
+
+
+// ─────────────────────────────────────────
+//  Live selected count badge
+// ─────────────────────────────────────────
+function updateCount() {
+    const n = document.querySelectorAll('input[name="models"]:checked:not(:disabled)').length;
+    const badge = document.getElementById('selCount');
+    badge.textContent = n === 0 ? '0 selected'
+                      : n === 1 ? '1 selected'
+                      : `${n} selected`;
+    badge.style.background = n > 0
+        ? 'rgba(102,126,234,0.15)'
+        : 'rgba(200,200,200,0.2)';
+    badge.style.color = n > 0 ? '#667eea' : '#a0aec0';
+}
+
+document.querySelectorAll('input[name="models"]').forEach(cb => {
+    cb.addEventListener('change', updateCount);
+});
+
+updateCount();
+
+
+// ─────────────────────────────────────────
+//  Select visible / Deselect all
+// ─────────────────────────────────────────
+function selectVisible() {
+    // Select only checkboxes in currently visible (non-hidden) categories
+    document.querySelectorAll('.model-category:not(.hidden) input[name="models"]:not(:disabled)')
+        .forEach(cb => cb.checked = true);
+    updateCount();
+}
+
+function deselectAll() {
+    document.querySelectorAll('input[name="models"]:not(:disabled)')
+        .forEach(cb => cb.checked = false);
+    updateCount();
+}
+
+
+// ─────────────────────────────────────────
+//  ARCH TEST PANEL
+// ─────────────────────────────────────────
+
+let archPanelOpen   = false;
+let detectedSigLags = [];   // lags identified from ACF
+let acfDetectionRan  = false;
+let currentLagMethod = 'manual';
+
+function toggleArchPanel() {
+    archPanelOpen = !archPanelOpen;
+    const panel     = document.getElementById('archTestPanel');
+    const cardFace  = document.getElementById('archTestCardFace');
+    const checkIcon = document.getElementById('archCheckIcon');
+
+    if (archPanelOpen) {
+        panel.style.display = 'block';
+        cardFace.style.background =
+            'linear-gradient(135deg,#e53e3e,#c53030)';
+        cardFace.style.borderColor = '#c53030';
+        cardFace.style.color       = 'white';
+        cardFace.style.boxShadow   = '0 8px 25px rgba(229,62,62,0.35)';
+        cardFace.style.transform   = 'translateY(-3px)';
+        checkIcon.style.background    = 'white';
+        checkIcon.style.borderColor   = 'white';
+        checkIcon.innerHTML = '<span style="color:#e53e3e;font-weight:bold;font-size:1rem;">✓</span>';
+        // Scroll panel into view
+        setTimeout(() => panel.scrollIntoView({ behavior:'smooth', block:'nearest' }), 100);
+    } else {
+        panel.style.display = 'none';
+        cardFace.style.background =
+            'linear-gradient(135deg,rgba(229,62,62,0.06),rgba(197,48,48,0.09))';
+        cardFace.style.borderColor = '#e53e3e';
+        cardFace.style.color       = '';
+        cardFace.style.boxShadow   = '';
+        cardFace.style.transform   = '';
+        checkIcon.style.background  = 'white';
+        checkIcon.style.borderColor = '#e53e3e';
+        checkIcon.innerHTML = '';
+        // Reset results
+        document.getElementById('archResultsWrapper').style.display = 'none';
+        document.getElementById('acfTableWrapper').style.display     = 'none';
+        document.getElementById('sigLagsSummary').style.display      = 'none';
+        document.getElementById('residualTableWrapper').style.display = 'none';
+        document.getElementById('residualTableInner').style.display   = 'none';
+        document.getElementById('residualToggleBtn').textContent      = '👁 Show';
+        detectedSigLags = [];
+        acfDetectionRan = false;
+    }
+}
+
+function toggleResidualTable() {
+    const inner = document.getElementById('residualTableInner');
+    const btn   = document.getElementById('residualToggleBtn');
+    const shown = inner.style.display !== 'none';
+    inner.style.display = shown ? 'none' : 'block';
+    btn.textContent     = shown ? '👁 Show' : '🙈 Hide';
+}
+
+function switchLagMethod(method) {
+    currentLagMethod = method;
+    ['manual','acf'].forEach(m => {
+        document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1))
+            .classList.toggle('active', m === method);
+        document.getElementById('panel' + m.charAt(0).toUpperCase() + m.slice(1))
+            .classList.toggle('active', m === method);
+    });
+    // Reset results when switching
+    // Reset results and detection state when switching
+    document.getElementById('archResultsWrapper').style.display = 'none';
+    acfDetectionRan = false;
+    detectedSigLags = [];
+}
+
+// ── ACF Auto-Detect ────────────────────────────────────────
+async function runAcfDetect() {
+    const targetCol = document.getElementById('archTargetCol').value.trim();
+    const maxLag    = parseInt(document.getElementById('maxAcfLag').value) || 12;
+
+    if (!targetCol) {
+        alert('⚠️ Please enter the Target Column name first.');
+        return;
+    }
+
+    const btn = document.getElementById('acfDetectBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="arch-spinner"></span> Running Auto-ARIMA...';
+
+    try {
+        const resp = await fetch('/api/arch_acf', {
+            method : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify({ target_col: targetCol, max_lag: maxLag }),
+        });
+
+        if (!resp.ok) throw new Error(`Server error ${resp.status}`);
+        const data = await resp.json();
+
+        if (data.error) throw new Error(data.error);
+
+        renderAcfTable(data.acf_rows, data.bound);
+        acfDetectionRan = true;
+
+        // ARIMA order badge
+        const badge = document.getElementById('arimaOrderBadge');
+        if (data.arima_order) {
+            const [p,d,q] = data.arima_order;
+            const trendLabel = d <= 1 ? 'with drift (trend=c)' : 'no constant';
+            badge.style.display = 'block';
+            badge.innerHTML =
+                `🔎 Auto-ARIMA: <strong>ARIMA(${p},${d},${q})</strong> ${trendLabel} &nbsp;|&nbsp; `+
+                `n = ${data.n} &nbsp;|&nbsp; `+
+                `95% bound = ±${data.bound}` +
+                (data.ma1_coef !== null && data.ma1_coef !== undefined
+                    ? ` &nbsp;|&nbsp; MA(1) coef = <strong>${data.ma1_coef}</strong>`
+                    : '') +
+                ` &nbsp;— <span style="color:#276749;">trend now matches R's "with drift"</span>`;
+        }
+
+        // Populate residuals table
+        if (data.residuals && data.residuals.length > 0) {
+            const tbody = document.getElementById('residualTableBody');
+            tbody.innerHTML = '';
+            data.residuals.forEach(r => {
+                const tr = document.createElement('tr');
+                const isLarge = Math.abs(r.residual) > 2 * Math.sqrt(
+                    data.residuals.reduce((s,x) => s + x.resid_sq, 0) / data.residuals.length
+                );
+                tr.innerHTML = `
+                    <td><strong>${r.index + 1}</strong></td>
+                    <td style="color:${r.residual < 0 ? '#c53030' : '#276749'};">
+                        ${r.residual}
+                    </td>
+                    <td style="font-weight:${isLarge ? '700' : '400'};
+                               color:${isLarge ? '#c53030' : 'inherit'};">
+                        ${r.resid_sq}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('residualTableWrapper').style.display = 'block';
+
+            if (data.ma1_coef !== null && data.ma1_coef !== undefined) {
+                const coefDiv = document.getElementById('coefDisplay');
+                coefDiv.style.display = 'block';
+                coefDiv.innerHTML =
+                    `📊 Compare with R: MA(1) = <strong>${data.ma1_coef}</strong> `+
+                    `(R shows -0.6068) — if these match, residuals will match`;
+            }
+        }
+
+        btn.innerHTML = '🔍 Detect Significant Lags';
+    } catch (err) {
+        alert('❌ ACF detection failed: ' + err.message);
+        btn.innerHTML = '🔍 Detect Significant Lags';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function renderAcfTable(rows, bound) {
+    // rows: [{lag, acf_value, significant, interpretation}, ...]
+    const tbody = document.getElementById('acfTableBody');
+    tbody.innerHTML = '';
+    detectedSigLags = [];
+
+    rows.forEach(r => {
+        const isSig = r.significant;
+        if (isSig) detectedSigLags.push(r.lag);
+
+        const tr = document.createElement('tr');
+        if (isSig) tr.className = 'acf-sig-row';
+        tr.innerHTML = `
+            <td><strong>${r.lag}</strong></td>
+            <td>${r.acf_value.toFixed(4)}</td>
+            <td>± ${bound.toFixed(4)}</td>
+            <td><span class="${isSig ? 'sig-yes' : 'sig-no'}">${isSig ? '✅ Yes' : '❌ No'}</span></td>
+            <td style="text-align:left;color:#4a5568;font-size:0.8rem;">${r.interpretation}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('acfTableWrapper').style.display = 'block';
+
+    const summary = document.getElementById('sigLagsSummary');
+    if (detectedSigLags.length > 0) {
+        summary.style.display = 'block';
+        summary.innerHTML =
+            `✅ <strong>${detectedSigLags.length} significant lag(s) detected:</strong> ` +
+            `[${detectedSigLags.join(', ')}] — These will be used for the ARCH LM test.`;
+    } else {
+        summary.style.display = 'block';
+        summary.style.background = 'rgba(160,174,192,0.1)';
+        summary.style.borderLeftColor = '#a0aec0';
+        summary.style.color = '#718096';
+        summary.innerHTML =
+            '⚠️ No significant lags detected in ACF of residuals². ' +
+            'ARCH effects may not be present in this series.';
+    }
+}
+
+// ── Run ARCH LM Test ──────────────────────────────────────
+async function runArchTest() {
+    const targetCol = document.getElementById('archTargetCol').value.trim();
+
+    if (!targetCol) {
+        alert('⚠️ Please enter the Target Column name.');
+        return;
+    }
+
+    // Determine lags to test
+    let lagsToTest = [];
+    if (currentLagMethod === 'manual') {
+        const raw = document.getElementById('manualLagInput').value;
+        lagsToTest = raw.split(',')
+            .map(v => parseInt(v.trim()))
+            .filter(v => !isNaN(v) && v > 0);
+        if (lagsToTest.length === 0) {
+            alert('⚠️ Please enter valid lag values (e.g. 1, 2, 3, 5).');
+            return;
+        }
+    } else {
+        if (!acfDetectionRan) {
+            alert('⚠️ Run "Detect Significant Lags" first, or switch to Manual mode.');
+            return;
+        }
+        if (detectedSigLags.length === 0) {
+            // Detection ran but found no significant lags —
+            // fall back to testing all lags up to maxAcfLag
+            const maxLag = parseInt(document.getElementById('maxAcfLag').value) || 12;
+            lagsToTest = Array.from({ length: maxLag }, (_, i) => i + 1);
+        } else {
+            lagsToTest = detectedSigLags;
+        }
+    }
+
+    const btn = document.getElementById('runArchBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="arch-spinner"></span> Running ARCH LM Test...';
+    document.getElementById('archResultsWrapper').style.display = 'none';
+
+    try {
+        const resp = await fetch('/api/arch_test', {
+            method : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify({
+                target_col: targetCol,
+                lags      : lagsToTest,
+            }),
+        });
+
+        if (!resp.ok) throw new Error(`Server error ${resp.status}`);
+        const data = await resp.json();
+
+        if (data.error) throw new Error(data.error);
+
+        renderArchResults(data.results, data.arima_order, lagsToTest);
+        btn.innerHTML = '⚡ Run ARCH LM Test';
+    } catch (err) {
+        alert('❌ ARCH LM Test failed: ' + err.message);
+        btn.innerHTML = '⚡ Run ARCH LM Test';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function renderArchResults(results, arimaOrder, lags) {
+    // results: [{lag, lm_stat, lm_pvalue, f_stat, f_pvalue, significant}, ...]
+    const tbody = document.getElementById('archResultsBody');
+    tbody.innerHTML = '';
+
+    let anySig = false;
+    results.forEach(r => {
+        if (r.significant) anySig = true;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${r.lag}</strong></td>
+            <td>${r.lm_stat.toFixed(4)}</td>
+            <td>${r.lm_pvalue.toFixed(4)}</td>
+            <td>${r.f_stat.toFixed(4)}</td>
+            <td>${r.f_pvalue.toFixed(4)}</td>
+            <td>
+                <span class="${r.significant ? 'arch-sig-yes' : 'arch-sig-no'}">
+                    ${r.significant ? '🔥 Yes' : '✅ No'}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    const orderStr = arimaOrder
+        ? `ARIMA(${arimaOrder[0]},${arimaOrder[1]},${arimaOrder[2]}) residuals`
+        : 'Auto-ARIMA residuals';
+
+    const verdictEl = document.getElementById('archVerdict');
+    if (anySig) {
+        const sigLags = results.filter(r => r.significant).map(r => r.lag);
+        verdictEl.className = 'arch-verdict arch-present';
+        verdictEl.innerHTML =
+            `🔥 <strong>ARCH effects detected</strong> at lag(s): [${sigLags.join(', ')}]<br>` +
+            `Mean model: ${orderStr}<br>` +
+            `<em>Interpretation:</em> Conditional heteroskedasticity is present — ` +
+            `<strong>GARCH / EGARCH family models are appropriate</strong> for this series.`;
+    } else {
+        verdictEl.className = 'arch-verdict arch-absent';
+        verdictEl.innerHTML =
+            `✅ <strong>No ARCH effects detected</strong> at any tested lag.<br>` +
+            `Mean model: ${orderStr}<br>` +
+            `<em>Interpretation:</em> Residuals show no conditional heteroskedasticity — ` +
+            `GARCH models may not be necessary. Consider ARIMA or linear models.`;
+    }
+
+    document.getElementById('archResultsWrapper').style.display = 'block';
+    document.getElementById('archResultsWrapper')
+        .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+    // ─────────────────────────────────────────
+//  Form validation
+// ─────────────────────────────────────────
+// Reset button if user navigates back (bfcache restore)
+window.addEventListener('pageshow', function(e) {
+    const btn = document.getElementById('submitBtn');
+    if (btn.disabled) {
+        btn.textContent = 'Next → Configure Hyperparameters';
+        btn.disabled = false;
+    }
+});
+
+document.getElementById('modelForm').addEventListener('submit', function(e) {
+    const checked = document.querySelectorAll('input[name="models"]:checked:not(:disabled)');
+
+    if (checked.length === 0) {
+        e.preventDefault();
+        alert('⚠️ Please select at least one model!');
+        return false;
+    }
+
+    if (checked.length > 10) {
+        e.preventDefault();
+        alert('⚠️ Maximum 10 models can be selected at once!');
+        return false;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = '⏳ Processing...';
+    btn.disabled = true;
+});
 </script>
 {% endblock %}
