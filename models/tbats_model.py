@@ -148,6 +148,71 @@ def _model_description(model):
 
 
 # ============================================================
+# FAST FITTER — same model choice as TBATS(...).fit(y), less repeated work
+# ============================================================
+class _FastTBATSFitter:
+    """
+    TBATS(...).fit(y) always searches the NON-seasonal models (Box-Cox × trend × damping
+    × ARMA) and then the seasonal ones, and returns the better by AIC.
+    Auto mode fits several seasonal-period candidates (incl. "no seasonality") on the
+    SAME series, so the identical non-seasonal search used to be repeated for every
+    candidate. Here it is computed once per series and reused — the chosen model is
+    the same, it is just found faster.
+    Falls back to the normal TBATS fit if the library internals are different.
+    """
+
+    def __init__(self, estimator_cls, use_box_cox, use_trend, use_damped_trend, use_arma_errors):
+        self.cls = estimator_cls
+        self.flags = dict(use_box_cox=use_box_cox, use_trend=use_trend,
+                          use_damped_trend=use_damped_trend, use_arma_errors=use_arma_errors)
+        self._non_seasonal = {}
+
+    def _new(self, seasonal_periods):
+        return self.cls(seasonal_periods=seasonal_periods, n_jobs=1, **self.flags)
+
+    def fit(self, y, seasonal_periods):
+        est = self._new(seasonal_periods)
+        try:
+            y_valid = est._validate(y)
+            if y_valid is False or np.allclose(y_valid, y_valid[0]):
+                return est.fit(y)
+            key = (np.asarray(y_valid, dtype=float).tobytes(), est.use_box_cox)
+            ns_model = self._non_seasonal.get(key)
+            if ns_model is None:
+                ns_model = est._choose_model_from_possible_component_settings(
+                    y_valid, components_grid=est._prepare_non_seasonal_components_grid())
+                self._non_seasonal[key] = ns_model
+            if est.seasonal_periods is None or len(est.seasonal_periods) == 0:
+                best = ns_model
+            else:
+                harmonics = est.context.create_harmonics_choosing_strategy().choose(
+                    y_valid, est.create_most_complex_components())
+                seasonal_model = est._choose_model_from_possible_component_settings(
+                    y_valid, components_grid=est._prepare_components_grid(seasonal_harmonics=harmonics))
+                best = ns_model if ns_model.aic < seasonal_model.aic else seasonal_model
+            return best
+        except AttributeError:
+            return self._new(seasonal_periods).fit(y)
+
+    def refit(self, y, seasonal_periods, chosen_model):
+        """
+        Re-estimate the model chosen on the training data (same Box-Cox, trend, damping,
+        ARMA(p,q) and harmonics) on a new series, instead of repeating the whole search.
+        Falls back to a full search if that is not possible.
+        """
+        try:
+            est = self._new(seasonal_periods)
+            y_valid = est._validate(y)
+            comps = chosen_model.params.components
+            if (y_valid is False or np.allclose(y_valid, y_valid[0])
+                    or (comps.use_box_cox and np.any(np.asarray(y_valid) <= 0))):
+                return self.fit(y, seasonal_periods)
+            return est.context.create_case(comps).fit_case(y_valid, comps)
+        except Exception:
+            return self.fit(y, seasonal_periods)
+
+
+# ============================================================
 # MAIN ENTRY POINT
 # ============================================================
 def run_tbats(
@@ -232,6 +297,9 @@ def run_tbats(
     log(f"   use_arma_errors    : {use_arma_errors}")
     log("=" * 60)
 
+    fast_fitter = _FastTBATSFitter(TBATSEstimator, use_box_cox, use_trend,
+                                   use_damped_trend, use_arma_errors)
+
     # ── Data preparation ─────────────────────────────────────────────
     df = data[[time_col, target_col]].copy()
 
@@ -269,7 +337,7 @@ def run_tbats(
 
         total_candidates = len(base_candidates)
         log(f"   📋 Will test {total_candidates} candidate(s): {base_candidates}")
-        log(f"   ⏳ Each fit may take 30–90s. Live heartbeat shown every 5s.")
+        log(f"   ⏳ The no-seasonality search is shared between candidates. Live heartbeat every 5s.")
 
         best_aic   = np.inf
         best_sp    = seasonal_periods
@@ -288,15 +356,7 @@ def run_tbats(
 
             def _fit_thread():
                 try:
-                    est = TBATSEstimator(
-                        seasonal_periods  = sp_candidate,
-                        use_box_cox       = use_box_cox,
-                        use_trend         = use_trend,
-                        use_damped_trend  = use_damped_trend,
-                        use_arma_errors   = use_arma_errors,
-                        n_jobs            = 1,
-                    )
-                    result_holder[0] = est.fit(train_series)
+                    result_holder[0] = fast_fitter.fit(train_series, sp_candidate)
                 except Exception as e:
                     error_holder[0] = e
                 finally:
@@ -363,15 +423,7 @@ def run_tbats(
     else:
         # Manual fit
         log("\n🔧 Fitting TBATS with manual configuration...")
-        estimator = TBATSEstimator(
-            seasonal_periods   = seasonal_periods,
-            use_box_cox        = use_box_cox,
-            use_trend          = use_trend,
-            use_damped_trend   = use_damped_trend,
-            use_arma_errors    = use_arma_errors,
-            n_jobs             = 1,
-        )
-        tbats_fit_train = estimator.fit(train_series)
+        tbats_fit_train = fast_fitter.fit(train_series, seasonal_periods)
 
     # ── Model description string ──────────────────────────────────────
     model_label = _model_description(tbats_fit_train)
@@ -441,22 +493,15 @@ def run_tbats(
 
     # ── Refit on full data for future forecasting ────────────────────
     log("\n🔧 Refitting on full dataset for future forecasting...")
-    log(f"   📊 Using best config: seasonal_periods={seasonal_periods}")
+    log(f"   📊 Using best config: seasonal_periods={seasonal_periods} — {model_label} "
+        f"(same components, parameters re-estimated on all data)")
     log(f"   📏 Training on {len(series)} observations (full dataset)...")
-    log(f"   ⏳ This is the final fit — please wait ~30–60s...")
-    estimator_full = TBATSEstimator(
-        seasonal_periods   = seasonal_periods,
-        use_box_cox        = use_box_cox,
-        use_trend          = use_trend,
-        use_damped_trend   = use_damped_trend,
-        use_arma_errors    = use_arma_errors,
-        n_jobs             = 1,
-    )
+    log(f"   ⏳ This is the final fit — please wait...")
     result_holder2 = [None]
     done_flag2     = threading.Event()
 
     def _refit_thread():
-        result_holder2[0] = estimator_full.fit(series)
+        result_holder2[0] = fast_fitter.refit(series, seasonal_periods, tbats_fit_train)
         done_flag2.set()
 
     t2 = threading.Thread(target=_refit_thread, daemon=True)

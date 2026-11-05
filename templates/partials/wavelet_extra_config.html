@@ -1,0 +1,154 @@
+{# ============================================================
+     WAVELET-RF / SVR / XGBOOST / GRU / RNN  CONFIG PARTIAL
+     Include with:
+       {% with wx_p="wrf", wx_kind="rf", wx_key="wavelet_rf", wx_label="Wavelet-RF" %}
+         {% include 'partials/wavelet_extra_config.html' %}
+       {% endwith %}
+     All ids/names start with the prefix (wrf_, wsvr_, wxgb_, wgru_, wrnn_) so they never clash.
+     ============================================================ #}
+{% set P = wx_p %}
+{% set field = "width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;margin-bottom:1rem;" %}
+
+<div class="auto-tune-section">
+    <label for="auto_tune_{{ P }}">
+        <input type="checkbox" id="auto_tune_{{ P }}" name="auto_tune_{{ P }}" value="true" checked
+               onchange="{{ P }}Toggle()">
+        <span>🌊 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+    </label>
+</div>
+
+<!-- ── AUTO-TUNE SECTION ─────────────────────────────── -->
+<div id="{{ P }}_grid_section" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p style="color:#718096;margin-bottom:1.5rem;font-size:0.95rem;">
+        The series is split into detail components <strong>D1…DJ</strong> and a trend <strong>AJ</strong>
+        (they add back exactly to the original series, with no look-ahead).
+        {% if wx_kind == "rf" %}A Random Forest
+        {% elif wx_kind == "svr" %}A Support Vector Regression model
+        {% elif wx_kind == "xgb" %}An XGBoost model
+        {% elif wx_kind == "gru" %}A GRU network
+        {% else %}A simple RNN{% endif %}
+        reads recent values of all components and predicts the next change.
+        The best wavelet filter, level, lags and model settings are picked automatically.
+        <br><br>
+        <strong>Multivariate:</strong> exogenous variables are used as extra inputs.
+        Typical training time: a few seconds.
+    </p>
+
+    <div class="parameter-group">
+        <label>Wavelet Filters to Test</label>
+        <div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-top:0.4rem;">
+            {% for w, label in [("haar","Haar"),("db2","Daubechies 2"),("db4","Daubechies 4"),("sym4","Symlet 4"),("sym8","Symlet 8 (LA8)"),("coif2","Coiflet 2")] %}
+            <label for="{{ P }}_w_{{ w }}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;
+                   border:2px solid #e2e8f0;border-radius:999px;cursor:pointer;font-weight:600;font-size:0.9rem;">
+                <input type="checkbox" id="{{ P }}_w_{{ w }}" class="{{ P }}-wavelet" value="{{ w }}"
+                       {% if w in ["haar","db2","db4","sym8"] %}checked{% endif %} onchange="{{ P }}Sync()">
+                {{ label }}
+            </label>
+            {% endfor %}
+        </div>
+        <input type="hidden" name="{{ P }}_wavelets" id="{{ P }}_wavelets_hidden" value="haar,db2,db4,sym8">
+        <small class="help-text-small">💡 Longer filters need more data; levels too deep for your series are skipped automatically.</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Decomposition Level Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="{{ P }}_min_level">Minimum</label>
+                <input type="number" id="{{ P }}_min_level" name="{{ P }}_min_level" value="1" min="1" max="8">
+            </div>
+            <div>
+                <label for="{{ P }}_max_level">Maximum</label>
+                <input type="number" id="{{ P }}_max_level" name="{{ P }}_max_level" value="3" min="1" max="8">
+            </div>
+        </div>
+    </div>
+
+    <div class="parameter-group">
+        <label>Lags (past periods used as inputs)</label>
+        <div class="range-input-group">
+            <div>
+                <label for="{{ P }}_lags_min">Minimum</label>
+                <input type="number" id="{{ P }}_lags_min" name="{{ P }}_lags_min" value="2" min="1" max="24">
+            </div>
+            <div>
+                <label for="{{ P }}_lags_max">Maximum</label>
+                <input type="number" id="{{ P }}_lags_max" name="{{ P }}_lags_max" value="4" min="1" max="24">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── MANUAL SECTION ─────────────────────────────── -->
+<div id="{{ P }}_manual_section" class="manual-section" style="display:none;">
+    <h4>🎛️ Manual {{ wx_label }} Configuration</h4>
+
+    <label for="{{ P }}_manual_wavelet">Wavelet Filter</label>
+    <select id="{{ P }}_manual_wavelet" name="{{ P }}_manual_wavelet" style="{{ field }}">
+        <option value="haar">Haar</option>
+        <option value="db2">Daubechies 2</option>
+        <option value="db4">Daubechies 4</option>
+        <option value="sym4">Symlet 4</option>
+        <option value="sym8" selected>Symlet 8 (LA8)</option>
+        <option value="coif2">Coiflet 2</option>
+    </select>
+
+    <label for="{{ P }}_manual_level">Decomposition Level</label>
+    <input type="number" id="{{ P }}_manual_level" name="{{ P }}_manual_level" value="2" min="1" max="8" style="{{ field }}">
+
+    <label for="{{ P }}_manual_lags">Lags</label>
+    <input type="number" id="{{ P }}_manual_lags" name="{{ P }}_manual_lags" value="3" min="1" max="24" style="{{ field }}">
+
+    {% if wx_kind == "rf" %}
+        <label for="{{ P }}_n_estimators">Number of Trees</label>
+        <input type="number" id="{{ P }}_n_estimators" name="{{ P }}_n_estimators" value="200" min="10" max="2000" style="{{ field }}">
+        <label for="{{ P }}_max_depth">Max Depth (0 = no limit)</label>
+        <input type="number" id="{{ P }}_max_depth" name="{{ P }}_max_depth" value="0" min="0" max="50" style="{{ field }}">
+        <label for="{{ P }}_min_samples_leaf">Min Samples per Leaf</label>
+        <input type="number" id="{{ P }}_min_samples_leaf" name="{{ P }}_min_samples_leaf" value="1" min="1" max="50" style="{{ field }}">
+    {% elif wx_kind == "svr" %}
+        <label for="{{ P }}_kernel">Kernel</label>
+        <select id="{{ P }}_kernel" name="{{ P }}_kernel" style="{{ field }}">
+            <option value="rbf" selected>RBF</option>
+            <option value="linear">Linear</option>
+            <option value="poly">Polynomial</option>
+            <option value="sigmoid">Sigmoid</option>
+        </select>
+        <label for="{{ P }}_C">C (regularisation)</label>
+        <input type="number" id="{{ P }}_C" name="{{ P }}_C" value="10" min="0.001" step="any" style="{{ field }}">
+        <label for="{{ P }}_epsilon">Epsilon</label>
+        <input type="number" id="{{ P }}_epsilon" name="{{ P }}_epsilon" value="0.1" min="0" step="any" style="{{ field }}">
+    {% elif wx_kind == "xgb" %}
+        <label for="{{ P }}_n_estimators">Number of Trees</label>
+        <input type="number" id="{{ P }}_n_estimators" name="{{ P }}_n_estimators" value="300" min="10" max="3000" style="{{ field }}">
+        <label for="{{ P }}_learning_rate">Learning Rate</label>
+        <input type="number" id="{{ P }}_learning_rate" name="{{ P }}_learning_rate" value="0.05" min="0.001" max="1" step="any" style="{{ field }}">
+        <label for="{{ P }}_max_depth">Max Depth</label>
+        <input type="number" id="{{ P }}_max_depth" name="{{ P }}_max_depth" value="3" min="1" max="15" style="{{ field }}">
+    {% else %}
+        <label for="{{ P }}_hidden">Hidden Units</label>
+        <input type="number" id="{{ P }}_hidden" name="{{ P }}_hidden" value="16" min="2" max="256" style="{{ field }}">
+        <label for="{{ P }}_layers">Number of Layers</label>
+        <input type="number" id="{{ P }}_layers" name="{{ P }}_layers" value="1" min="1" max="3" style="{{ field }}">
+        <label for="{{ P }}_lr">Learning Rate</label>
+        <input type="number" id="{{ P }}_lr" name="{{ P }}_lr" value="0.005" min="0.0001" max="0.1" step="any" style="{{ field }}">
+        <label for="{{ P }}_epochs">Max Epochs (early stopping is used)</label>
+        <input type="number" id="{{ P }}_epochs" name="{{ P }}_epochs" value="400" min="50" max="3000" style="{{ field }}">
+    {% endif %}
+</div>
+
+<script>
+function {{ P }}Sync() {
+    var vals = Array.prototype.map.call(document.querySelectorAll('.{{ P }}-wavelet:checked'), function (c) { return c.value; });
+    document.getElementById('{{ P }}_wavelets_hidden').value = vals.join(',');
+}
+function {{ P }}Toggle() {
+    var auto = document.getElementById('auto_tune_{{ P }}').checked;
+    document.getElementById('{{ P }}_grid_section').style.display = auto ? 'block' : 'none';
+    document.getElementById('{{ P }}_manual_section').style.display = auto ? 'none' : 'block';
+    if (typeof updateStatusBadge === 'function') { try { updateStatusBadge('{{ wx_key }}', auto); } catch (e) {} }
+}
+{{ P }}Sync();
+{{ P }}Toggle();
+</script>

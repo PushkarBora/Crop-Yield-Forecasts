@@ -1,0 +1,105 @@
+<!-- ============================================================
+     WAVELET-ARIMA CONFIG PARTIAL
+     Used by: hyperparams.html (single model) and hyperparams_comparison.html
+     All ids start with "warima_" so they never clash with other models.
+     ============================================================ -->
+
+<div class="auto-tune-section">
+    <label for="auto_tune_warima">
+        <input type="checkbox" id="auto_tune_warima" name="auto_tune_warima" value="true" checked
+               onchange="warimaToggle()">
+        <span>🌊 Auto-Tune Hyperparameters (Recommended for Best Results)</span>
+    </label>
+</div>
+
+<!-- ── AUTO-TUNE SECTION ─────────────────────────────── -->
+<div id="warima_grid_section" class="grid-search-section">
+    <h4>Grid Search Configuration</h4>
+    <p style="color:#718096;margin-bottom:1.5rem;font-size:0.95rem;">
+        The series is split into detail components <strong>D1…DJ</strong> and a trend <strong>AJ</strong>
+        (they add back exactly to the original series). An ARIMA model is fitted to every component
+        and the forecasts are added together. The best wavelet filter and level are picked automatically.
+        <br><br>
+        <strong>Multivariate:</strong> each exogenous variable is decomposed the same way and used in the matching component model.
+        Typical training time: a few seconds.
+    </p>
+
+    <div class="parameter-group">
+        <label>Wavelet Filters to Test</label>
+        <div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-top:0.4rem;">
+            {% for w, label in [("haar","Haar"),("db2","Daubechies 2"),("db4","Daubechies 4"),("sym4","Symlet 4"),("sym8","Symlet 8 (LA8)"),("coif2","Coiflet 2")] %}
+            <label for="warima_w_{{ w }}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;
+                   border:2px solid #e2e8f0;border-radius:999px;cursor:pointer;font-weight:600;font-size:0.9rem;">
+                <input type="checkbox" id="warima_w_{{ w }}" class="warima-wavelet" value="{{ w }}"
+                       {% if w in ["haar","db2","db4","sym8"] %}checked{% endif %} onchange="warimaSync()">
+                {{ label }}
+            </label>
+            {% endfor %}
+        </div>
+        <input type="hidden" name="warima_wavelets" id="warima_wavelets_hidden" value="haar,db2,db4,sym8">
+        <small class="help-text-small">💡 Longer filters need more data; levels too deep for your series are skipped automatically.</small>
+    </div>
+
+    <div class="parameter-group">
+        <label>Decomposition Level Range</label>
+        <div class="range-input-group">
+            <div>
+                <label for="warima_min_level">Minimum</label>
+                <input type="number" id="warima_min_level" name="warima_min_level" value="1" min="1" max="8">
+            </div>
+            <div>
+                <label for="warima_max_level">Maximum</label>
+                <input type="number" id="warima_max_level" name="warima_max_level" value="3" min="1" max="8">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── MANUAL SECTION ─────────────────────────────── -->
+<div id="warima_manual_section" class="manual-section" style="display:none;">
+    <h4>🎛️ Manual Wavelet-ARIMA Configuration</h4>
+    <label for="warima_manual_wavelet">Wavelet Filter</label>
+    <select id="warima_manual_wavelet" name="warima_manual_wavelet"
+            style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;margin-bottom:1rem;">
+        <option value="haar" selected>Haar</option>
+        <option value="db2">Daubechies 2</option>
+        <option value="db4">Daubechies 4</option>
+        <option value="sym4">Symlet 4</option>
+        <option value="sym8">Symlet 8 (LA8)</option>
+        <option value="coif2">Coiflet 2</option>
+    </select>
+    <label for="warima_manual_level">Decomposition Level</label>
+    <input type="number" id="warima_manual_level" name="warima_manual_level" value="2" min="1" max="8"
+           style="width:100%;padding:0.8rem;border:2px solid #e2e8f0;border-radius:8px;">
+</div>
+
+<!-- ── ARIMA ORDERS (both modes) ─────────────────────── -->
+<div class="parameter-group" style="margin-top:1rem;">
+    <label>Component ARIMA Orders (searched by AIC)</label>
+    <div class="range-input-group">
+        <div>
+            <label for="warima_max_p">Max AR order (p)</label>
+            <input type="number" id="warima_max_p" name="warima_max_p" value="2" min="0" max="4">
+        </div>
+        <div>
+            <label for="warima_max_q">Max MA order (q)</label>
+            <input type="number" id="warima_max_q" name="warima_max_q" value="2" min="0" max="4">
+        </div>
+    </div>
+    <small class="help-text-small">Details use d = 0; the trend component's d is chosen by an ADF test.</small>
+</div>
+
+<script>
+function warimaSync() {
+    var vals = Array.prototype.map.call(document.querySelectorAll('.warima-wavelet:checked'), function (c) { return c.value; });
+    document.getElementById('warima_wavelets_hidden').value = vals.join(',');
+}
+function warimaToggle() {
+    var auto = document.getElementById('auto_tune_warima').checked;
+    document.getElementById('warima_grid_section').style.display = auto ? 'block' : 'none';
+    document.getElementById('warima_manual_section').style.display = auto ? 'none' : 'block';
+    if (typeof updateStatusBadge === 'function') { try { updateStatusBadge('wavelet_arima', auto); } catch (e) {} }
+}
+warimaSync();
+warimaToggle();
+</script>

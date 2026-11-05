@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import root_mean_squared_error, mean_absolute_error
+from models.fast_search import ml_combos
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -134,10 +135,10 @@ def auto_tune_gbm(df_clean, target_col, exog_cols, split, params, log_callback=N
         X_val_gs  = X_tr_s[val_start:]
         y_val_gs  = y_tr_s[val_start:]
 
-        combos = list(iproduct(
+        combos = ml_combos([
             n_estimators_values, max_depth_values,
             lr_values, subsample_values, max_features_values
-        ))
+        ], log if lag_idx == 1 else None, budget=30)
         n_combos = len(combos)
         log(f"     📐 Training samples: {len(X_tr_s)} | "
             f"Val samples: {len(X_val_gs)} | "
@@ -160,7 +161,7 @@ def auto_tune_gbm(df_clean, target_col, exog_cols, split, params, log_callback=N
 
                 # ── TimeSeriesSplit cross-validation ──────────────────────
                 cv_scores = []
-                for train_idx, val_idx in tscv.split(X_tr_s):
+                for train_idx, val_idx in (tscv.split(X_tr_s) if len(X_val_gs) == 0 else ()):
                     X_cv_tr, X_cv_val = X_tr_s[train_idx], X_tr_s[val_idx]
                     y_cv_tr, y_cv_val = y_tr_s[train_idx], y_tr_s[val_idx]
                     gbm_cv.fit(X_cv_tr, y_cv_tr)
@@ -169,7 +170,7 @@ def auto_tune_gbm(df_clean, target_col, exog_cols, split, params, log_callback=N
                     )
                     cv_scores.append(fold_rmse)
 
-                mean_cv_rmse = float(np.mean(cv_scores))
+                mean_cv_rmse = float(np.mean(cv_scores)) if cv_scores else float('nan')
 
                 # ── Final val score on temporal holdout ───────────────────
                 gbm_cv.fit(X_tr_s[:val_start], y_tr_s[:val_start])
@@ -184,7 +185,7 @@ def auto_tune_gbm(df_clean, target_col, exog_cols, split, params, log_callback=N
                 log(f"     [{combo_idx:>4}/{n_combos}] "
                     f"n_est={n_est:<4} depth={depth:<2} lr={lr:<5} "
                     f"subs={subs:<4} feat={str(max_feat):<6} "
-                    f"| CV={mean_cv_rmse:.4f} | Val={val_rmse_combo:.4f}"
+                    f"| Val={val_rmse_combo:.4f}"
                     + (" ✅ NEW BEST" if is_best else ""))
 
                 if is_best:

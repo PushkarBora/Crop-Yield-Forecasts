@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import root_mean_squared_error, mean_absolute_error
 from sklearn.model_selection import GridSearchCV
+from models.fast_search import ml_combos
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -171,11 +172,11 @@ def auto_tune_rf(df_clean, target_col, exog_cols, split, params, log_callback=No
         X_val_gs  = X_tr_s[val_start:]
         y_val_gs  = y_tr_s[val_start:]
 
-        combos = list(iproduct(
-            n_estimators_values, max_depth_values,
+        combos = ml_combos([
+            [max(n_estimators_values)], max_depth_values,
             min_samples_split_values, min_samples_leaf_values,
             max_features_options, bootstrap_options
-        ))
+        ], log if lag_idx == 1 else None, budget=12)
         n_combos = len(combos)
         log(f"     📐 Training samples: {len(X_tr_s)} | "
             f"Val samples: {len(X_val_gs)} | "
@@ -200,7 +201,7 @@ def auto_tune_rf(df_clean, target_col, exog_cols, split, params, log_callback=No
 
                 # ── TimeSeriesSplit cross-validation ──────────────────
                 cv_scores = []
-                for train_idx, val_idx in tscv.split(X_tr_s):
+                for train_idx, val_idx in (tscv.split(X_tr_s) if len(X_val_gs) == 0 else ()):
                     X_cv_tr, X_cv_val = X_tr_s[train_idx], X_tr_s[val_idx]
                     y_cv_tr, y_cv_val = y_tr_s[train_idx], y_tr_s[val_idx]
                     rf_cv.fit(X_cv_tr, y_cv_tr)
@@ -209,7 +210,7 @@ def auto_tune_rf(df_clean, target_col, exog_cols, split, params, log_callback=No
                     )
                     cv_scores.append(fold_rmse)
 
-                mean_cv_rmse = float(np.mean(cv_scores))
+                mean_cv_rmse = float(np.mean(cv_scores)) if cv_scores else float('nan')
 
                 # ── Temporal holdout validation ───────────────────────
                 rf_cv.fit(X_tr_s[:val_start], y_tr_s[:val_start])
@@ -225,7 +226,7 @@ def auto_tune_rf(df_clean, target_col, exog_cols, split, params, log_callback=No
                     f"n_est={n_est:<4} depth={str(max_d):<5} "
                     f"split={min_split} leaf={min_leaf} "
                     f"feat={str(max_feat):<5} boot={str(boot):<5} "
-                    f"| CV={mean_cv_rmse:.4f} | Val={val_rmse_combo:.4f}"
+                    f"| Val={val_rmse_combo:.4f}"
                     + (" ✅ NEW BEST" if is_best else ""))
 
                 if is_best:

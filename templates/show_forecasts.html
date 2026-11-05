@@ -526,6 +526,13 @@
                         {% elif model_name|upper == 'ANN' %}🕸️
                         {% elif model_name|upper == 'WAVELET_ANN' %}🌊🕸️
                         {% elif model_name|upper == 'WAVELET_LSTM' %}🌊🧠
+                        {% elif model_name|upper == 'WAVELET_TRANSFORMER' %}🌊🔮
+                        {% elif model_name|upper == 'WAVELET_ARIMA' %}🌊📉
+                        {% elif model_name|upper == 'WAVELET_RF' %}🌊🌲
+                        {% elif model_name|upper == 'WAVELET_SVR' %}🌊📊
+                        {% elif model_name|upper == 'WAVELET_XGB' %}🌊🌿
+                        {% elif model_name|upper == 'WAVELET_GRU' %}🌊⚡
+                        {% elif model_name|upper == 'WAVELET_RNN' %}🌊🔄
                         {% elif model_name|upper == 'SVR' %}📐
                         {% elif model_name|upper == 'RF' %}🌲
                         {% elif model_name|upper == 'XGB' %}🌿
@@ -552,11 +559,11 @@
                     <div class="forecast-card-title">
                         <h3>{{ model_name|upper }}</h3>
                         <div class="model-type">
-                            {% if model_name|upper in ['LSTM', 'GRU', 'RNN', 'TRANSFORMER', 'CNN', 'STACKED_LSTM', 'BD_LSTM', 'CONV_LSTM', 'DEEP_LSTM', 'WAVELET_LSTM'] %}
+                            {% if model_name|upper in ['LSTM', 'GRU', 'RNN', 'TRANSFORMER', 'CNN', 'STACKED_LSTM', 'BD_LSTM', 'CONV_LSTM', 'DEEP_LSTM', 'WAVELET_LSTM', 'WAVELET_TRANSFORMER', 'WAVELET_GRU', 'WAVELET_RNN'] %}
                             Deep Learning Model
-                            {% elif model_name|upper in ['ANN','SVR', 'RF', 'XGB','GBM', 'KNN', 'WAVELET_ANN'] %}
+                            {% elif model_name|upper in ['ANN','SVR', 'RF', 'XGB','GBM', 'KNN', 'WAVELET_ANN', 'WAVELET_RF', 'WAVELET_SVR', 'WAVELET_XGB'] %}
                             Machine Learning Model
-                            {% elif model_name|upper in ['ARIMA', 'SARIMA', 'TBATS', 'RW', 'ETS'] %}
+                            {% elif model_name|upper in ['ARIMA', 'SARIMA', 'TBATS', 'RW', 'ETS', 'WAVELET_ARIMA'] %}
                             Statistical Model
                             {% elif model_name|upper in ['AREGARCH', 'ARGARCH', 'ARMAGARCH', 'ARTGARCH', 'ARGJRGARCH'] %}
                             Volatility Model

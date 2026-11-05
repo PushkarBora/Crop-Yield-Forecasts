@@ -261,6 +261,12 @@
                     {% elif model_key == 'wavelet_ann' %}🌊🌐
                     {% elif model_key == 'wavelet_lstm' %}🌊🧠
                     {% elif model_key == 'wavelet_transformer' %}🌊🔮
+                    {% elif model_key == 'wavelet_arima' %}🌊📉
+                    {% elif model_key == 'wavelet_rf' %}🌊🌲
+                    {% elif model_key == 'wavelet_svr' %}🌊📊
+                    {% elif model_key == 'wavelet_xgb' %}🌊🌿
+                    {% elif model_key == 'wavelet_gru' %}🌊⚡
+                    {% elif model_key == 'wavelet_rnn' %}🌊🔄
                     {% elif model_key == 'svr' %}📊
                     {% elif model_key == 'rf' %}🌲
                     {% elif model_key == 'xgb' %}🌿
@@ -282,9 +288,9 @@
                 <div class="forecast-card-title">
                     <h3>{{ model_name }} — Future Predictions</h3>
                     <div class="model-type">
-                        {% if model_key in ['lstm','gru','rnn','transformer','cnn','stacked_lstm','bd_lstm','conv_lstm','deep_lstm', 'wavelet_lstm', 'wavelet_transformer'] %}Deep Learning Model
-                        {% elif model_key in ['ann','svr','rf','xgb','gbm','knn','wavelet_ann'] %}Machine Learning Model
-                        {% elif model_key in ['arima','sarima','tbats','rw'] %}Statistical Model
+                        {% if model_key in ['lstm','gru','rnn','transformer','cnn','stacked_lstm','bd_lstm','conv_lstm','deep_lstm', 'wavelet_lstm', 'wavelet_transformer', 'wavelet_gru', 'wavelet_rnn'] %}Deep Learning Model
+                        {% elif model_key in ['ann','svr','rf','xgb','gbm','knn','wavelet_ann','wavelet_rf','wavelet_svr','wavelet_xgb'] %}Machine Learning Model
+                        {% elif model_key in ['arima','sarima','tbats','rw','wavelet_arima'] %}Statistical Model
                         {% elif model_key in ['aregarch','argarch','armagarch','artgarch','argjrgarch'] %}Volatility Model
                         {% else %}AI Model
                         {% endif %}

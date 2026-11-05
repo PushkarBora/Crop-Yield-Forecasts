@@ -440,7 +440,7 @@
                                 <span class="drop-icon teal">🌊</span>
                                 <span class="drop-text">
                                     <strong>Wavelet Based Models</strong>
-                                    <span>Wave-ANN, Wave-ARIMA, Wave-LSTM</span>
+                                    <span>Wave-ANN, ARIMA, LSTM, GRU, RNN, Transformer, RF, SVR, XGBoost</span>
                                 </span>
                             </a>
                         </div>
@@ -589,6 +589,25 @@
 
     <!-- Chat Widget -->
     {% include 'components/chat_widget.html' %}
+
+    <!-- Visitor counter (self-hosted, anonymous; feeds the User Traffic page) -->
+    <script>
+    (function () {
+        function send(kind) {
+            try {
+                var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+                fetch('/api/track-visit', {
+                    method: 'POST', credentials: 'same-origin', keepalive: true,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ kind: kind, tz: tz })
+                }).catch(function () {});
+            } catch (e) {}
+        }
+        send('view');
+        // keeps "Online now" accurate while the tab is open and visible
+        setInterval(function () { if (!document.hidden) send('ping'); }, 2 * 60 * 1000);
+    })();
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

@@ -165,7 +165,7 @@ def auto_tune_svr(df_clean, target_col, exog_cols, split, params, log_callback=N
 
                 # ── TimeSeriesSplit cross-validation ──────────────────────
                 cv_scores = []
-                for train_idx, val_idx in tscv.split(X_tr_s):
+                for train_idx, val_idx in (tscv.split(X_tr_s) if len(X_val_gs) == 0 else ()):
                     X_cv_tr, X_cv_val = X_tr_s[train_idx], X_tr_s[val_idx]
                     y_cv_tr, y_cv_val = y_tr_s[train_idx], y_tr_s[val_idx]
                     svr_cv.fit(X_cv_tr, y_cv_tr)
@@ -174,7 +174,7 @@ def auto_tune_svr(df_clean, target_col, exog_cols, split, params, log_callback=N
                     )
                     cv_scores.append(fold_rmse)
 
-                mean_cv_rmse = float(np.mean(cv_scores))
+                mean_cv_rmse = float(np.mean(cv_scores)) if cv_scores else float('nan')
 
                 # ── Final val score on temporal holdout ───────────────────
                 svr_cv.fit(X_tr_s[:val_start], y_tr_s[:val_start])
@@ -188,7 +188,7 @@ def auto_tune_svr(df_clean, target_col, exog_cols, split, params, log_callback=N
                 # Log every combination
                 log(f"     [{combo_idx:>4}/{n_combos}] "
                     f"k={kern:<8} C={c_val:<5} ε={eps_val:<5} γ={str(gam_val):<6} "
-                    f"| CV={mean_cv_rmse:.4f} | Val={val_rmse_combo:.4f}"
+                    f"| Val={val_rmse_combo:.4f}"
                     + (" ✅ NEW BEST" if val_rmse_combo < best_lag_rmse else ""))
 
                 if val_rmse_combo < best_lag_rmse:

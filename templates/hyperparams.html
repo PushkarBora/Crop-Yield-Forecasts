@@ -1616,6 +1616,24 @@
                 {% endif %}
 
 <!-- ========================= -->
+<!-- WAVELET-ARIMA PARAMS      -->
+<!-- ========================= -->
+{% if model_name == "wavelet_arima" %}
+    {% include 'partials/wavelet_arima_config.html' %}
+{% endif %}
+
+<!-- ========================================== -->
+<!-- WAVELET-RF / SVR / XGBOOST / GRU / RNN     -->
+<!-- ========================================== -->
+{% for wk, wp, wkind, wlabel in [("wavelet_rf","wrf","rf","Wavelet-RF"), ("wavelet_svr","wsvr","svr","Wavelet-SVR"), ("wavelet_xgb","wxgb","xgb","Wavelet-XGBoost"), ("wavelet_gru","wgru","gru","Wavelet-GRU"), ("wavelet_rnn","wrnn","rnn","Wavelet-RNN")] %}
+{% if model_name == wk %}
+    {% with wx_p=wp, wx_kind=wkind, wx_key=wk, wx_label=wlabel %}
+        {% include 'partials/wavelet_extra_config.html' %}
+    {% endwith %}
+{% endif %}
+{% endfor %}
+
+<!-- ========================= -->
 <!-- WAVELET-ANN PARAMS        -->
 <!-- ========================= -->
 {% if model_name == "wavelet_ann" %}

@@ -167,12 +167,12 @@ def auto_tune_knn(df_clean, target_col, exog_cols, split, params, log_callback=N
                         weights     = weights,
                         metric      = metric,
                         p           = p,
-                        n_jobs      = -1,
+                        n_jobs      = None,
                     )
 
                     # ── TimeSeriesSplit cross-validation ──────────────
                     cv_scores = []
-                    for train_idx, val_idx in tscv.split(X_tr_s):
+                    for train_idx, val_idx in (tscv.split(X_tr_s) if len(X_val_gs) == 0 else ()):
                         X_cv_tr, X_cv_val = X_tr_s[train_idx], X_tr_s[val_idx]
                         y_cv_tr, y_cv_val = y_tr_s[train_idx], y_tr_s[val_idx]
                         # Further cap k for smaller CV folds
@@ -181,7 +181,7 @@ def auto_tune_knn(df_clean, target_col, exog_cols, split, params, log_callback=N
                             continue
                         knn_fold = KNeighborsRegressor(
                             n_neighbors=fold_k, weights=weights,
-                            metric=metric, p=p, n_jobs=-1
+                            metric=metric, p=p, n_jobs=None
                         )
                         knn_fold.fit(X_cv_tr, y_cv_tr)
                         fold_rmse = root_mean_squared_error(
@@ -189,9 +189,9 @@ def auto_tune_knn(df_clean, target_col, exog_cols, split, params, log_callback=N
                         )
                         cv_scores.append(fold_rmse)
 
-                    if not cv_scores:
+                    if not cv_scores and len(X_val_gs) == 0:
                         continue
-                    mean_cv_rmse = float(np.mean(cv_scores))
+                    mean_cv_rmse = float(np.mean(cv_scores)) if cv_scores else float('nan')
 
                     # ── Final val score on temporal holdout ───────────
                     knn_cv.fit(X_tr_s[:val_start], y_tr_s[:val_start])
@@ -206,7 +206,7 @@ def auto_tune_knn(df_clean, target_col, exog_cols, split, params, log_callback=N
                     is_best = val_rmse_combo < best_lag_rmse
                     log(f"     [{combo_idx:>4}/{n_combos}] "
                         f"k={effective_k:<3} w={weights:<8} m={metric:<10}{p_str} "
-                        f"| CV={mean_cv_rmse:.4f} | Val={val_rmse_combo:.4f}"
+                        f"| Val={val_rmse_combo:.4f}"
                         + (" ✅ NEW BEST" if is_best else ""))
 
                     if is_best:
@@ -492,7 +492,7 @@ def run_knn(
         weights     = weights,
         metric      = metric,
         p           = p,
-        n_jobs      = -1,
+        n_jobs      = None,
     )
     knn.fit(X_train_s, y_train_s)
 
@@ -517,7 +517,7 @@ def run_knn(
             weights     = weights,
             metric      = metric,
             p           = p,
-            n_jobs      = -1,
+            n_jobs      = None,
         )
         knn_loo.fit(X_train_s[train_idx], y_train_s[train_idx])
         loo_preds[val_idx] = knn_loo.predict(X_train_s[val_idx])
@@ -594,7 +594,7 @@ def run_knn(
     for k_val in k_range:
         knn_tmp = KNeighborsRegressor(
             n_neighbors=k_val, weights=weights,
-            metric=metric, p=p, n_jobs=-1
+            metric=metric, p=p, n_jobs=None
         )
         knn_tmp.fit(X_train_s, y_train_s)
         k_rmses.append(root_mean_squared_error(

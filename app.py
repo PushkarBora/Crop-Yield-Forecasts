@@ -1,7 +1,5 @@
 from flask import Flask, render_template, request, session, flash, redirect, url_for
 from models.wavelet_ann_model import run_wavelet_ann
-from google.analytics.data_v1beta import BetaAnalyticsDataClient
-from google.analytics.data_v1beta.types import RunReportRequest
 from io import BytesIO
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -49,6 +47,21 @@ from models.gbm_model import run_gbm
 from models.knn_model import run_knn
 from models.wavelet_lstm_model import run_wavelet_lstm
 from models.wavelet_transformer_model import run_wavelet_transformer
+from models.wavelet_arima_model import run_wavelet_arima
+from models.wavelet_rf_model import run_wavelet_rf
+from models.wavelet_svr_model import run_wavelet_svr
+from models.wavelet_xgb_model import run_wavelet_xgb
+from models.wavelet_gru_model import run_wavelet_gru
+from models.wavelet_rnn_model import run_wavelet_rnn
+
+# Newer wavelet models: key -> (run function, form prefix, display label)
+WAVELET_EXTRA_MODELS = {
+    "wavelet_rf":  (run_wavelet_rf,  "wrf",  "Wavelet-RF"),
+    "wavelet_svr": (run_wavelet_svr, "wsvr", "Wavelet-SVR"),
+    "wavelet_xgb": (run_wavelet_xgb, "wxgb", "Wavelet-XGBoost"),
+    "wavelet_gru": (run_wavelet_gru, "wgru", "Wavelet-GRU"),
+    "wavelet_rnn": (run_wavelet_rnn, "wrnn", "Wavelet-RNN"),
+}
 from flask import Response, stream_with_context
 import google.generativeai as genai
 import queue
@@ -861,6 +874,41 @@ def collect_hyperparameters(form):
         params["wtransformer_pa_max_resolved"]  = pa
         params["wtransformer_pa_step_resolved"] = 10
     # ============================================================
+    # WAVELET-ARIMA PARAMETERS
+    # ============================================================
+    params["auto_tune_warima"]      = form.get("auto_tune_warima") == "true"
+    params["warima_wavelets"]       = [w.strip() for w in form.get("warima_wavelets", "").split(",") if w.strip()] \
+                                      or ["haar", "db2", "db4", "sym8"]
+    params["warima_min_level"]      = safe_int(form.get("warima_min_level"), 1)
+    params["warima_max_level"]      = safe_int(form.get("warima_max_level"), 3)
+    params["warima_max_p"]          = safe_int(form.get("warima_max_p"), 2)
+    params["warima_max_q"]          = safe_int(form.get("warima_max_q"), 2)
+    params["warima_manual_wavelet"] = form.get("warima_manual_wavelet", "haar").strip()
+    params["warima_manual_level"]   = safe_int(form.get("warima_manual_level"), 2)
+
+    # ============================================================
+    # WAVELET-RF / SVR / XGBOOST / GRU / RNN PARAMETERS
+    # (form fields: auto_tune_<p>, <p>_wavelets, <p>_min_level ... with p = wrf, wsvr, ...)
+    # ============================================================
+    for _wkey, (_wfn, _wp, _wlabel) in WAVELET_EXTRA_MODELS.items():
+        params[f"auto_tune_{_wp}"] = form.get(f"auto_tune_{_wp}") == "true"
+        params[f"{_wp}_wavelets"] = [w.strip() for w in form.get(f"{_wp}_wavelets", "").split(",")
+                                     if w.strip()] or ["haar", "db2", "db4", "sym8"]
+        for _f in ("min_level", "max_level", "lags_min", "lags_max", "manual_level", "manual_lags",
+                   "n_estimators", "max_depth", "min_samples_leaf", "hidden", "layers", "epochs"):
+            _v = form.get(f"{_wp}_{_f}")
+            if _v not in (None, ""):
+                params[f"{_wp}_{_f}"] = safe_int(_v, None)
+        for _f in ("C", "epsilon", "learning_rate", "lr"):
+            _v = form.get(f"{_wp}_{_f}")
+            if _v not in (None, ""):
+                params[f"{_wp}_{_f}"] = safe_float(_v, None)
+        for _f in ("manual_wavelet", "kernel"):
+            _v = form.get(f"{_wp}_{_f}")
+            if _v:
+                params[f"{_wp}_{_f}"] = _v.strip()
+
+    # ============================================================
     # SVR PARAMETERS (GRID SEARCH + MANUAL)
     # ============================================================
     
@@ -1501,57 +1549,229 @@ def user_traffic():
     """
     return render_template("user_traffic_globe.html")
 
-def get_country_coords(country):
+# =====================================================
+# USER TRAFFIC — self-hosted visitor counter (no Google credentials needed)
+# =====================================================
+# Every page (base.html) sends a tiny "visit" ping to /api/track-visit.
+# Each browser gets an anonymous random id in a cookie, so a person is counted once.
+# Counts are stored in a small SQLite file on the server.
+# Total shown on the traffic page = TRAFFIC_BASELINE_USERS + visitors counted here.
+import sqlite3, uuid
+from datetime import datetime, timedelta, timezone
+
+TRAFFIC_BASELINE_USERS = int(os.environ.get("TRAFFIC_BASELINE_USERS", "3000"))
+VISITOR_DB_PATH        = os.environ.get("VISITOR_DB_PATH",
+                                        os.path.join(app.root_path, "instance", "visitors.db"))
+# "Today" is counted in this time zone (default India, UTC+5:30)
+TRAFFIC_UTC_OFFSET_MIN = int(os.environ.get("TRAFFIC_UTC_OFFSET_MINUTES", "330"))
+VISITOR_COOKIE         = "datai_vid"
+ONLINE_WINDOW_SECONDS  = 5 * 60          # "online now" = seen in the last 5 minutes
+NEW_VISITORS_PER_IP_HR = 30              # simple protection against counter spamming
+
+_visitor_db_lock = threading.Lock()
+_visitor_db_ready = False
+_new_visitor_log = {}                     # ip -> [timestamps of new ids created]
+_tz_country = None
+_country_table = None
+
+
+def _load_country_table():
+    """ISO-2 -> (name, lat, lng) from static/data/country_centroids.json (no network calls)."""
+    global _country_table
+    if _country_table is None:
+        path = os.path.join(app.root_path, "static", "data", "country_centroids.json")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+        except Exception as e:
+            print(f"⚠️ Could not load country centroids: {e}")
+            raw = {}
+        by_code = {k.upper(): v for k, v in raw.items()}
+        by_name = {v[0].lower(): k for k, v in by_code.items()}
+        # Names GA4 uses that differ from the table
+        for alias, code in {"united states": "US", "south korea": "KR", "north korea": "KP",
+                            "russia": "RU", "vietnam": "VN", "iran": "IR", "syria": "SY",
+                            "laos": "LA", "bolivia": "BO", "venezuela": "VE", "tanzania": "TZ",
+                            "czechia": "CZ", "türkiye": "TR", "turkey": "TR", "taiwan": "TW",
+                            "hong kong": "HK", "macao": "MO", "moldova": "MD",
+                            "palestine": "PS", "côte d’ivoire": "CI", "myanmar (burma)": "MM",
+                            "congo - kinshasa": "CD", "congo - brazzaville": "CG"}.items():
+            by_name.setdefault(alias, code)
+        _country_table = (by_code, by_name)
+    return _country_table
+
+
+def get_country_coords(country, code=None):
+    by_code, by_name = _load_country_table()
+    iso = (code or "").upper()
+    if iso not in by_code:
+        iso = by_name.get(str(country or "").strip().lower(), "")
+    if iso in by_code:
+        name, lat, lng = by_code[iso]
+        return iso, lat, lng
+    return None
+
+
+def _visitor_db():
+    """Open the visitor database (created automatically on first use)."""
+    global _visitor_db_ready
+    folder = os.path.dirname(VISITOR_DB_PATH)
+    if folder:
+        os.makedirs(folder, exist_ok=True)
+    con = sqlite3.connect(VISITOR_DB_PATH, timeout=10)
+    if not _visitor_db_ready:
+        with _visitor_db_lock:
+            con.execute("PRAGMA journal_mode=WAL")
+            con.executescript("""
+                CREATE TABLE IF NOT EXISTS visitors (
+                    vid TEXT PRIMARY KEY, country TEXT, first_seen REAL,
+                    last_seen REAL, page_views INTEGER DEFAULT 0);
+                CREATE TABLE IF NOT EXISTS visitor_days (
+                    day TEXT, vid TEXT, PRIMARY KEY (day, vid));
+                CREATE INDEX IF NOT EXISTS ix_visitors_last ON visitors(last_seen);
+            """)
+            con.commit()
+            _visitor_db_ready = True
+    return con
+
+
+def _local_day(ts=None):
+    t = datetime.fromtimestamp(ts or time.time(), timezone.utc)
+    return (t + timedelta(minutes=TRAFFIC_UTC_OFFSET_MIN)).strftime("%Y-%m-%d")
+
+
+def _country_from_request(tz_name):
+    """Country code from the hosting provider's header if present, otherwise from the
+    browser's time zone (e.g. Asia/Kolkata -> IN). No IP lookup service is used."""
+    for h in ("CF-IPCountry", "X-Country-Code", "X-AppEngine-Country", "X-Client-Geo-Country"):
+        v = (request.headers.get(h) or "").strip().upper()
+        if len(v) == 2 and v.isalpha() and v not in ("XX", "ZZ", "T1"):
+            return v
+    global _tz_country
+    if _tz_country is None:
+        try:
+            with open(os.path.join(app.root_path, "static", "data", "timezone_country.json"),
+                      "r", encoding="utf-8") as f:
+                _tz_country = json.load(f)
+        except Exception as e:
+            print(f"⚠️ Could not load timezone table: {e}")
+            _tz_country = {}
+    return _tz_country.get(str(tz_name or "").strip())
+
+
+def _client_ip():
+    fwd = request.headers.get("X-Forwarded-For", "")
+    return (fwd.split(",")[0].strip() if fwd else request.remote_addr) or "?"
+
+
+def _allow_new_visitor(ip):
+    now = time.time()
+    with _visitor_db_lock:
+        stamps = [t for t in _new_visitor_log.get(ip, []) if now - t < 3600]
+        if len(stamps) >= NEW_VISITORS_PER_IP_HR:
+            _new_visitor_log[ip] = stamps
+            return False
+        stamps.append(now)
+        _new_visitor_log[ip] = stamps
+        if len(_new_visitor_log) > 5000:          # keep memory small
+            for k in list(_new_visitor_log)[:2500]:
+                _new_visitor_log.pop(k, None)
+    return True
+
+
+@app.route("/api/track-visit", methods=["POST"])
+def track_visit():
+    """Called by every page. kind = 'view' (page opened) or 'ping' (still on the page)."""
+    body = request.get_json(silent=True) or {}
+    kind = "ping" if body.get("kind") == "ping" else "view"
+    ua = (request.headers.get("User-Agent") or "").lower()
+    if any(b in ua for b in ("bot", "crawl", "spider", "headless", "lighthouse", "preview")):
+        return {"ok": True, "counted": False}
+
+    vid = request.cookies.get(VISITOR_COOKIE, "")
     try:
-        url = f"https://restcountries.com/v3.1/name/{country}"
-        r = requests.get(url, timeout=5).json()
-        latlng = r[0]["latlng"]
-        return latlng[0], latlng[1]
-    except:
-        return None
+        vid = str(uuid.UUID(vid))
+    except Exception:
+        vid = ""
+    is_new_cookie = not vid
+    if is_new_cookie:
+        if kind == "ping" or not _allow_new_visitor(_client_ip()):
+            return {"ok": True, "counted": False}
+        vid = str(uuid.uuid4())
+
+    now = time.time()
+    country = _country_from_request(body.get("tz"))
+    try:
+        con = _visitor_db()
+        with con:
+            con.execute("""
+                INSERT INTO visitors (vid, country, first_seen, last_seen, page_views)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(vid) DO UPDATE SET
+                    last_seen  = excluded.last_seen,
+                    page_views = visitors.page_views + excluded.page_views,
+                    country    = COALESCE(visitors.country, excluded.country)
+            """, (vid, country, now, now, 1 if kind == "view" else 0))
+            con.execute("INSERT OR IGNORE INTO visitor_days (day, vid) VALUES (?, ?)",
+                        (_local_day(now), vid))
+        con.close()
+    except Exception as e:
+        print(f"⚠️ Visitor tracking failed: {e}")
+        return {"ok": False}
+
+    resp = app.response_class(json.dumps({"ok": True, "counted": True}),
+                              mimetype="application/json")
+    if is_new_cookie:
+        resp.set_cookie(VISITOR_COOKIE, vid, max_age=2 * 365 * 24 * 3600,
+                        httponly=True, samesite="Lax", secure=request.is_secure)
+    return resp
 
 
 @app.route("/api/visitor-countries")
+@app.route("/api/visitor-stats")
 def visitor_countries():
-    """
-    Return visitor counts by country from Google Analytics
-    """
+    """Visitor statistics for the traffic page. Never returns less than the baseline."""
+    payload = {
+        "total_users": TRAFFIC_BASELINE_USERS, "baseline_users": TRAFFIC_BASELINE_USERS,
+        "tracked_users": 0, "page_views": 0, "users_30d": 0, "users_today": 0,
+        "online_now": 0, "countries_count": 0, "unmapped_users": 0, "data": [],
+        "since": None, "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "error": None,
+    }
     try:
-        PROPERTY_ID = "527652952"
+        now = time.time()
+        con = _visitor_db()
+        tracked, views, since = con.execute(
+            "SELECT COUNT(*), COALESCE(SUM(page_views),0), MIN(first_seen) FROM visitors").fetchone()
+        online = con.execute("SELECT COUNT(*) FROM visitors WHERE last_seen >= ?",
+                             (now - ONLINE_WINDOW_SECONDS,)).fetchone()[0]
+        today = con.execute("SELECT COUNT(*) FROM visitor_days WHERE day = ?",
+                            (_local_day(now),)).fetchone()[0]
+        d30 = con.execute("SELECT COUNT(DISTINCT vid) FROM visitor_days WHERE day >= ?",
+                          (_local_day(now - 29 * 86400),)).fetchone()[0]
+        rows = con.execute("SELECT country, COUNT(*) FROM visitors GROUP BY country").fetchall()
+        con.close()
 
-        client = BetaAnalyticsDataClient()
+        by_code, _ = _load_country_table()
+        countries, unmapped = [], 0
+        for code, n in rows:
+            hit = by_code.get((code or "").upper())
+            if not hit:
+                unmapped += n
+                continue
+            name, lat, lng = hit
+            countries.append({"name": name, "code": code.upper(), "count": n, "lat": lat, "lng": lng})
+        countries.sort(key=lambda c: c["count"], reverse=True)
 
-        request = RunReportRequest(
-            property=f"properties/{PROPERTY_ID}",
-            dimensions=[{"name": "country"}],
-            metrics=[{"name": "activeUsers"}],
-            date_ranges=[{"start_date": "1daysAgo", "end_date": "today"}],
-        )
-
-        response = client.run_report(request)
-
-        data = []
-
-        for row in response.rows:
-            country = row.dimension_values[0].value
-            users = int(row.metric_values[0].value)
-
-            coords = get_country_coords(country)
-
-            if coords:
-                lat, lng = coords
-
-                data.append({
-                    "name": country,
-                    "count": users,
-                    "lat": lat,
-                    "lng": lng
-                })
-
-        return {"data": data}
-
+        payload.update(
+            total_users=TRAFFIC_BASELINE_USERS + tracked, tracked_users=tracked,
+            page_views=int(views), users_30d=d30, users_today=today, online_now=online,
+            countries_count=len(countries), unmapped_users=unmapped, data=countries,
+            since=(datetime.fromtimestamp(since, timezone.utc).date().isoformat() if since else None))
     except Exception as e:
-        return {"data": [], "error": str(e)}
+        print(f"⚠️ Visitor stats failed: {e}")
+        payload["error"] = str(e)
+    return payload
 
 # =====================================================
 # STEP 3 — CONFIGURE HYPERPARAMETERS
@@ -2483,7 +2703,8 @@ def show_single_results():
         show_future_inputs=True,
         is_arima=(model_name == "arima"),
         is_univariate=is_univariate , # ✅ NEW FLAG
-        is_wavelet_ann=(model_name in ("wavelet_ann", "wavelet_lstm", "wavelet_transformer")),
+        is_wavelet_ann=(model_name in ("wavelet_ann", "wavelet_lstm", "wavelet_transformer", "wavelet_arima")
+                        or model_name in WAVELET_EXTRA_MODELS),
         exog_cols=session.get("exog_cols", []),
         ts=int(time.time()),
     )
@@ -2841,6 +3062,18 @@ def train_model_with_progress(model_name, data, params, horizon, frequency, sess
                 data, wt_params, horizon, frequency,
                 mode="train", log_callback=log
             )
+
+        elif model_name == "wavelet_arima":
+            log(f"  → Loading Wavelet-ARIMA model...")
+            result = run_wavelet_arima(
+                data, params, horizon, frequency,
+                mode="train", log_callback=log
+            )
+
+        elif model_name in WAVELET_EXTRA_MODELS:
+            _wfn, _wp, _wlabel = WAVELET_EXTRA_MODELS[model_name]
+            log(f"  → Loading {_wlabel} model...")
+            result = _wfn(data, params, horizon, frequency, mode="train", log_callback=log)
 
         elif model_name == "svr":
             log(f"  → Loading SVR model...")
@@ -3511,6 +3744,25 @@ def generate_forecasts():
                         mode="forecast"
                     )
                     forecasts[model_name] = forecast_result["forecast_table"]
+                elif model_name == "wavelet_arima":
+                    forecast_result = run_wavelet_arima(
+                        data=None,
+                        params=params,
+                        horizon=horizon,
+                        frequency=frequency,
+                        mode="forecast"
+                    )
+                    forecasts[model_name] = forecast_result["forecast_table"]
+
+                elif model_name in WAVELET_EXTRA_MODELS:
+                    forecast_result = WAVELET_EXTRA_MODELS[model_name][0](
+                        data=None,
+                        params=params,
+                        horizon=horizon,
+                        frequency=frequency,
+                        mode="forecast"
+                    )
+                    forecasts[model_name] = forecast_result["forecast_table"]
                     
                 elif model_name == "svr":
                     forecast_result = run_svr(
@@ -3842,6 +4094,25 @@ def generate_forecasts():
             
             elif model_name == "wavelet_transformer":
                 forecast_result = run_wavelet_transformer(
+                    data=None,
+                    params={**params, "future_exog": future_exog_dict},
+                    horizon=horizon,
+                    frequency=frequency,
+                    mode="forecast"
+                )
+                forecasts[model_name] = forecast_result["forecast_table"]
+            elif model_name == "wavelet_arima":
+                forecast_result = run_wavelet_arima(
+                    data=None,
+                    params={**params, "future_exog": future_exog_dict},
+                    horizon=horizon,
+                    frequency=frequency,
+                    mode="forecast"
+                )
+                forecasts[model_name] = forecast_result["forecast_table"]
+
+            elif model_name in WAVELET_EXTRA_MODELS:
+                forecast_result = WAVELET_EXTRA_MODELS[model_name][0](
                     data=None,
                     params={**params, "future_exog": future_exog_dict},
                     horizon=horizon,
@@ -5158,6 +5429,171 @@ def predict():
         session["wavelet_transformer_forecast"] = forecast_df.to_json(orient="split")
         session.modified = True
         return redirect(url_for('show_forecast_result', model_key='wavelet_transformer'))
+
+    elif model_name == "wavelet_arima":
+
+        is_forecast = (request.form.get("wavelet_arima_forecast_trigger", "").strip() or
+                       request.form.get("wavelet_ann_forecast_trigger", "").strip() or
+                       request.form.get("univariate_forecast_trigger", "").strip())
+
+        params["time_col"]   = session.get("time_col",   "Year")
+        params["target_col"] = session.get("target_col", "Yield")
+        params["exog_cols"]  = session.get("exog_cols",  [])
+        exog_cols = session.get("exog_cols", [])
+        has_exog  = len(exog_cols) > 0
+
+        # ── STEP 1: TRAIN ──────────────────────────────────────
+        if not is_forecast:
+            results = run_wavelet_arima(
+                data=data, params=params,
+                horizon=horizon, frequency=frequency, mode="train",
+            )
+            session["wavelet_arima_results"] = {
+                "meta": {
+                    "model_key"   : "wavelet_arima",
+                    "model_name"  : results["model_name"],
+                    "frequency"   : frequency,
+                    "horizon"     : horizon,
+                    "rmse_train"  : results["rmse_train"],
+                    "mae_train"   : results["mae_train"],
+                    "mape_train"  : results["mape_train"],
+                    "rmse_test"   : results["rmse_test"],
+                    "mae_test"    : results["mae_test"],
+                    "mape_test"   : results["mape_test"],
+                    "model_config": results["model_config"],
+                    "auto_tuned"  : results["auto_tuned"],
+                },
+                "train_table": results["train_table"].to_json(orient="split"),
+                "test_table" : results["test_table"].to_json(orient="split"),
+            }
+            session.modified = True
+            return render_template(
+                "results.html",
+                results=results,
+                show_future_inputs=True,
+                is_univariate=not has_exog,
+                is_wavelet_ann=True,   # reuse same forecast button style
+                exog_cols=exog_cols,
+            )
+
+        # ── STEP 2: FORECAST ───────────────────────────────────
+        stored = session.get("wavelet_arima_results")
+        if stored is None:
+            return "Session expired. Please run the model again."
+
+        if not has_exog:
+            forecast_only = run_wavelet_arima(
+                data=None, params=params,
+                horizon=horizon, frequency=frequency, mode="forecast",
+            )
+            session["wavelet_arima_forecast"] = \
+                forecast_only["forecast_table"].to_json(orient="split")
+            session.modified = True
+            return redirect(url_for('show_forecast_result', model_key='wavelet_arima'))
+
+        future_exog_dict = {}
+        for col in exog_cols:
+            raw = request.form.get(f"future_exog_{col}", "").strip()
+            if not raw: return f"Missing future values for '{col}'.", 400
+            try: vals = list(map(float, raw.split()))
+            except ValueError: return f"Invalid values for '{col}'.", 400
+            if len(vals) != horizon: return f"Enter exactly {horizon} values for '{col}'.", 400
+            future_exog_dict[col] = vals
+
+        forecast_only = run_wavelet_arima(
+            data=None,
+            params={**params, "future_exog": future_exog_dict},
+            horizon=horizon, frequency=frequency, mode="forecast",
+        )
+        forecast_df = forecast_only["forecast_table"].copy()
+        for i, col in enumerate(exog_cols):
+            forecast_df.insert(i + 1, col, future_exog_dict[col])
+        session["wavelet_arima_forecast"] = forecast_df.to_json(orient="split")
+        session.modified = True
+        return redirect(url_for('show_forecast_result', model_key='wavelet_arima'))
+
+    elif model_name in WAVELET_EXTRA_MODELS:
+        _wrun = WAVELET_EXTRA_MODELS[model_name][0]
+
+        is_forecast = (request.form.get(f"{model_name}_forecast_trigger", "").strip() or
+                       request.form.get("wavelet_ann_forecast_trigger", "").strip() or
+                       request.form.get("univariate_forecast_trigger", "").strip())
+
+        params["time_col"]   = session.get("time_col",   "Year")
+        params["target_col"] = session.get("target_col", "Yield")
+        params["exog_cols"]  = session.get("exog_cols",  [])
+        exog_cols = session.get("exog_cols", [])
+        has_exog  = len(exog_cols) > 0
+
+        # ── STEP 1: TRAIN ──────────────────────────────────────
+        if not is_forecast:
+            results = _wrun(
+                data=data, params=params,
+                horizon=horizon, frequency=frequency, mode="train",
+            )
+            session[f"{model_name}_results"] = {
+                "meta": {
+                    "model_key"   : model_name,
+                    "model_name"  : results["model_name"],
+                    "frequency"   : frequency,
+                    "horizon"     : horizon,
+                    "rmse_train"  : results["rmse_train"],
+                    "mae_train"   : results["mae_train"],
+                    "mape_train"  : results["mape_train"],
+                    "rmse_test"   : results["rmse_test"],
+                    "mae_test"    : results["mae_test"],
+                    "mape_test"   : results["mape_test"],
+                    "model_config": results["model_config"],
+                    "auto_tuned"  : results["auto_tuned"],
+                },
+                "train_table": results["train_table"].to_json(orient="split"),
+                "test_table" : results["test_table"].to_json(orient="split"),
+            }
+            session.modified = True
+            return render_template(
+                "results.html",
+                results=results,
+                show_future_inputs=True,
+                is_univariate=not has_exog,
+                is_wavelet_ann=True,   # reuse same forecast button style
+                exog_cols=exog_cols,
+            )
+
+        # ── STEP 2: FORECAST ───────────────────────────────────
+        stored = session.get(f"{model_name}_results")
+        if stored is None:
+            return "Session expired. Please run the model again."
+
+        if not has_exog:
+            forecast_only = _wrun(
+                data=None, params=params,
+                horizon=horizon, frequency=frequency, mode="forecast",
+            )
+            session[f"{model_name}_forecast"] = \
+                forecast_only["forecast_table"].to_json(orient="split")
+            session.modified = True
+            return redirect(url_for('show_forecast_result', model_key=model_name))
+
+        future_exog_dict = {}
+        for col in exog_cols:
+            raw = request.form.get(f"future_exog_{col}", "").strip()
+            if not raw: return f"Missing future values for '{col}'.", 400
+            try: vals = list(map(float, raw.split()))
+            except ValueError: return f"Invalid values for '{col}'.", 400
+            if len(vals) != horizon: return f"Enter exactly {horizon} values for '{col}'.", 400
+            future_exog_dict[col] = vals
+
+        forecast_only = _wrun(
+            data=None,
+            params={**params, "future_exog": future_exog_dict},
+            horizon=horizon, frequency=frequency, mode="forecast",
+        )
+        forecast_df = forecast_only["forecast_table"].copy()
+        for i, col in enumerate(exog_cols):
+            forecast_df.insert(i + 1, col, future_exog_dict[col])
+        session[f"{model_name}_forecast"] = forecast_df.to_json(orient="split")
+        session.modified = True
+        return redirect(url_for('show_forecast_result', model_key=model_name))
 
     elif model_name == "svr":
 

@@ -28,6 +28,8 @@ except Exception:
 
 import torch
 import torch.nn as nn
+from models.fast_search import dl_combos, use_single_thread
+use_single_thread()   # small networks train fastest on one CPU thread
 
 torch.manual_seed(SEED)
 torch.cuda.manual_seed_all(SEED)
@@ -149,7 +151,7 @@ def auto_tune_transformer(
                  params["transformer_epochs_step"]),
     }
 
-    combos = [dict(zip(grid, v)) for v in itertools.product(*grid.values())]
+    combos = dl_combos(grid, log)   # fast search (models/fast_search.py)
     log(f"🔢 Total combinations: {len(combos)}")
 
     Xtr = torch.tensor(X_train, dtype=torch.float32, device=device)

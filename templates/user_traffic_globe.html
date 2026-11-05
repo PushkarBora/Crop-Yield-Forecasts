@@ -12,7 +12,8 @@
   position: relative;
   width: 100%;
   min-height: 700px;
-  background: radial-gradient(circle at center, #0b2a3a 0%, #000 70%);
+  background: linear-gradient(180deg, #ffffff 0%, #f3f5ff 100%);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
   overflow: hidden;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   border-radius: 20px;
@@ -38,12 +39,67 @@
 /* Title */
 #datai-globe-section .dg-title {
   text-align: center;
-  color: #ffffff;
+  color: #2d3748;
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.5px;
   margin-bottom: 1rem;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+}
+
+/* Counter strip */
+#datai-globe-section .dg-stats {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0 auto 0.5rem;
+  position: relative;
+  z-index: 5;
+}
+#datai-globe-section .dg-stat {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(45, 55, 72, 0.06);
+  border-radius: 12px;
+  padding: 10px 18px;
+  text-align: center;
+  color: #2d3748;
+  min-width: 120px;
+}
+#datai-globe-section .dg-stat .v {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+#datai-globe-section .dg-stat.total .v { font-size: 34px; color: #667eea; }
+#datai-globe-section .dg-stat .l {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #718096;
+}
+#datai-globe-section .dg-note {
+  text-align: center;
+  color: #cfd8dc;
+  font-size: 12px;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 5;
+}
+#datai-globe-section .dg-warn {
+  display: none;
+  text-align: center;
+  color: #b7791f;
+  font-size: 13px;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 5;
+}
+@media (max-width: 600px) {
+  #datai-globe-section { padding: 1rem; }
+  #dg-globe-wrapper { height: 420px; }
+  #datai-globe-section .dg-stat { min-width: 90px; padding: 8px 10px; }
+  #datai-globe-section .dg-stat.total .v { font-size: 26px; }
 }
 
 /* Source */
@@ -51,9 +107,8 @@
   position: absolute;
   bottom: 16px;
   left: 16px;
-  color: #cfd8dc;
+  color: #718096;
   font-size: 12px;
-  opacity: 0.85;
   z-index: 5;
 }
 
@@ -62,11 +117,12 @@
   position: absolute;
   bottom: 16px;
   right: 16px;
-  background: rgba(0,0,0,0.65);
+  background: #ffffff;
   padding: 12px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.25);
-  color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(45, 55, 72, 0.08);
+  color: #2d3748;
   font-size: 13px;
   z-index: 5;
 }
@@ -129,6 +185,9 @@
   margin-top: 6px;
   font-size: 11px;
   color: #ffffff;
+  background: rgba(26, 32, 44, 0.85);
+  padding: 3px 7px;
+  border-radius: 6px;
   white-space: nowrap;
   text-align: center;
   line-height: 1.2;
@@ -199,14 +258,23 @@
 </a>
 
 <div id="datai-globe-section">
-  <div class="dg-title">User Traffic Across Globe (Last 24 Hours)</div>
+  <div class="dg-title">User Traffic Across Globe</div>
+
+  <div class="dg-stats">
+    <div class="dg-stat total"><div class="v" id="dgTotal">3,000</div><div class="l">Total users</div></div>
+    <div class="dg-stat"><div class="v" id="dgOnline">–</div><div class="l">Online now</div></div>
+    <div class="dg-stat"><div class="v" id="dgToday">–</div><div class="l">Today</div></div>
+    <div class="dg-stat"><div class="v" id="dgMonth">–</div><div class="l">Last 30 days</div></div>
+    <div class="dg-stat"><div class="v" id="dgCountries">–</div><div class="l">Countries</div></div>
+  </div>
+  <div class="dg-warn" id="dgWarn"></div>
 
   <div id="dg-globe-wrapper">
     <div id="dg-globe"></div>
   </div>
 
-  <div class="dg-source">
-    Source: Analytics data (past 24 hours)
+  <div class="dg-source" id="dgSource">
+    Source: DATAI visitor counter
   </div>
 
   <div class="dg-legend">
@@ -225,93 +293,41 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Three.js and Globe.gl -->
-<script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
-<script src="https://unpkg.com/globe.gl"></script>
+<!-- Globe.gl (includes its own Three.js — do not load a second copy, it stops the globe).
+     Served from this website first; a public CDN is used only if the local file is missing. -->
+<script src="{{ url_for('static', filename='vendor/globe.gl.min.js') }}"></script>
+<script>
+  window.Globe || document.write('<script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js"><\/script>');
+</script>
 
 <script>
 (function () {
-  // =====================================================
-  // SAMPLE DATA - Replace with your analytics API
-  // =====================================================
-  
-  // Option 1: Use hardcoded sample data
-  const sampleData = [
-    { name: 'India', count: 1005, lat: 20.5937, lng: 78.9629 },
-    { name: 'United States', count: 865, lat: 37.0902, lng: -95.7129 },
-    { name: 'United Kingdom', count: 100, lat: 55.3781, lng: -3.4360 },
-    { name: 'Germany', count: 50, lat: 51.1657, lng: 10.4515 },
-    { name: 'Canada', count: 8, lat: 56.1304, lng: -106.3468 },
-    { name: 'Australia', count: 65, lat: -25.2744, lng: 133.7751 },
-    { name: 'Brazil', count: 50, lat: -14.2350, lng: -51.9253 },
-    { name: 'Japan', count: 40, lat: 36.2048, lng: 138.2529 },
-    { name: 'France', count: 43, lat: 46.2276, lng: 2.2137 },
-    { name: 'Singapore', count: 35, lat: 1.3521, lng: 103.8198 },
-    { name: 'Netherlands', count: 30, lat: 52.1326, lng: 5.2913 },
-    { name: 'South Korea', count: 25, lat: 35.9078, lng: 127.7669 },
-    { name: 'Spain', count: 20, lat: 40.4637, lng: -3.7492 },
-    { name: 'Italy', count: 18, lat: 41.8719, lng: 12.5674 },
-    { name: 'Mexico', count: 15, lat: 23.6345, lng: -102.5528 }
-  ];
+  const API = "{{ url_for('visitor_countries') }}";
+  const fmt = n => (Number(n) || 0).toLocaleString('en-IN');
+  const getColor = c =>
+    c > 3000 ? '#ff3333' :
+    c >= 1000 ? '#ffcc00' :
+    '#00f2ff';
+
+  let world = null;          // the globe is created ONCE, later refreshes only update its data
+  let shownTotal = 0;
 
   // =====================================================
-  // Option 2: Fetch from Google Sheets 
+  // GLOBE (created once)
   // =====================================================
-  // Uncomment this section if you want to use Google Sheets
-  /*
-  const SHEET_CSV = "YOUR_GOOGLE_SHEETS_CSV_URL";
-  
-  fetch(SHEET_CSV)
-    .then(res => res.ok ? res.text() : Promise.reject())
-    .then(csv => {
-      const rows = csv.trim().split('\n').slice(1);
-      const usageData = rows.map(r => {
-        const [name, count, lat, lng] = r.split(',');
-        return {
-          name,
-          count: Number(count),
-          lat: Number(lat),
-          lng: Number(lng)
-        };
-      });
-      initGlobe(usageData.length ? usageData : sampleData);
-    })
-    .catch(() => initGlobe(sampleData));
-  */
-
-  // For now, use sample data directly
-  function loadTraffic(){
-    fetch("/api/visitor-countries")
-      .then(res => res.json())
-      .then(result => {
-          if(result.data && result.data.length > 0){
-              initGlobe(result.data);
-          } else {
-              initGlobe(sampleData);
-          }
-      })
-      .catch(() => initGlobe(sampleData));
-  }
-
-  loadTraffic();
-  setInterval(loadTraffic, 60000); // refresh every 60 seconds
-
-  // =====================================================
-  // GLOBE INITIALIZATION
-  // =====================================================
-  function initGlobe(usageData) {
-    const getColor = c =>
-      c > 3000 ? '#ff3333' :
-      c >= 1000 ? '#ffcc00' :
-      '#00f2ff';
-
+  function initGlobe() {
     const container = document.getElementById('dg-globe');
+    if (typeof Globe === 'undefined') {
+      container.innerHTML = '<p style="text-align:center;color:#718096;padding-top:40%">The globe could not be loaded. Please check your internet connection and refresh.</p>';
+      return;
+    }
 
-    const world = Globe()(container)
-      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-      .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-
-      .htmlElementsData(usageData)
+    world = Globe()(container)
+      .globeImageUrl("{{ url_for('static', filename='img/earth-blue-marble.jpg') }}")
+      .backgroundColor('rgba(0,0,0,0)')
+      .showAtmosphere(true)
+      .atmosphereColor('#8fb4ff')
+      .atmosphereAltitude(0.18)
       .htmlLat(d => d.lat)
       .htmlLng(d => d.lng)
       .htmlAltitude(0.02)
@@ -321,16 +337,10 @@
         el.style.color = getColor(d.count);
         el.innerHTML = `
           <div class="dg-ripple"></div>
-          <div class="dg-label">${d.name}<br>${d.count.toLocaleString()}</div>
+          <div class="dg-label">${d.name}<br>${fmt(d.count)}</div>
         `;
         return el;
       });
-
-    const scene = world.scene();
-    scene.add(new THREE.AmbientLight(0xffffff, 1.1));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-    dir.position.set(1, 1, 1);
-    scene.add(dir);
 
     const controls = world.controls();
     controls.autoRotate = true;
@@ -338,7 +348,7 @@
     controls.enableZoom = true;
     controls.enablePan = false;
 
-    world.pointOfView({ lat: 20, lng: 78, altitude: 3.2 }, 0);
+    world.pointOfView({ lat: 20, lng: 78, altitude: 2.2 }, 0);
 
     function resize() {
       const { width, height } = container.getBoundingClientRect();
@@ -348,6 +358,55 @@
     resize();
     window.addEventListener('resize', resize);
   }
+
+  // =====================================================
+  // COUNTERS
+  // =====================================================
+  function animateTotal(target) {
+    const el = document.getElementById('dgTotal');
+    const start = shownTotal || Math.max(0, target - 300), t0 = performance.now(), dur = 1200;
+    (function step(now) {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmt(Math.round(start + (target - start) * e));
+      if (k < 1) requestAnimationFrame(step); else shownTotal = target;
+    })(performance.now());
+  }
+
+  // =====================================================
+  // LOAD REAL DATA (no fake sample numbers)
+  // =====================================================
+  function loadTraffic() {
+    fetch(API, { cache: 'no-store' })
+      .then(res => res.json())
+      .then(d => {
+        animateTotal(d.total_users || d.baseline_users || 3000);
+        document.getElementById('dgOnline').textContent    = fmt(d.online_now);
+        document.getElementById('dgToday').textContent     = fmt(d.users_today);
+        document.getElementById('dgMonth').textContent     = fmt(d.users_30d);
+        document.getElementById('dgCountries').textContent = fmt(d.countries_count);
+        document.getElementById('dgSource').textContent = d.updated_at
+          ? `Source: DATAI visitor counter · updated ${new Date(d.updated_at).toLocaleTimeString()}`
+          : 'Source: DATAI visitor counter';
+
+        const warn = document.getElementById('dgWarn');
+        if (d.error) {
+          warn.style.display = 'block';
+          warn.textContent = '⚠️ Visitor numbers could not be read right now — only the earlier total is shown.';
+        } else {
+          warn.style.display = 'none';
+        }
+        if (world) world.htmlElementsData(d.data || []);
+      })
+      .catch(() => {
+        const warn = document.getElementById('dgWarn');
+        warn.style.display = 'block';
+        warn.textContent = 'Could not load traffic data.';
+      });
+  }
+
+  try { initGlobe(); } catch (e) { console.error('Globe failed to start:', e); }
+  loadTraffic();
+  setInterval(loadTraffic, 60 * 1000);   // refresh every minute
 })();
 </script>
 {% endblock %}

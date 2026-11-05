@@ -25,6 +25,8 @@ except Exception:
 
 import torch
 import torch.nn as nn
+from models.fast_search import dl_combos, use_single_thread
+use_single_thread()   # small networks train fastest on one CPU thread
 
 torch.manual_seed(SEED)
 torch.cuda.manual_seed_all(SEED)
@@ -166,7 +168,7 @@ def auto_tune_cnn(
 
     # NOTE: lags grid search is handled at the outer level in run_cnn
     # because changing lags requires rebuilding X entirely.
-    combos = [dict(zip(grid, v)) for v in itertools.product(*grid.values())]
+    combos = dl_combos(grid, log)   # fast search (models/fast_search.py)
     log(f"🔢 Total combinations: {len(combos)}")
 
     # ── Tensors for inner search ─────────────────────────────────────

@@ -572,6 +572,12 @@
                             {% elif model_name == "wavelet_ann" %}🌊🌐
                             {% elif model_name == "wavelet_lstm" %}🌊🧠
                             {% elif model_name == "wavelet_transformer" %}🌊🔮
+                            {% elif model_name == "wavelet_arima" %}🌊📉
+                            {% elif model_name == "wavelet_rf" %}🌊🌲
+                            {% elif model_name == "wavelet_svr" %}🌊📊
+                            {% elif model_name == "wavelet_xgb" %}🌊🌿
+                            {% elif model_name == "wavelet_gru" %}🌊⚡
+                            {% elif model_name == "wavelet_rnn" %}🌊🔄
                             {% elif model_name == "svr" %}📊
                             {% elif model_name == "rf" %}🌲
                             {% elif model_name == "xgb" %}🌿
@@ -618,6 +624,16 @@
                             {% include 'partials/wavelet_lstm_config.html' %}
                         {% elif model_name == "wavelet_transformer" %}
                             {% include 'partials/wavelet_transformer_config.html' %}
+                        {% elif model_name == "wavelet_arima" %}
+                            {% include 'partials/wavelet_arima_config.html' %}
+                        {% elif model_name in ["wavelet_rf","wavelet_svr","wavelet_xgb","wavelet_gru","wavelet_rnn"] %}
+                            {% for wk, wp, wkind, wlabel in [("wavelet_rf","wrf","rf","Wavelet-RF"), ("wavelet_svr","wsvr","svr","Wavelet-SVR"), ("wavelet_xgb","wxgb","xgb","Wavelet-XGBoost"), ("wavelet_gru","wgru","gru","Wavelet-GRU"), ("wavelet_rnn","wrnn","rnn","Wavelet-RNN")] %}
+                            {% if model_name == wk %}
+                                {% with wx_p=wp, wx_kind=wkind, wx_key=wk, wx_label=wlabel %}
+                                    {% include 'partials/wavelet_extra_config.html' %}
+                                {% endwith %}
+                            {% endif %}
+                            {% endfor %}
                         {% elif model_name == "svr" %}
                             {% include 'partials/svr_config.html' %}
                         {% elif model_name == "rf" %}
@@ -956,6 +972,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         updateStatusBadge('wavelet_transformer', waveletTransformerCheckbox.checked);
     }
+
+    // Wavelet-RF / SVR / XGBoost / GRU / RNN
+    [['wrf','wavelet_rf'],['wsvr','wavelet_svr'],['wxgb','wavelet_xgb'],
+     ['wgru','wavelet_gru'],['wrnn','wavelet_rnn']].forEach(function (pair) {
+        const cb = document.getElementById('auto_tune_' + pair[0]);
+        if (cb) {
+            cb.addEventListener('change', function () { updateStatusBadge(pair[1], this.checked); });
+            updateStatusBadge(pair[1], cb.checked);
+        }
+    });
 
 
 });
