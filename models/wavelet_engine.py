@@ -123,14 +123,62 @@ def wavelet_decompose(x, filt, level):
     return np.vstack(comps)
 
 
+WARMUP_SHARE = 0.5   # a level may use at most half of the training data as filter warm-up
+
+
+def warmup_points(filt, level):
+    """Number of start-up points level J needs: (filter length − 1) × (2^J − 1)."""
+    return (len(lowpass(filt)) - 1) * (2 ** level - 1)
+
+
 def max_level_for(filt, n_train):
-    """Deepest level whose filter warm-up stays within ~35% of the training data."""
-    L = len(lowpass(filt))
-    budget = max(1.0, 0.35 * n_train)
+    """Deepest level whose filter warm-up fits in WARMUP_SHARE of the training data (≥ 1)."""
+    budget = max(1.0, WARMUP_SHARE * n_train)
     lvl = 1
-    while (L - 1) * (2 ** (lvl + 1) - 1) <= budget and lvl < 8:
+    while lvl < 8 and warmup_points(filt, lvl + 1) <= budget:
         lvl += 1
     return lvl
+
+
+def feasible_setups(filters, levels, n_train, log):
+    """
+    (filter, level) pairs to test, keeping the user's level range.
+    A filter that is too long for a requested level is skipped for that level
+    (it is NOT pushed down below the user's minimum level).
+    Only if no filter can reach the minimum level at all, the deepest possible
+    level is used and the reason is written to the log.
+    """
+    pairs, skipped = [], []
+    for f in filters:
+        lmax = max_level_for(f, n_train)
+        ok = [lv for lv in levels if lv <= lmax]
+        pairs += [(f, lv) for lv in ok]
+        if len(ok) < len(levels):
+            skipped.append(f"{f.upper()} (max level {lmax})")
+    if not pairs:
+        best_f = max(filters, key=lambda f: max_level_for(f, n_train))
+        lv = max_level_for(best_f, n_train)
+        log(f"   ⚠️ Level {min(levels)} needs at least {warmup_points(best_f, min(levels))} start-up points "
+            f"(with {best_f.upper()}), but there are only {n_train} training points. "
+            f"Using the deepest possible level instead: {best_f.upper()} level {lv}.")
+        return [(best_f, lv)]
+    tested = ", ".join(f"{f.upper()} L{lv}" for f, lv in pairs)
+    log(f"   📐 Levels {min(levels)}–{max(levels)}: testing {tested}")
+    if skipped:
+        log(f"   ℹ️ Too long for some requested levels with {n_train} training points: "
+            + ", ".join(skipped))
+    return pairs
+
+
+def manual_level(filt, level, n_train, log):
+    """Use the user's manual level if the data is long enough; otherwise explain and reduce."""
+    lmax = max_level_for(filt, n_train)
+    if level <= lmax:
+        return level
+    log(f"   ⚠️ Level {level} with {filt.upper()} needs about {warmup_points(filt, level)} start-up points, "
+        f"but there are only {n_train} training points → using level {lmax}. "
+        f"(A shorter filter such as Haar allows deeper levels.)")
+    return lmax
 
 
 # ============================================================
@@ -205,14 +253,11 @@ def screen_setups(x, exog, n_train, settings, log, top_k=2, use_lags=True):
     n_val = max(3, int(round(0.15 * n_train)))
     n_fit = n_train - n_val
     cands = []
-    for f in settings["filters"]:
-        lmax = max_level_for(f, n_fit)
-        for lv in settings["levels"]:
-            lv = min(lv, lmax)
-            for lg in (settings["lags"] if use_lags else [settings["lags"][0]]):
-                lg = max(1, min(lg, n_fit // 3))
-                if (f, lv, lg) not in cands:
-                    cands.append((f, lv, lg))
+    for f, lv in feasible_setups(settings["filters"], settings["levels"], n_fit, log):
+        for lg in (settings["lags"] if use_lags else [settings["lags"][0]]):
+            lg = max(1, min(lg, n_fit // 3))
+            if (f, lv, lg) not in cands:
+                cands.append((f, lv, lg))
     log(f"   ⚡ Fast screening of {len(cands)} filter × level{' × lags' if use_lags else ''} "
         f"set-ups (validation = last {n_val} training points)")
     t0 = time.time()
@@ -390,7 +435,7 @@ def neural_search(kind, x, exog, n_train, settings, log):
             setups, n_fit = screen_setups(x, exog, n_train, settings, log, top_k=2)
         else:
             f = settings["filters"][0]
-            lv = min(settings["levels"][0], max_level_for(f, n_train))
+            lv = manual_level(f, settings["levels"][0], n_train, log)
             lg = max(1, min(settings["lags"][0], n_train // 4))
             setups = [(f, lv, lg)]
             n_fit = n_train - max(3, int(round(0.15 * n_train)))
@@ -530,7 +575,7 @@ def ml_search(kind, x, exog, n_train, settings, log):
         setups, n_fit = screen_setups(x, exog, n_train, settings, log, top_k=2)
     else:
         f = settings["filters"][0]
-        lv = min(settings["levels"][0], max_level_for(f, n_train))
+        lv = manual_level(f, settings["levels"][0], n_train, log)
         lg = max(1, min(settings["lags"][0], n_train // 4))
         setups = [(f, lv, lg)]
         n_fit = n_train - max(3, int(round(0.15 * n_train)))
@@ -629,7 +674,7 @@ def arima_search(x, exog, n_train, settings, log):
         setups = list(dict.fromkeys((f, lv) for f, lv, _ in setups))
     else:
         f = settings["filters"][0]
-        setups = [(f, min(settings["levels"][0], max_level_for(f, n_train)))]
+        setups = [(f, manual_level(f, settings["levels"][0], n_train, log))]
         n_fit = n_train
         log(f"   🔧 Manual set-up: {f.upper()}, level {setups[0][1]}")
     if len(setups) == 1:
