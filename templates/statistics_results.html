@@ -414,67 +414,75 @@
     ══════════════════════════════════════════════════════════ #}
     {% if (not show_section or show_section == 'tests') and results.stationarity_tests %}
         {% set st = results.stationarity_tests %}
+        {% set st_has = namespace(adf=false, pp=false, kpss=false) %}
+        {% for v, ct in st.items() %}
+            {% if ct.adf is defined %}{% set st_has.adf = true %}{% endif %}
+            {% if ct.pp is defined %}{% set st_has.pp = true %}{% endif %}
+            {% if ct.kpss is defined %}{% set st_has.kpss = true %}{% endif %}
+        {% endfor %}
         <div class="result-card">
             <h2 class="section-title">⚖️ Tests for Stationarity</h2>
 
-            {% for col_name, col_tests in st.items() %}
-
-                {% if col_tests.adf is defined %}
+            {% if st_has.adf %}
+            <p class="test-sub-title">📏 Augmented Dickey-Fuller (ADF) Test</p>
+            <div style="overflow-x:auto;">
+            <table class="stats-table">
+                <thead><tr><th>Variable</th><th>ADF Statistic</th><th>p-value</th><th>Decision</th></tr></thead>
+                <tbody>
+                {% for col_name, col_tests in st.items() %}{% if col_tests.adf is defined %}
                 {% set t = col_tests.adf %}
-                <p class="test-sub-title">📏 Augmented Dickey-Fuller (ADF) Test</p>
-                <div style="overflow-x:auto;">
-                <table class="stats-table">
-                    <thead><tr><th>Variable</th><th>ADF Statistic</th><th>p-value</th><th>Decision</th></tr></thead>
-                    <tbody>
-                    <tr>
-                        <td><span class="var-badge">{{ col_name }}</span></td>
-                        <td>{{ t.statistic }}</td>
-                        <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
-                        <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Stationary' else 'chip-warn' }}">{{ t.interpretation }}</span></td>
-                    </tr>
-                    </tbody>
-                </table>
-                </div>
-                {% endif %}
+                <tr>
+                    <td>{{ var_badge(col_name) }}</td>
+                    <td>{{ t.statistic }}</td>
+                    <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                    <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Stationary' else 'chip-warn' }}">{{ t.interpretation }}</span></td>
+                </tr>
+                {% endif %}{% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
 
-                {% if col_tests.pp is defined %}
+            {% if st_has.pp %}
+            <p class="test-sub-title">📏 Phillips-Perron (PP) Test</p>
+            <div style="overflow-x:auto;">
+            <table class="stats-table">
+                <thead><tr><th>Variable</th><th>PP Statistic</th><th>p-value</th><th>Lags</th><th>Decision</th></tr></thead>
+                <tbody>
+                {% for col_name, col_tests in st.items() %}{% if col_tests.pp is defined %}
                 {% set t = col_tests.pp %}
-                <p class="test-sub-title">📏 Phillips-Perron (PP) Test</p>
-                <div style="overflow-x:auto;">
-                <table class="stats-table">
-                    <thead><tr><th>Variable</th><th>PP Statistic</th><th>p-value</th><th>Lags</th><th>Decision</th></tr></thead>
-                    <tbody>
-                    <tr>
-                        <td><span class="var-badge">{{ col_name }}</span></td>
-                        <td>{{ t.statistic if t.statistic is not none else '—' }}</td>
-                        <td class="{{ 'p-sig' if (t.p_value and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) if t.p_value is not none else '—' }}</td>
-                        <td>{{ t.lags if t.lags is defined else '—' }}</td>
-                        <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Stationary' else 'chip-warn' }}">{{ t.interpretation }}</span></td>
-                    </tr>
-                    </tbody>
-                </table>
-                </div>
-                {% endif %}
+                <tr>
+                    <td>{{ var_badge(col_name) }}</td>
+                    <td>{{ t.statistic if t.statistic is not none else '—' }}</td>
+                    <td class="{{ 'p-sig' if (t.p_value and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) if t.p_value is not none else '—' }}</td>
+                    <td>{{ t.lags if t.lags is defined else '—' }}</td>
+                    <td><span class="chip {{ 'chip-ok' if t.interpretation == 'Stationary' else 'chip-warn' }}">{{ t.interpretation }}</span></td>
+                </tr>
+                {% endif %}{% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
 
-                {% if col_tests.kpss is defined %}
+            {% if st_has.kpss %}
+            <p class="test-sub-title">📏 KPSS Test <span style="font-size:.8rem;font-weight:400;color:#6b7280;">(H₀: Stationary)</span></p>
+            <div style="overflow-x:auto;">
+            <table class="stats-table">
+                <thead><tr><th>Variable</th><th>KPSS Statistic</th><th>p-value</th><th>Decision</th></tr></thead>
+                <tbody>
+                {% for col_name, col_tests in st.items() %}{% if col_tests.kpss is defined %}
                 {% set t = col_tests.kpss %}
-                <p class="test-sub-title">📏 KPSS Test <span style="font-size:.8rem;font-weight:400;color:#6b7280;">(H₀: Stationary)</span></p>
-                <div style="overflow-x:auto;">
-                <table class="stats-table">
-                    <thead><tr><th>Variable</th><th>KPSS Statistic</th><th>p-value</th><th>Decision</th></tr></thead>
-                    <tbody>
-                    <tr>
-                        <td><span class="var-badge">{{ col_name }}</span></td>
-                        <td>{{ t.statistic }}</td>
-                        <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
-                        <td><span class="chip {{ 'chip-warn' if t.interpretation == 'Non-Stationary' else 'chip-ok' }}">{{ t.interpretation }}</span></td>
-                    </tr>
-                    </tbody>
-                </table>
-                </div>
-                {% endif %}
-
-            {% endfor %}
+                <tr>
+                    <td>{{ var_badge(col_name) }}</td>
+                    <td>{{ t.statistic }}</td>
+                    <td class="{{ 'p-sig' if t.p_value <= 0.05 else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                    <td><span class="chip {{ 'chip-warn' if t.interpretation == 'Non-Stationary' else 'chip-ok' }}">{{ t.interpretation }}</span></td>
+                </tr>
+                {% endif %}{% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
         </div>
     {% endif %}
     {# ── END SECTION 3 ── #}
@@ -614,67 +622,85 @@
        Shown when: show_section == 'tests'  OR  no section filter
     ══════════════════════════════════════════════════════════ #}
     {% if (not show_section or show_section == 'tests') and results.nonlinearity_tests %}
-        {% set nl = results.nonlinearity_tests %}
+        {% set nl_raw = results.nonlinearity_tests %}
+        {# results saved before this update were not per-variable: {'bds': {...}} #}
+        {% if nl_raw.bds is defined or nl_raw.tnn is defined or nl_raw.nn is defined %}
+            {% set nl = {'Study Variable': nl_raw} %}
+        {% else %}
+            {% set nl = nl_raw %}
+        {% endif %}
+        {% set nl_has = namespace(bds=false, tnn=false, nn=false) %}
+        {% for v, ct in nl.items() %}
+            {% if ct.bds %}{% set nl_has.bds = true %}{% endif %}
+            {% if ct.tnn %}{% set nl_has.tnn = true %}{% endif %}
+            {% if ct.nn %}{% set nl_has.nn = true %}{% endif %}
+        {% endfor %}
         <div class="result-card">
             <h2 class="section-title">🌀 Tests for Non-Linearity</h2>
-            <div class="nl-grid">
 
-                {% if nl.bds %}
-                {% set t = nl.bds %}
-                <div class="nl-inner">
-                    <div class="t-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                        <span class="t-name" style="font-weight:700;font-size:1.05rem;">Brock–Dechert–Scheinkman (BDS) Test</span>
-                        <span class="chip {{ 'chip-warn' if t.interpretation != 'IID' else 'chip-ok' }}">{{ t.interpretation }}</span>
-                    </div>
-                    <table class="stats-table">
-                        <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
-                        <tbody>
-                        <tr><td>Z Statistic</td>      <td>{{ t.statistic }}</td></tr>
-                        <tr><td>p-value</td>           <td class="{{ 'p-sig' if (t.p_value is not none and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td></tr>
-                        <tr><td>Embedding Dim (m)</td> <td>{{ t.embedding_dim }}</td></tr>
-                        <tr><td>ε (Epsilon)</td>       <td>{{ t.epsilon }}</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                {% endif %}
+            {% if nl_has.bds %}
+            <p class="test-sub-title">🌀 Brock–Dechert–Scheinkman (BDS) Test</p>
+            <div style="overflow-x:auto;">
+            <table class="stats-table">
+                <thead><tr><th>Variable</th><th>Z Statistic</th><th>p-value</th><th>Embedding Dim (m)</th><th>ε (Epsilon)</th><th>Decision</th></tr></thead>
+                <tbody>
+                {% for var, vt in nl.items() %}{% if vt.bds %}
+                {% set t = vt.bds %}
+                <tr>
+                    <td>{{ var_badge(var) }}</td>
+                    <td>{{ t.statistic }}</td>
+                    <td class="{{ 'p-sig' if (t.p_value is not none and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                    <td>{{ t.embedding_dim }}</td>
+                    <td>{{ t.epsilon }}</td>
+                    <td><span class="chip {{ 'chip-warn' if t.interpretation != 'IID' else 'chip-ok' }}">{{ t.interpretation }}</span></td>
+                </tr>
+                {% endif %}{% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
 
-                {% if nl.tnn %}
-                {% set t = nl.tnn %}
-                <div class="nl-inner">
-                    <div class="t-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                        <span class="t-name" style="font-weight:700;font-size:1.05rem;">Teraesvirta Neural Network (TNN) Test</span>
-                        <span class="chip {{ 'chip-warn' if t.interpretation != 'Linear' else 'chip-ok' }}">{{ t.interpretation }}</span>
-                    </div>
-                    <table class="stats-table">
-                        <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
-                        <tbody>
-                        <tr><td>F Statistic</td><td>{{ t.statistic }}</td></tr>
-                        <tr><td>p-value</td>    <td class="{{ 'p-sig' if (t.p_value is not none and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td></tr>
-                        <tr><td>Lag</td>        <td>{{ t.lag }}</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                {% endif %}
+            {% if nl_has.tnn %}
+            <p class="test-sub-title">🌀 Teraesvirta Neural Network (TNN) Test</p>
+            <div style="overflow-x:auto;">
+            <table class="stats-table">
+                <thead><tr><th>Variable</th><th>F Statistic</th><th>p-value</th><th>Lag</th><th>Decision</th></tr></thead>
+                <tbody>
+                {% for var, vt in nl.items() %}{% if vt.tnn %}
+                {% set t = vt.tnn %}
+                <tr>
+                    <td>{{ var_badge(var) }}</td>
+                    <td>{{ t.statistic }}</td>
+                    <td class="{{ 'p-sig' if (t.p_value is not none and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                    <td>{{ t.lag }}</td>
+                    <td><span class="chip {{ 'chip-warn' if t.interpretation != 'Linear' else 'chip-ok' }}">{{ t.interpretation }}</span></td>
+                </tr>
+                {% endif %}{% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
 
-                {% if nl.nn %}
-                {% set t = nl.nn %}
-                <div class="nl-inner">
-                    <div class="t-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                        <span class="t-name" style="font-weight:700;font-size:1.05rem;">White Neural Network (WNN) Test</span>
-                        <span class="chip {{ 'chip-warn' if t.interpretation != 'Linear' else 'chip-ok' }}">{{ t.interpretation }}</span>
-                    </div>
-                    <table class="stats-table">
-                        <thead><tr><th style="text-align:left">Metric</th><th>Value</th></tr></thead>
-                        <tbody>
-                        <tr><td>LM Statistic</td><td>{{ t.statistic }}</td></tr>
-                        <tr><td>p-value</td>     <td class="{{ 'p-sig' if (t.p_value is not none and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td></tr>
-                        <tr><td>Lag</td>         <td>{{ t.lag }}</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                {% endif %}
-
-            </div>{# end nl-grid #}
+            {% if nl_has.nn %}
+            <p class="test-sub-title">🌀 White Neural Network (WNN) Test</p>
+            <div style="overflow-x:auto;">
+            <table class="stats-table">
+                <thead><tr><th>Variable</th><th>LM Statistic</th><th>p-value</th><th>Lag</th><th>Decision</th></tr></thead>
+                <tbody>
+                {% for var, vt in nl.items() %}{% if vt.nn %}
+                {% set t = vt.nn %}
+                <tr>
+                    <td>{{ var_badge(var) }}</td>
+                    <td>{{ t.statistic }}</td>
+                    <td class="{{ 'p-sig' if (t.p_value is not none and t.p_value <= 0.05) else 'p-ok' }}">{{ fmt_p(t.p_value) }}</td>
+                    <td>{{ t.lag }}</td>
+                    <td><span class="chip {{ 'chip-warn' if t.interpretation != 'Linear' else 'chip-ok' }}">{{ t.interpretation }}</span></td>
+                </tr>
+                {% endif %}{% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
         </div>
     {% endif %}
     {# ── END SECTION 5 ── #}

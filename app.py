@@ -3476,9 +3476,25 @@ def show_comparison():
             "param_estimates_table": pet_df,
         })
     
-    # Sort by test RMSE (best first)
+    # Sort by test RMSE (best first); models without a test RMSE go last.
+    # Ties are broken by test MAE.
+    def _num(v):
+        try:
+            v = float(v)
+            return v if v == v else None          # NaN -> None
+        except (TypeError, ValueError):
+            return None
+
+    def _rank_key(m):
+        rmse, mae = _num(m["rmse_test"]), _num(m["mae_test"])
+        return (rmse is None,
+                rmse if rmse is not None else float("inf"),
+                mae if mae is not None else float("inf"))
+
+    models_data.sort(key=_rank_key)
+
     # Then filter best_model to only fitted models:
-    fitted_models = [m for m in models_data if m["rmse_test"] is not None]
+    fitted_models = [m for m in models_data if _num(m["rmse_test"]) is not None]
     best_model = fitted_models[0] if fitted_models else None
     
     

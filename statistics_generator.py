@@ -154,11 +154,28 @@ def perform_normality_tests(data, selected_tests,
 #         so template shows the real variable name, not hardcoded "Yield"
 # ============================================================
 
-def perform_stationarity_tests(data, selected_tests, target_col=None):
+def _test_columns(data, target_col=None, exog_cols=None):
+    """Target first, then each exogenous variable (same order as the summary statistics)."""
+    resolved_target = _resolve_target_col(data, target_col)
+    cols = [resolved_target]
+    for ec in (exog_cols or []):
+        if ec in data.columns and ec != resolved_target and ec not in cols:
+            cols.append(ec)
+    return cols
+
+
+def perform_stationarity_tests(data, selected_tests, target_col=None, exog_cols=None):
     """
     Returns: { actual_col_name: { 'adf': {...}, 'pp': {...}, 'kpss': {...} } }
+    for the target and every exogenous variable.
     """
-    col_name    = _resolve_target_col(data, target_col)
+    out = {}
+    for col_name in _test_columns(data, target_col, exog_cols):
+        out[col_name] = _stationarity_one(data, col_name, selected_tests)
+    return out
+
+
+def _stationarity_one(data, col_name, selected_tests):
     col_results = {}
 
     try:
@@ -211,8 +228,7 @@ def perform_stationarity_tests(data, selected_tests, target_col=None):
     except Exception as e:
         print(f"Stationarity test error on '{col_name}': {e}")
 
-    # ✅ Keyed by actual column name so template can display it
-    return {col_name: col_results}
+    return col_results
 
 
 # ============================================================
@@ -355,17 +371,24 @@ def _linear_regression_trend(arr: np.ndarray) -> dict:
 # NON-LINEARITY TESTS
 # ============================================================
 
-def perform_nonlinearity_tests(data, selected_tests, target_col=None):
-    results = {}
-    try:
-        series = get_yield_series(data, target_col)
-        if 'bds' in selected_tests:  results['bds'] = bds_test(series)
-        if 'tnn' in selected_tests:  results['tnn'] = terasvirta_test(series)
-        if 'nn'  in selected_tests or 'wnn' in selected_tests:
-            results['nn'] = white_test(series)
-    except Exception as e:
-        print(f"Nonlinearity test error: {e}")
-    return results
+def perform_nonlinearity_tests(data, selected_tests, target_col=None, exog_cols=None):
+    """
+    Returns: { actual_col_name: { 'bds': {...}, 'tnn': {...}, 'nn': {...} } }
+    for the target and every exogenous variable.
+    """
+    out = {}
+    for col in _test_columns(data, target_col, exog_cols):
+        results = {}
+        try:
+            series = pd.to_numeric(data[col], errors="coerce").dropna()
+            if 'bds' in selected_tests:  results['bds'] = bds_test(series)
+            if 'tnn' in selected_tests:  results['tnn'] = terasvirta_test(series)
+            if 'nn'  in selected_tests or 'wnn' in selected_tests:
+                results['nn'] = white_test(series)
+        except Exception as e:
+            print(f"Nonlinearity test error on '{col}': {e}")
+        out[col] = results
+    return out
 
 
 def bds_test(series, m=2, eps_multiplier=0.7):
@@ -858,11 +881,11 @@ def generate_all_statistics(
 
     if stationarity_tests:
         results["stationarity_tests"] = perform_stationarity_tests(
-            data, stationarity_tests, target_col=resolved_target)
+            data, stationarity_tests, target_col=resolved_target, exog_cols=exog_cols)
 
     if nonlinearity_tests:
         results["nonlinearity_tests"] = perform_nonlinearity_tests(
-            data, nonlinearity_tests, target_col=resolved_target)
+            data, nonlinearity_tests, target_col=resolved_target, exog_cols=exog_cols)
 
     if trend_tests:
         series = get_yield_series(data, resolved_target)
