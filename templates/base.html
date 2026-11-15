@@ -463,7 +463,7 @@
                         <button class="nav-trigger" onclick="toggleDropdown('sampleDropdown', 'sampleNavItem')">
                             Sample Data <i class="chevron">▾</i>
                         </button>
-                        <div class="dropdown" id="sampleDropdown" style="min-width:300px;">
+                        <div class="dropdown" id="sampleDropdown" style="min-width:300px; max-height:calc(100vh - 90px); overflow-y:auto;">
                             <div class="dropdown-label">📦 Test Dataset</div>
                             <div style="padding:0.75rem 0.85rem 0.4rem; font-size:0.83rem; color:#4a5568; line-height:1.6;">
                                 A monthly time-series dataset (Apr 2000 – Jan 2012, n=142) with one
@@ -481,6 +481,34 @@
                                 <span class="drop-text">
                                     <strong>Download Sample CSV</strong>
                                     <span>Ready to upload — time col: t, study variable: y</span>
+                                </span>
+                            </a>
+
+                            <div class="drop-divider"></div>
+                            <div class="dropdown-label">🌾 Yield + Exogenous Dataset</div>
+                            <div style="padding:0.75rem 0.85rem 0.4rem; font-size:0.83rem; color:#4a5568; line-height:1.6;">
+                                Annual crop yield (1950 – 2024, n=75) with three climate
+                                variables: maximum temperature, minimum temperature and rainfall.
+                                Upload both files together for multivariate models.
+                            </div>
+                            <div style="padding:0 0.85rem 0.3rem; display:flex; flex-wrap:wrap; gap:0.4rem;">
+                                <span style="background:rgba(102,126,234,0.1);color:#667eea;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;">Annual</span>
+                                <span style="background:rgba(56,161,105,0.1);color:#276749;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;">75 rows</span>
+                                <span style="background:rgba(118,75,162,0.1);color:#553c9a;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;">Multivariate</span>
+                                <span style="background:rgba(237,137,54,0.1);color:#c05621;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;">Excel</span>
+                            </div>
+                            <a href="{{ url_for('static', filename='sample_yield.xlsx') }}" download="DATAI_Sample_Yield.xlsx">
+                                <span class="drop-icon green">⬇️</span>
+                                <span class="drop-text">
+                                    <strong>Download Yield</strong>
+                                    <span>Study variable file — time col: Year, study variable: Yield</span>
+                                </span>
+                            </a>
+                            <a href="{{ url_for('static', filename='sample_exog_variables.xlsx') }}" download="DATAI_Sample_Exogenous_Variables.xlsx">
+                                <span class="drop-icon green">⬇️</span>
+                                <span class="drop-text">
+                                    <strong>Download Exogenous Variables</strong>
+                                    <span>Climate file — Year, Max_T, Min_T, Mean_Rain</span>
                                 </span>
                             </a>
                         </div>
